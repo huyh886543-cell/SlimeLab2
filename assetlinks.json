@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.netlify.dapper_phoenix_e50fe5.twa",
+        "sha256_cert_fingerprints": ["C2:0D:E4:93:40:70:E7:BE:41:EE:AC:18:50:37:A2:0F:C6:09:4D:FB:4D:E2:0C:BF:04:A6:FA:38:C3:EB:DD:4F"]
+      }
+    }]

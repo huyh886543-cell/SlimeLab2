@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>🧪 Microbe & Slime Lab Simulator</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#06090f">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            const bgm = document.getElementById("bgm-stardew");
+            if (bgm) { bgm.volume = 0.4; window.addEventListener("pointerdown", () => { if (bgm.paused) bgm.play().catch(e=>console.log(e)); }, { once: true }); }
+        });
+    </script>
+    <style>
+        [class*="netlify"], [id*="netlify"], iframe[src*="netlify"] { display: none !important; }  
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
+        html, body { width: 100vw; height: 100vh; height: 100dvh; background-color: #06090f; color: #e6f5ff; font-family: Arial, sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        #rotate-warning { display: none; position: fixed; inset: 0; background: #080c14; color: #00ffc8; z-index: 99999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+        #rotate-warning .icon { font-size: 48px; margin-bottom: 12px; animation: rotateAnim 2s infinite ease-in-out; }
+        @keyframes rotateAnim { 0%, 20% { transform: rotate(0deg); } 50%, 70% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
+        @media (orientation: portrait) { #rotate-warning { display: flex !important; } }
+        #app-layout { display: flex; flex-direction: row; width: 100vw; height: 100dvh; padding: 4px; gap: 6px; align-items: center; justify-content: center; }
+        #rank-board { width: clamp(155px, 18vw, 210px); height: 100%; background-color: #0f1622; border: 1.5px solid #223145; border-radius: 8px; display: flex; flex-direction: column; padding: 8px 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7); flex-shrink: 0; }
+        #rank-header { text-align: center; color: #ffd700; font-size: 13px; font-weight: bold; }
+        #rank-server { text-align: center; color: #6a829a; font-size: 10px; margin-bottom: 6px; border-bottom: 1px solid #1a2636; padding-bottom: 3px; }
+        #rank-list { flex: 1; overflow-y: auto; scrollbar-width: none; }
+        #rank-list::-webkit-scrollbar { display: none; }
+        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-bottom: 1px solid #131c29; font-size: 11.5px; cursor: pointer; transition: 0.2s; }
+        .rank-item:hover { background-color: rgba(255, 255, 255, 0.05); }
+        .rank-item:nth-child(1) { color: #ffd700; font-weight: bold; }
+        .rank-item:nth-child(2) { color: #c0c0c0; font-weight: bold; }
+        .rank-item:nth-child(3) { color: #cd7f32; font-weight: bold; }
+        .rank-item.current-user { background-color: rgba(0, 255, 200, 0.15); border-radius: 3px; border-left: 3px solid #00ffc8; }
+        .rank-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px; }
+        .rank-val { font-weight: bold; font-size: 11px; text-align: right;}
+        .val-diamond { color: #e056fd; text-shadow: 0 0 5px rgba(224,86,253,0.5); }
+        .val-money { color: #00ffc8; }
+        #game-wrapper { flex: 1; height: 100%; display: flex; position: relative; overflow: hidden; }
+        canvas { width: 100%; height: 100%; display: block; background-color: #0c1018; border-radius: 8px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.9); border: 1.5px solid #1c2838; }
+        #welcome-modal, #custom-input-overlay, #html-alert-overlay { position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        #custom-input-overlay { z-index: 20000; } #html-alert-overlay { z-index: 999999; backdrop-filter: blur(4px); }
+        #welcome-panel, #custom-input-box, #html-alert-box { background-color: #111a28; border: 1.5px solid #00ffc8; border-radius: 10px; width: min(360px, 85vw); padding: 22px 18px; text-align: center; box-shadow: 0 0 25px rgba(0, 255, 200, 0.2); }
+        #welcome-title { color: #ffd700; font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+        #welcome-server { color: #7890a8; font-size: 11px; margin-bottom: 14px; }
+        .welcome-input, #custom-input-field { width: 100%; padding: 10px 12px; background-color: #080c14; border: 1px solid #28374b; color: #fff; border-radius: 6px; margin-bottom: 12px; font-size: 13px; outline: none; text-align: center; }
+        .welcome-input:focus, #custom-input-field:focus { border-color: #00ffc8; }
+        .modal-btn { width: 100%; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        #start-btn { background-color: #14503c; color: #e6f5ff; border: 1px solid #00ffc8; }
+        #google-btn { background-color: #ffffff; color: #2b2b2b; border: 1px solid #ddd; font-size: 13px; }
+        .divider-or { display: flex; align-items: center; text-align: center; color: #6a829a; font-size: 11px; margin: 6px 0 10px 0; }
+        .divider-or::before, .divider-or::after { content: ''; flex: 1; border-bottom: 1px solid #223145; }
+        .custom-input-btns { display: flex; gap: 10px; }
+        .custom-input-btns button { flex: 1; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; border: none; }
+        #custom-input-ok { background: #14503c; color: #fff; border: 1px solid #00ffc8; } #custom-input-cancel { background: #283c50; color: #fff; }
+        #html-alert-btn { background: #a02832; color: #fff; border: 1px solid #ff4646; padding: 10px 30px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <audio id="bgm-stardew" loop></audio>
+    <div id="rotate-warning"><div class="icon">📱 ↷</div><h3 style="font-size: 16px;">Vui lòng xoay ngang điện thoại</h3></div>
+
+    <div id="html-alert-overlay">
+        <div id="html-alert-box">
+            <div id="html-alert-icon" style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
+            <h3 id="html-alert-title" style="color: #ff4646; font-size: 20px; font-weight: bold; margin-bottom: 15px;">CẢNH BÁO</h3>
+            <p id="html-alert-msg" style="color: #e6f5ff; font-size: 15px; margin-bottom: 25px; line-height: 1.5;"></p>
+            <button id="html-alert-btn">XÁC NHẬN</button>
+        </div>
+    </div>
+
+    <div id="custom-input-overlay">
+        <div id="custom-input-box">
+            <h3 id="custom-input-title" style="color:#ffd700; margin-bottom:15px;">Nhập tên mới:</h3>
+            <input type="text" id="custom-input-field" maxlength="15" autocomplete="off">
+            <div class="custom-input-btns"><button id="custom-input-ok">Xác Nhận</button><button id="custom-input-cancel">Hủy Bỏ</button></div>
+        </div>
+    </div>
+
+    <div id="welcome-modal">
+        <div id="welcome-panel">
+            <div id="welcome-title">🧪 MICROBE & SLIME LAB</div>
+            <div id="welcome-server">MÁY CHỦ SỐ 1 (VN-REALTIME)</div>
+            <input type="text" id="player-name" class="welcome-input" placeholder="Nhập tên người chơi..." maxlength="15">
+            <button id="start-btn" class="modal-btn">▶️ VÀO PHÒNG THÍ NGHIỆM</button>
+            <div class="divider-or">HOẶC</div>
+            <button id="google-btn" class="modal-btn">Đăng nhập bằng Google</button>
+        </div>
+    </div>
+
+    <div id="app-layout">
+        <div id="rank-board">
+            <div id="rank-header">🏆 BẢNG XẾP HẠNG</div>
+            <div id="rank-server">ONLINE SERVER 1</div>
+            <div id="rank-list"><div style="text-align:center; padding:10px; font-size:10.5px; color:#6a829a;">Đang kết nối...</div></div>
+        </div>
+        <div id="game-wrapper"><canvas id="gameCanvas" width="1400" height="720"></canvas></div>
+    </div>
+
+<script>
+const CANVAS_W = 1400; const CANVAS_H = 720;
+const COLOR_TEXT = "#e6f5ff"; const COLOR_ACCENT = "#00ffc8"; const COLOR_GOLD = "#ffd700"; const COLOR_WARNING = "#ff4646";
+
+function formatMoney(val) {
+    const num = Number(val || 0);
+    if (num < 1e6) return num.toLocaleString("vi-VN") + " VNĐ";
+    const units = [
+        { v: 1e303, s: "Centillion" }, { v: 1e120, s: "Novemdec" }, { v: 1e117, s: "Octodec" }, { v: 1e114, s: "Septendec" }, { v: 1e111, s: "Sexdec" }, 
+        { v: 1e108, s: "Quindec" }, { v: 1e105, s: "Quattuordec" }, { v: 1e102, s: "Tredec" }, { v: 1e99,  s: "Duodec" }, { v: 1e96,  s: "Undec" }, 
+        { v: 1e93,  s: "Dec" }, { v: 1e90,  s: "Non" }, { v: 1e87,  s: "Oct" }, { v: 1e84,  s: "Sept" }, { v: 1e81,  s: "Sex" }, 
+        { v: 1e78,  s: "Quin" }, { v: 1e75,  s: "Quat" }, { v: 1e72,  s: "Tre" }, { v: 1e69,  s: "Duo" }, { v: 1e66,  s: "Un" }, 
+        { v: 1e63,  s: "Vigint" }, { v: 1e60,  s: "Novemd" }, { v: 1e57,  s: "Octod" }, { v: 1e54,  s: "Septend" }, { v: 1e51,  s: "Sexd" }, 
+        { v: 1e48,  s: "Quind" }, { v: 1e45,  s: "Quatd" }, { v: 1e42,  s: "Tredec" }, { v: 1e39,  s: "Duodec" }, { v: 1e36,  s: "Undec" }, 
+        { v: 1e33,  s: "Dec" }, { v: 1e30,  s: "Q" }, { v: 1e27,  s: "R" }, { v: 1e24,  s: "Y" }, { v: 1e21,  s: "Z" }, 
+        { v: 1e18,  s: "E" }, { v: 1e15,  s: "P" }, { v: 1e12,  s: "T" }, { v: 1e9,   s: "G" }, { v: 1e6,   s: "M" }
+    ];
+    if (num >= 1e306) return "INFINITY VNĐ";
+    for (let i = 0; i < units.length; i++) {
+        if (num >= units[i].v) { const scaled = num / units[i].v; return scaled.toFixed(scaled >= 100 ? 0 : (scaled >= 10 ? 1 : 2)) + " " + units[i].s; }
+    }
+    return num.toLocaleString("vi-VN") + " VNĐ";
+}
+
+function showCustomAlert(msg, type = "error") {
+    const o = document.getElementById("html-alert-overlay"), b = document.getElementById("html-alert-box"), i = document.getElementById("html-alert-icon"), t = document.getElementById("html-alert-title"), m = document.getElementById("html-alert-msg"), btn = document.getElementById("html-alert-btn");
+    m.innerHTML = msg;
+    if (type === "success") { b.style.borderColor = "#00ffc8"; b.style.boxShadow = "0 0 40px rgba(0, 255, 200, 0.3)"; i.innerText = "✨"; t.innerText = "THÀNH CÔNG"; t.style.color = "#00ffc8"; btn.style.background = "#14503c"; btn.style.borderColor = "#00ffc8"; } 
+    else if (type === "info") { b.style.borderColor = "#00a8ff"; b.style.boxShadow = "0 0 40px rgba(0, 168, 255, 0.3)"; i.innerText = "ℹ️"; t.innerText = "THÔNG TIN"; t.style.color = "#00a8ff"; btn.style.background = "#0984e3"; btn.style.borderColor = "#00a8ff"; } 
+    else { b.style.borderColor = "#ff4646"; b.style.boxShadow = "0 0 40px rgba(255, 70, 70, 0.4)"; i.innerText = "⚠️"; t.innerText = "CẢNH BÁO"; t.style.color = "#ff4646"; btn.style.background = "#a02832"; btn.style.borderColor = "#ff4646"; }
+    o.style.display = "flex"; btn.onclick = () => { o.style.display = "none"; };
+}
+
+const TANK_THEMES = [
+    { id: 'default', name: 'Bể Slime Nguyên Bản', price: 0, bg: '#0c1018', containerBg: '#0e2030', glass: '#00b4e6', grid: '#1c2838', scale: 1.0 },
+    { id: 'cosmos', name: '🌌 Bể Vũ Trụ Huyền Ảo', price: 1e18, bg: '#020008', containerBg: '#080214', glass: '#9b59b6', grid: '#9b59b633', scale: 2.0 },
+    { id: 'magma', name: '🌋 Bể Núi Lửa Cực Nhiệt', price: 5e18, bg: '#1c0500', containerBg: '#2e0a00', glass: '#ff4500', grid: '#ff450044', scale: 3.0 },
+    { id: 'glacier', name: '❄️ Bể Băng Hà Vĩnh Cửu', price: 1e19, bg: '#001428', containerBg: '#02203c', glass: '#00f7ff', grid: '#00f7ff33', scale: 4.0 },
+    { id: 'desert', name: '🏜️ Bể Sa Mạc Cát Vàng', price: 5e19, bg: '#281c0c', containerBg: '#3c2b14', glass: '#e6a100', grid: '#d4880644', scale: 5.0 },
+    { id: 'cyber', name: '⚡ Bể Lượng Tử Cyberpunk', price: 1e20, bg: '#080014', containerBg: '#100220', glass: '#ff0055', grid: '#ff007f33', scale: 6.0 },
+    { id: 'abyss', name: '🌀 Bể Vực Thẳm Hỗn Mang', price: 5e20, bg: '#000208', containerBg: '#000714', glass: '#ff007f', grid: '#ff007f33', scale: 7.0 },
+    { id: 'sky', name: '☁️ Bể Bầu Trời Mây Xanh', price: 1e21, bg: '#102035', containerBg: '#18304c', glass: '#70a5ff', grid: '#4070a044', scale: 8.0 },
+    { id: 'swamp', name: '🌿 Bể Đầm Lầy Sương Mù', price: 5e21, bg: '#0c1c14', containerBg: '#122c1e', glass: '#2ecc71', grid: '#27ae6044', scale: 9.0 },
+    { id: 'crystal', name: '💎 Bể Tinh Thể Lấp Lánh', price: 1e22, bg: '#1a0033', containerBg: '#26004d', glass: '#e056fd', grid: '#e056fd44', scale: 10.0 }
+];
+
+const LAB_STRAIN_SETS = {};
+LAB_STRAIN_SETS[0] = [
+    { id: 0, name: "Alpha Lục Bảo", tier: 1, color: "#3cdc64", valMult: 1.0, mutRate: 0.08, mood: "cute" },
+    { id: 1, name: "Bong Bóng Nước", tier: 1, color: "#00a8ff", valMult: 2.2, mutRate: 0.075, mood: "happy" },
+    { id: 2, name: "Độc Axit Tím", tier: 2, color: "#9c88ff", valMult: 4.5, mutRate: 0.07, mood: "silly" },
+    { id: 3, name: "Hỏa Tinh Diệm", tier: 2, color: "#eb2d41", valMult: 9.0, mutRate: 0.065, mood: "angry" },
+    { id: 4, name: "Lôi Quang Sét", tier: 3, color: "#ffe632", valMult: 18.0, mutRate: 0.06, mood: "excited" },
+    { id: 5, name: "Băng Cực Tuyết", tier: 3, color: "#dcdde1", valMult: 35.0, mutRate: 0.055, mood: "sleepy" },
+    { id: 6, name: "Thạch Anh Hồng", tier: 4, color: "#fd79a8", valMult: 75.0, mutRate: 0.05, mood: "sparkle" },
+    { id: 7, name: "Hổ Phách Cổ", tier: 4, color: "#e67e22", valMult: 160.0, mutRate: 0.045, mood: "mysterious" },
+    { id: 8, name: "Kim Cương Quang", tier: 5, color: "#74b9ff", valMult: 350.0, mutRate: 0.04, mood: "sparkle" },
+    { id: 9, name: "Hắc Diệu Thạch", tier: 5, color: "#2d3436", valMult: 800.0, mutRate: 0.035, mood: "void" },
+    { id: 10, name: "Ruby Huyết Tinh", tier: 6, color: "#d63031", valMult: 1800.0, mutRate: 0.03, mood: "fierce" },
+    { id: 11, name: "Cầu Vồng Prism", tier: 6, color: "#e056fd", valMult: 4200.0, mutRate: 0.025, mood: "happy" },
+    { id: 12, name: "Phóng Xạ Nuclear", tier: 7, color: "#badc58", valMult: 9500.0, mutRate: 0.02, mood: "excited" },
+    { id: 13, name: "Plasma Nguyên Thủy", tier: 7, color: "#f39c12", valMult: 22000.0, mutRate: 0.015, mood: "fierce" },
+    { id: 14, name: "Vực Thẳm Void", tier: 8, color: "#1e272e", valMult: 55000.0, mutRate: 0.012, mood: "void" },
+    { id: 15, name: "Tinh Vân Galaxy", tier: 8, color: "#5f27cd", valMult: 130000.0, mutRate: 0.01, mood: "starry" },
+    { id: 16, name: "Long Tộc Dragon", tier: 9, color: "#ff5252", valMult: 320000.0, mutRate: 0.008, mood: "fierce" },
+    { id: 17, name: "Virus Chúa Tể", tier: 9, color: "#800000", valMult: 800000.0, mutRate: 0.006, mood: "angry" },
+    { id: 18, name: "Cổ Ma Pháp Runes", tier: 10, color: "#341f97", valMult: 2000000.0, mutRate: 0.004, mood: "mysterious" },
+    { id: 19, name: "Thủy Ngân Bạc", tier: 10, color: "#c8d6e5", valMult: 5000000.0, mutRate: 0.003, mood: "sparkle" },
+    { id: 100, name: "🌟 Thần Quang Thái Dương", tier: 11, color: "#ffffff", valMult: 15000000.0, mutRate: 0.000008, mood: "divine", isGod: true },
+    { id: 101, name: "🌌 Ma Thần Hư Không", tier: 11, color: "#130f40", valMult: 40000000.0, mutRate: 0.000005, mood: "divine", isGod: true },
+    { id: 102, name: "⏳ Thần Thời Gian Chronos", tier: 12, color: "#00ffff", valMult: 100000000.0, mutRate: 0.000003, mood: "divine", isGod: true },
+    { id: 103, name: "🔥 Phượng Hoàng Lửa", tier: 12, color: "#ff3838", valMult: 280000000.0, mutRate: 0.000002, mood: "divine", isGod: true },
+    { id: 104, name: "⚡ Vạn Lôi Zeus", tier: 13, color: "#17c0eb", valMult: 800000000.0, mutRate: 0.000001, mood: "divine", isGod: true },
+    { id: 105, name: "👑 Slime Vũ Trụ Tối Cao", tier: 14, color: "#ffd700", valMult: 2500000000.0, mutRate: 0.0000005, mood: "divine", isGod: true }
+];
+
+for (let lab = 1; lab < 10; lab++) {
+    LAB_STRAIN_SETS[lab] = [
+        { id: lab * 10, name: `Khuẩn Mầm Lab ${lab}`, tier: 1, color: "#f1c40f", valMult: 15.0 * lab, mutRate: 0.08, mood: "excited" },
+        { id: lab * 10 + 1, name: `Tế Bào Đột Biến ${lab}`, tier: 2, color: "#3498db", valMult: 35.0 * lab, mutRate: 0.07, mood: "silly" },
+        ...Array.from({ length: 18 }, (_, i) => ({ 
+            id: lab * 100 + 12 + i, name: `Thực Thể Phân Biệt MK-${i + 1}`, tier: 3 + Math.floor(i / 3), 
+            color: `hsl(${(i * 20 + lab * 40) % 360}, 80%, 60%)`, 
+            valMult: 5000.0 * Math.pow(2.2, i) * lab, 
+            mutRate: 0.03 / (i + 1), mood: "excited" 
+        })),
+        ...Array.from({ length: 6 }, (_, i) => ({ 
+            id: lab * 1000 + i, name: `⚡ Thần Linh Hệ ${lab} Cấp ${i + 1}`, tier: 11 + i, 
+            color: '#00ffc8', 
+            valMult: 50000000.0 * Math.pow(3.0, i) * lab, 
+            mutRate: 0.000005 / (i + 1), mood: "divine", isGod: true 
+        }))
+    ];
+}
+
+const weaponNames = ["Kiếm Cánh Thiên Thần", "Huyết Điệp Bỉ Ngạn", "Hàn Băng Long Kiếm", "Đoản Kiếm Bạch Cốt", "Xích Vân Mộc Lan", "Cung Nguyệt Thạch", "Tiên Cung Anh Đào", "Đại Kiếm Hắc Hỏa", "Thánh Kiếm Thái Dương", "Ma Kiếm Dạ Quỷ", "Song Lưỡi Hái Tinh Vân", "Đại Thần Phủ Bạch Kim", "Trượng Hỏa Long Thần", "Nhật Nguyệt Song Đao", "Hắc Ma Thương", "Kích Sét Phán Xét", "Cung Hỏa Phượng Hoàng", "Trượng Pha Lê Sinh Mệnh", "Đao Bán Nguyệt Thần", "Rìu Hỗn Độn Địa Ngục", "Kiếm Xương Gai Độc", "Lưỡi Hái Hấp Huyết", "Thương Băng Tuyệt Đối", "Phi Tiêu Đa Chiều", "Gậy Phép Hắc Tinh"];
+const auraNames = ["Vòng Tinh Tú Xanh", "Vòng Băng Tuyết", "Trận Đồ Tím Đa Tầng", "Hố Đen Gargantua", "Quả Cầu Thủy Tinh", "Quỹ Đạo Nguyên Tử", "Hỏa Luân Chân Hỏa", "Vòng Neon Ảo Ảnh", "Cổng Ma Thuật Hỗn Mang", "Hố Đen Vũ Trụ", "Vành Đai Hoàng Kim", "Hỏa Luân Thái Dương", "Vòng Xoáy Lượng Tử", "Vòng Rune Tím Cổ Đại", "Hào Quang Kim Cương", "Bát Quái Tiên Nhân", "Lốc Xoáy Hủy Diệt", "Trận Đồ Lôi Điện", "Hoa Sen Nở Rộ", "Mắt Thần Đa Chiều", "Lưới Lục Giác Sinh Học", "Trận Đồ Siêu Phân Tử", "Đĩa Hỏa Ngục", "Vành Đai Băng Lăng", "Quả Cầu Gai Bóng Tối"];
+
+const SKINS = Array.from({ length: 100 }, (_, i) => ({ id: 'skin_' + i, name: i === 0 ? "Mặc Định" : `${weaponNames[i % 25]} MK-${Math.floor(i/25)+1}`, price: i === 0 ? 0 : 150000000 * Math.pow(2.8, i), tier: (i % 25) + 1 }));
+const AURA_EFFECTS = Array.from({ length: 100 }, (_, i) => ({ id: 'aura_' + i, name: i === 0 ? "Không Dùng Aura" : `${auraNames[i % 25]} MK-${Math.floor(i/25)+1}`, price: i === 0 ? 0 : 300000000 * Math.pow(2.9, i), tier: (i % 25) + 1 }));
+
+class MasterpieceArtRenderer {
+    constructor(tier, type) { this.tier = Math.max(1, tier); this.type = type; }
+    circle(ctx, r, fill, stroke, lw) { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); } }
+    poly(ctx, sides, r, fill, stroke, lw, offset=0) { ctx.beginPath(); for (let i = 0; i < sides; i++) { const a = i * Math.PI * 2 / sides + offset; if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r); else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); } }
+    spin(ctx, count, fn) { for (let i = 0; i < count; i++) { ctx.save(); ctx.rotate((i * Math.PI * 2) / count); fn(i); ctx.restore(); } }
+    draw(ctx, x, y, time, radius = 35, isShopPreview = false) {
+        try {
+            ctx.save(); ctx.translate(x, y);
+            const hueShift = (this.tier * 35) % 360; 
+            ctx.filter = `hue-rotate(${hueShift}deg) brightness(${1 + (this.tier % 5) * 0.05})`;
+            const tMult = 0.95 + (this.tier * 0.3); 
+            const rA = (85 + (this.tier * 15)) * tMult; 
+            const rW = (55 + (this.tier * 7)) * tMult;
+            if (isShopPreview) {
+                const safeScale = this.type === 'auras' ? (35 / rA) : (40 / rW); ctx.scale(safeScale, safeScale); if (this.type === 'weapons') ctx.rotate(Math.PI / 4);
+            } else {
+                const scaleRatio = Math.max(0.5, radius / 35); ctx.scale(scaleRatio, scaleRatio);
+            }
+            if (this.type === 'auras') this.renderAuras(ctx, time, rA); else if (this.type === 'weapons') this.renderWeapons(ctx, time, rW, isShopPreview, radius);
+        } catch (err) { } finally { ctx.restore(); }
+    }
+    renderAuras(ctx, time, s) {
+        ctx.rotate(time * (0.3 + (this.tier % 5) * 0.05)); const t = (this.tier - 1) % 25; const baseType = t % 5;
+        const cols = ['#007fff', '#ff3838', '#ffd700', '#9b59b6', '#00f7ff']; const c1 = cols[t % 5]; const c2 = cols[(t + 2) % 5]; const rings = 1 + Math.floor(t / 5);
+        this.circle(ctx, s, null, c1, 3);
+        if (baseType === 0) { this.poly(ctx, 3 + rings, s*0.8, null, c2, 2); this.poly(ctx, 3 + rings, s*0.8, null, c2, 2, Math.PI / (3 + rings)); this.circle(ctx, s*0.5, null, c1, 2); } 
+        else if (baseType === 1) { const grad = ctx.createRadialGradient(0,0,s*0.2, 0,0,s); grad.addColorStop(0, c1); grad.addColorStop(1, 'transparent'); this.circle(ctx, s, grad, null, 0); this.circle(ctx, s*0.4, '#000', null, 0); ctx.save(); ctx.rotate(time); ctx.beginPath(); ctx.ellipse(0,0, s*1.2, s*0.2, 0, 0, Math.PI*2); ctx.strokeStyle = c2; ctx.lineWidth = 15; ctx.stroke(); ctx.restore(); } 
+        else if (baseType === 2) { this.circle(ctx, s*0.2, c1, null, 0); this.spin(ctx, 2 + rings, (i) => { ctx.beginPath(); ctx.ellipse(0,0, s, s*0.3, 0, 0, Math.PI*2); ctx.strokeStyle = c2; ctx.lineWidth = 2; ctx.stroke(); ctx.beginPath(); ctx.arc(s * Math.cos(time*3+i), s*0.3 * Math.sin(time*3+i), 5, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill(); }); } 
+        else if (baseType === 3) { this.spin(ctx, 4 + rings*2, (i) => { ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(s*0.5, s*0.5, s, 0); ctx.quadraticCurveTo(s*0.5, -s*0.5, 0, 0); ctx.fillStyle = c1; ctx.globalAlpha = 0.4; ctx.fill(); ctx.globalAlpha = 1.0; ctx.strokeStyle=c2; ctx.lineWidth=2; ctx.stroke(); }); } 
+        else if (baseType === 4) { ctx.setLineDash([5, 10]); for(let i=1; i<=rings+1; i++) { this.circle(ctx, s * (i/(rings+1)), null, c2, 2); } ctx.setLineDash([]); this.spin(ctx, 6, (i) => { ctx.beginPath(); ctx.moveTo(s*0.2, 0); ctx.lineTo(s, 0); ctx.strokeStyle=c1; ctx.lineWidth=2; ctx.stroke(); }); }
+    }
+    renderWeapons(ctx, time, w, isShopPreview, radius) {
+        if (!isShopPreview) { ctx.translate(radius + 10, -10); ctx.rotate(Math.sin(time * 6) * 0.18); }
+        const t = (this.tier - 1) % 25; const baseType = t % 5; const cols = ['#ecf0f1', '#ff4757', '#00f7ff', '#f1c40f', '#9b59b6'];
+        const mainCol = cols[t % 5]; const glowCol = cols[(t + 2) % 5]; const hasExtraBlades = t > 9; const hasParticles = t > 4; const hasEnergyCore = t > 14;
+        ctx.fillStyle = mainCol; ctx.strokeStyle = glowCol;
+        if (baseType === 0) { ctx.fillRect(-w*0.1, -w, w*0.2, w*1.5); ctx.beginPath(); ctx.moveTo(-w*0.1, -w); ctx.lineTo(0, -w*1.2); ctx.lineTo(w*0.1, -w); ctx.fill(); ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.4, -w*0.2, w*0.8, w*0.1); ctx.fillStyle = mainCol; if (hasExtraBlades) { ctx.beginPath(); ctx.moveTo(-w*0.4, -w*0.2); ctx.lineTo(-w*0.5, -w*0.6); ctx.lineTo(-w*0.1, -w*0.4); ctx.fill(); ctx.beginPath(); ctx.moveTo(w*0.4, -w*0.2); ctx.lineTo(w*0.5, -w*0.6); ctx.lineTo(w*0.1, -w*0.4); ctx.fill(); } } 
+        else if (baseType === 1) { ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, -w*0.1); ctx.quadraticCurveTo(-w, -w*0.5, w*0.2, -w); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, w*0.1); ctx.quadraticCurveTo(-w, w*0.5, w*0.2, w); ctx.stroke(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.moveTo(w*0.2, -w); ctx.lineTo(-w*0.4 + Math.sin(time*8)*w*0.1, 0); ctx.lineTo(w*0.2, w); ctx.stroke(); ctx.strokeStyle = glowCol; } 
+        else if (baseType === 2) { ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.05, -w*1.2, w*0.1, w*2); ctx.fillStyle = mainCol; ctx.beginPath(); ctx.moveTo(0, -w*1.1); ctx.quadraticCurveTo(-w*1.5, -w*1.2, -w*1.8, 0); ctx.quadraticCurveTo(-w, -w*0.8, 0, -w*0.9); ctx.fill(); if (hasExtraBlades) { ctx.beginPath(); ctx.moveTo(0, w*0.8); ctx.quadraticCurveTo(-w*0.8, w*0.9, -w, w*0.2); ctx.quadraticCurveTo(-w*0.5, w*0.6, 0, w*0.7); ctx.fill(); } } 
+        else if (baseType === 3) { ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.08, -w*0.8, w*0.16, w*1.6); ctx.fillStyle = mainCol; ctx.beginPath(); ctx.moveTo(0, -w*0.6); ctx.quadraticCurveTo(-w*1.2, -w*0.8, -w, -w*0.2); ctx.quadraticCurveTo(-w*0.5, 0, 0, -w*0.2); ctx.fill(); if (hasExtraBlades) { ctx.beginPath(); ctx.moveTo(0, -w*0.6); ctx.quadraticCurveTo(w*1.2, -w*0.8, w, -w*0.2); ctx.quadraticCurveTo(w*0.5, 0, 0, -w*0.2); ctx.fill(); } } 
+        else if (baseType === 4) { ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.06, -w*0.5, w*0.12, w*1.5); ctx.fillStyle = mainCol; ctx.beginPath(); ctx.arc(0, -w*0.6, w*0.3, 0, Math.PI*2); ctx.fill(); if (hasEnergyCore) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -w*0.6, w*0.15, 0, Math.PI*2); ctx.fill(); } }
+        if (hasParticles) { ctx.fillStyle = glowCol; for (let i=0; i<3; i++) { ctx.beginPath(); ctx.arc(Math.cos(time*5+i)*w*0.5, -w*0.5 + Math.sin(time*4+i)*w*0.5, w*0.05, 0, Math.PI*2); ctx.fill(); } }
+    }
+}
+
+class SoundEngine {
+    constructor() { this.ctx = null; this.volume = 0.5; this.musicPlaying = true; this.currentTrackId = -1; }
+    init(labId = 0) { try { if(!this.ctx) { this.ctx=new (window.AudioContext||window.webkitAudioContext)(); } if(this.ctx.state==="suspended") this.ctx.resume(); this.switchBGM(labId); } catch(e){} }
+    switchBGM(labId) { if (this.currentTrackId === labId) return; this.currentTrackId = labId; const b = document.getElementById("bgm-stardew"); if (b) { b.src = `music_${labId}.mp3`; b.load(); b.volume = this.volume; if (this.musicPlaying) b.play().catch(()=>{}); } }
+    playPop() { try { if(!this.ctx||this.volume<=0)return; const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.frequency.setValueAtTime(520,this.ctx.currentTime); o.frequency.exponentialRampToValueAtTime(820,this.ctx.currentTime+0.07); g.gain.setValueAtTime(this.volume*0.25,this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+0.07); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime+0.07); } catch(e){} }
+    playCoin() { try { if(!this.ctx||this.volume<=0)return; const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.type="triangle"; o.frequency.setValueAtTime(880,this.ctx.currentTime); o.frequency.setValueAtTime(1320,this.ctx.currentTime+0.08); g.gain.setValueAtTime(this.volume*0.3,this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+0.16); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime+0.16); } catch(e){} }
+    playMutate() { try { if(!this.ctx||this.volume<=0)return; [440,554,659,880].forEach((f,i)=>{ const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.frequency.setValueAtTime(f,this.ctx.currentTime+i*0.06); g.gain.setValueAtTime(this.volume*0.25,this.ctx.currentTime+i*0.06); g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+i*0.06+0.1); o.connect(g); g.connect(this.ctx.destination); o.start(this.ctx.currentTime+i*0.06); o.stop(this.ctx.currentTime+i*0.06+0.1); }); } catch(e){} }
+    setVolume(d) { this.volume=Math.max(0,Math.min(1,this.volume+d)); const b=document.getElementById("bgm-stardew"); if(b)b.volume=this.volume; }
+    toggleMusic() { this.musicPlaying=!this.musicPlaying; const b=document.getElementById("bgm-stardew"); if(b){if(this.musicPlaying)b.play().catch(()=>{}); else b.pause();} }
+}
+
+class Particle {
+    constructor(x, y, color) { this.x=x; this.y=y; this.color=color; this.life=15+Math.random()*10; this.maxLife=this.life; this.size=1.5+Math.random()*2.5; let a=Math.random()*Math.PI*2, s=0.5+Math.random(); this.vx=Math.cos(a)*s; this.vy=Math.sin(a)*s-0.5; }
+    update(dt, spd=1) { this.x+=this.vx*(dt*60)*spd; this.y+=this.vy*(dt*60)*spd; this.life-=spd; }
+    draw(ctx) { ctx.save(); ctx.globalAlpha=Math.max(0,this.life/this.maxLife); ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+}
+
+class Shockwave {
+    constructor(x, y, color) { this.x=x; this.y=y; this.color=color; this.r=5; this.mr=70; this.life=1; }
+    update(dt, spd=1) { this.r+=120*dt*spd; this.life=Math.max(0,1-(this.r/this.mr)); }
+    draw(ctx) { if(this.life<=0)return; ctx.save(); ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.strokeStyle=this.color; ctx.lineWidth=3*this.life; ctx.globalAlpha=this.life; ctx.stroke(); ctx.restore(); }
+}
+
+class AmbientBubble {
+    constructor(w, h) { this.w=w; this.h=h; this.reset(); }
+    reset() { this.x=Math.random()*this.w; this.y=this.h+20; this.r=2+Math.random()*3; this.s=0.4+Math.random()*0.6; this.wb=Math.random()*Math.PI*2; }
+    update(spd=1) { this.y-=this.s*spd; this.wb+=0.03*spd; this.x+=Math.sin(this.wb)*0.2; if(this.y<-20)this.reset(); }
+    draw(ctx) { ctx.save(); ctx.strokeStyle="rgba(140,220,255,0.25)"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.stroke(); ctx.restore(); }
+}
+
+class Slime {
+    constructor(x, y, labId=0, strainId=null, level=1, repTimer=null) {
+        this.x=x||600; this.y=y||380; this.labId=labId;
+        const strains=LAB_STRAIN_SETS[this.labId]||LAB_STRAIN_SETS[0];
+        this.strain=strainId!==null?(strains.find(s=>s.id===strainId)||strains[0]):strains[0];
+        this.level=Math.max(1,parseInt(level)||1); this.radius=32+this.level*3.5;
+        this.vx=(Math.random()-0.5)*0.5; this.vy=(Math.random()-0.5)*0.4;
+        this.buoyancy=Math.random()*100; this.angle=Math.random()*360; this.rotSpeed=(Math.random()-0.5)*0.3;
+        this.blobWobble=Math.random()*100; this.numPoints=12;
+        this.locked=false; this.frozen=false; this.isDragged=false; this.isPaused=false;
+        this.stretchX=1; this.stretchY=1; this.rotationAngle=Math.random()*Math.PI*2; this.sameCloneCount=0;
+        this.customSkin='skin_0'; this.customAura='none';
+        const baseVal=Math.floor(Math.random()*400)+450; const lm=1+(this.labId*1.5);
+        this.value=Math.floor(baseVal*Math.pow(1.65,this.level-1)*(this.strain.valMult||1)*lm);
+        this.timerMax=(6+(this.level-1)*4)*(1+this.labId*0.5);
+        this.replicateTimer=repTimer!==null?Number(repTimer):this.timerMax;
+    }
+    update(dt, wB, eL, sW, spd=1, isLabPaused=false, isCurrentLab=true) {
+        this.rotationAngle+=1.5*dt*spd; if(this.isDragged||this.frozen)return null;
+        this.buoyancy+=dt*2*spd; this.x+=this.vx*(dt*60)*spd; this.y+=(this.vy+Math.sin(this.buoyancy)*0.2)*(dt*60)*spd;
+        this.angle+=this.rotSpeed*(dt*60)*spd; this.blobWobble+=dt*4*spd;
+        this.stretchX+=(1-this.stretchX)*0.12; this.stretchY+=(1-this.stretchY)*0.12;
+        const p=this.radius+10;
+        if(this.x-p<wB.left){this.x=wB.left+p;this.vx=Math.abs(this.vx);} else if(this.x+p>wB.right){this.x=wB.right-p;this.vx=-Math.abs(this.vx);}
+        if(this.y-p<wB.top){this.y=wB.top+p;this.vy=Math.abs(this.vy);} else if(this.y+p>wB.bottom){this.y=wB.bottom-p;this.vy=-Math.abs(this.vy);}
+        
+        if(isCurrentLab && Math.random()<0.03*dt*60*spd)eL.push(new Particle(this.x+(Math.random()-0.5)*this.radius,this.y+(Math.random()-0.5)*this.radius,this.strain.color));
+        
+        if(!this.locked&&!isLabPaused&&!this.isPaused&&Math.random()<0.00008*dt*spd)return "DEAD";
+        if(!isLabPaused && !this.isPaused){ 
+            this.replicateTimer-=dt*spd; 
+            if(this.replicateTimer<=0){ 
+                this.replicateTimer=this.timerMax+(this.sameCloneCount*5); 
+                return this.replicate(sW,wB,isCurrentLab); 
+            } 
+        }
+        return null;
+    }
+    replicate(sW, wB, isCurrentLab) {
+        let isMut=false, nId=this.strain.id; const sts=LAB_STRAIN_SETS[this.labId]||LAB_STRAIN_SETS[0];
+        for(let g of sts.filter(s=>s.isGod)){ if(Math.random()<(g.mutRate||0.000005)){ nId=g.id; isMut=true; if(isCurrentLab&&sW)sW.push(new Shockwave(this.x,this.y,'#ffd700')); break; } }
+        
+        if(!isMut&&Math.random()<(this.strain.mutRate||0.05)){ 
+            const ops=sts.filter(s=>s.id!==this.strain.id&&!s.isGod); 
+            if(ops.length>0){ 
+                nId=ops[Math.floor(Math.random()*ops.length)].id; 
+                isMut=true; 
+                if(isCurrentLab&&sW)sW.push(new Shockwave(this.x,this.y,'#00ffc8')); 
+            } 
+        }
+        let nLvl=1; if(!isMut){ this.sameCloneCount++; nLvl=Math.random()<(Math.max(0.05,0.45-(this.level-1)*0.05))?this.level+1:this.level; } else this.sameCloneCount=0;
+        
+        let nX=Math.max(wB.left+50,Math.min(wB.right-50,this.x+(Math.random()-0.5)*45)), nY=Math.max(wB.top+50,Math.min(wB.bottom-50,this.y+(Math.random()-0.5)*45));
+        return new Slime(nX,nY,this.labId,nId,nLvl);
+    }
+    draw(ctx) {
+        ctx.save(); const r=this.radius; const time=Date.now()*0.003;
+        
+        if(this.strain.isGod) { 
+            ctx.save(); ctx.translate(this.x, this.y);
+            const tier = this.strain.tier;
+            
+            if (tier === 11) {
+                const pulse = Math.sin(time * 3) * 0.2 + 1;
+                for(let i=0; i<3; i++) {
+                    ctx.save();
+                    ctx.rotate(time * (i%2===0?1:-1) + i * Math.PI/1.5);
+                    ctx.scale(1, 0.3);
+                    ctx.shadowBlur = 10; ctx.shadowColor = this.strain.color;
+                    ctx.strokeStyle = this.strain.color; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.arc(0, 0, r * 2.5 * pulse, 0, Math.PI*2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(Math.cos(time*4)*r*2.5*pulse, Math.sin(time*4)*r*2.5*pulse, 4.5, 0, Math.PI*2);
+                    ctx.fillStyle = '#fff'; ctx.fill();
+                    ctx.restore();
+                }
+            } 
+            else if (tier === 12) {
+                ctx.rotate(time * 0.5);
+                for (let i = 0; i < 2; i++) {
+                    ctx.rotate(Math.PI / 6 * i + (i%2===0?time:-time));
+                    ctx.shadowBlur = 15; ctx.shadowColor = this.strain.color;
+                    ctx.strokeStyle = i===0 ? this.strain.color : "#fff"; 
+                    ctx.lineWidth = i===0 ? 3 : 1.5;
+                    ctx.beginPath();
+                    for(let j=0; j<6; j++) {
+                        const a = j * Math.PI / 3;
+                        const dist = r * 2.2 + Math.sin(time * 4) * 8;
+                        if(j===0) ctx.moveTo(Math.cos(a)*dist, Math.sin(a)*dist);
+                        else ctx.lineTo(Math.cos(a)*dist, Math.sin(a)*dist);
+                    }
+                    ctx.closePath(); ctx.stroke();
+                }
+            } 
+            else if (tier === 13) {
+                ctx.shadowBlur = 20; ctx.shadowColor = this.strain.color;
+                ctx.strokeStyle = this.strain.color; ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                const spikes = 14;
+                for (let i = 0; i < spikes; i++) {
+                    const a = i * Math.PI * 2 / spikes + time * 2;
+                    const spikeR = r * 1.5 + Math.random() * r * 1.8; 
+                    if(i===0) ctx.moveTo(Math.cos(a)*spikeR, Math.sin(a)*spikeR);
+                    else ctx.lineTo(Math.cos(a)*spikeR, Math.sin(a)*spikeR);
+                }
+                ctx.closePath(); ctx.stroke();
+                ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.arc(0, 0, r * 2.8 + Math.random()*5, 0, Math.PI*2); ctx.stroke();
+            } 
+            else if (tier >= 14) {
+                const grad = ctx.createRadialGradient(0,0,r*0.5, 0,0,r*3.5);
+                grad.addColorStop(0, "rgba(0,0,0,0.9)");
+                grad.addColorStop(0.4, this.strain.color);
+                grad.addColorStop(1, "transparent");
+                ctx.beginPath(); ctx.arc(0,0, r*3.5, 0, Math.PI*2);
+                ctx.fillStyle = grad; ctx.fill();
+
+                ctx.rotate(-time * 0.4);
+                ctx.strokeStyle = "#ffd700"; ctx.lineWidth = 2;
+                ctx.shadowBlur = 10; ctx.shadowColor = "#ffd700";
+                for(let i=0; i<8; i++) {
+                    ctx.rotate(Math.PI / 4);
+                    ctx.beginPath(); ctx.ellipse(0, r*1.2, r*0.8, r*2.2, 0, 0, Math.PI*2); ctx.stroke();
+                }
+            }
+            ctx.restore();
+        }
+
+        if(this.customAura&&this.customAura!=='none'){ const aId=parseInt(this.customAura.replace('aura_',''))||1; new MasterpieceArtRenderer(aId,'auras').draw(ctx,this.x,this.y,time,r,false); }
+        
+        ctx.save(); ctx.translate(this.x,this.y); ctx.scale(this.stretchX,this.stretchY); ctx.translate(-this.x,-this.y);
+        ctx.beginPath(); for(let i=0;i<this.numPoints;i++){ const a=(this.angle+i*(360/this.numPoints))*(Math.PI/180), w=Math.sin(this.blobWobble+i*1.5)*2.5, d=r+w, px=this.x+Math.cos(a)*d, py=this.y+Math.sin(a)*d; if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); } ctx.closePath();
+        
+        ctx.fillStyle=this.strain.color; 
+        if(this.strain.isGod) { ctx.shadowBlur = 25; ctx.shadowColor = this.strain.color; }
+        ctx.fill(); ctx.shadowBlur = 0;
+        ctx.strokeStyle="rgba(0,0,0,0.28)"; ctx.lineWidth=3; ctx.stroke();
+        
+        ctx.fillStyle="rgba(255,255,255,0.4)"; ctx.beginPath(); ctx.ellipse(this.x-r*0.35,this.y-r*0.35,r*0.28,r*0.14,-Math.PI/4,0,Math.PI*2); ctx.fill();
+        
+        if (this.strain.isGod) {
+            ctx.fillStyle="#fff"; ctx.shadowBlur = 12; ctx.shadowColor = "#fff";
+            ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.25,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.25,0,Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0; ctx.fillStyle=this.strain.color; 
+            ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.12,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.12,0,Math.PI*2); ctx.fill();
+        } else {
+            ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.2,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.2,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle="#141414"; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.1,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.1,0,Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+        
+        if(this.customSkin&&this.customSkin!=='skin_0'){ const sId=parseInt(this.customSkin.replace('skin_',''))||1; new MasterpieceArtRenderer(sId,'weapons').draw(ctx,this.x,this.y,time,r,false); }
+        if(!this.isPaused) { const p=1-(this.replicateTimer/(this.timerMax+(this.sameCloneCount*5))); ctx.strokeStyle=COLOR_ACCENT; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(this.x,this.y,r+8,-Math.PI/2,-Math.PI/2+p*2*Math.PI); ctx.stroke(); }
+        if(this.locked){ ctx.font="bold 14px Arial"; ctx.fillStyle=COLOR_GOLD; ctx.fillText("🔒",this.x+10,this.y-r-10); }
+        if(this.isPaused){ ctx.font="bold 14px Arial"; ctx.fillStyle="#ff4646"; ctx.fillText("⏸",this.x-10,this.y-r-10); }
+        ctx.restore();
+    }
+}
+
+class Game {
+    constructor() {
+        this.canvas = document.getElementById("gameCanvas"); this.ctx = this.canvas.getContext("2d");
+        this.sound = new SoundEngine(); this.serverName = "SỐ 1"; this.currentLabId = 0;
+        this.activeTheme = 'default'; this.ownedThemes = ['default']; this.gameSpeed = 1.0; 
+        this.pauseState = 0; 
+        this.diamonds = 0; this.pendingDiscoveryQueue = []; this.giftingTo = null;
+        this.playerId = localStorage.getItem("slime_player_id") || ('usr_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36)); localStorage.setItem("slime_player_id", this.playerId);
+        this.containerRect = { left: 12, top: 66, width: CANVAS_W - 24, height: CANVAS_H - 78, right: CANVAS_W - 12, bottom: CANVAS_H - 12 };
+        this.updateWorldDimensions(); this.camera = { x: this.worldWidth / 2, y: this.worldHeight / 2, zoom: 0.15 };
+        this.labsData = {};
+        for (let i = 0; i < 10; i++) {
+            this.labsData[i] = { money: 100000, maxCapacity: 20, unlocked: (i===0), isPaused: false, collection: {}, slimes: i===0?[new Slime(this.worldWidth/2, this.worldHeight/2, 0, 0, 1)]:[] };
+            (LAB_STRAIN_SETS[i]||LAB_STRAIN_SETS[0]).forEach((s,idx)=>{ this.labsData[i].collection[s.id]=(idx===0); });
+        }
+        this.ownedSkins = ['skin_0']; this.ownedAuras = ['aura_0'];
+        this.bubbles = Array.from({ length: 40 }, () => new AmbientBubble(this.worldWidth, this.worldHeight));
+        this.effects = []; this.shockwaves = [];
+        this.selectedSlime = null; this.showBook = false; this.showSettings = false; this.showShop = false; this.showLabModal = false;
+        this.shopTab = 'skins'; this.shopPage = 0; this.bookPage = 0;
+        this.activePointers = new Map();
+        this.lastTime = performance.now(); this.lastSaveTime = performance.now();
+        this.initFirebase(); this.setupEvents(); this.checkLoginStatus();
+    }
+    
+    updateWorldDimensions() { const t=TANK_THEMES[this.currentLabId]||TANK_THEMES[0]; const s=t.scale||1; this.worldWidth=this.containerRect.width*20*s; this.worldHeight=this.containerRect.height*20*s; }
+    clampCamera() { const mx=this.containerRect.width/this.worldWidth, my=this.containerRect.height/this.worldHeight; this.camera.zoom=Math.max(Math.max(mx,my),Math.min(5,this.camera.zoom)); const hw=(this.containerRect.width/2)/this.camera.zoom, hh=(this.containerRect.height/2)/this.camera.zoom; this.camera.x=Math.max(hw,Math.min(this.worldWidth-hw,this.camera.x)); this.camera.y=Math.max(hh,Math.min(this.worldHeight-hh,this.camera.y)); }
+    get curLabData() { return this.labsData[this.currentLabId]; } get money() { return this.labsData[0].money; } set money(v) { for(let i=0;i<10;i++)this.labsData[i].money=v; } get maxCapacity() { return this.curLabData.maxCapacity; } set maxCapacity(v) { this.curLabData.maxCapacity=v; } get slimes() { return this.curLabData.slimes; } set slimes(v) { this.curLabData.slimes=v; } get collection() { return this.curLabData.collection; }
+    
+    initFirebase() {
+        try {
+            if (typeof firebase!=='undefined'&&!firebase.apps.length) {
+                // ĐIỀN MÃ CỦA BẠN VÀO ĐÂY ĐỂ HIỆN BẢNG XẾP HẠNG
+                firebase.initializeApp({ apiKey:"AIzaSyDzKd338xOMrNG8UGWPPMwjDdVyuMg3XW8", authDomain:"slime-lab-3cc86.firebaseapp.com", databaseURL:"https://slime-lab-3cc86-default-rtdb.asia-southeast1.firebasedatabase.app", projectId:"slime-lab-3cc86", storageBucket:"slime-lab-3cc86.firebasestorage.app", messagingSenderId:"1060591682150", appId:"1:1060591682150:web:64942ca562ec87fc4063a7" });
+                this.auth=firebase.auth(); this.db=firebase.database(); this.leaderboardRef=this.db.ref('leaderboard');
+                
+                this.leaderboardRef.on('value', s=>{ 
+                    const l=document.getElementById("rank-list"); if(!l)return; const d=s.val(); l.innerHTML=""; 
+                    if(!d){ if(this.playerName&&!this.isDeleted) l.innerHTML=`<div class="rank-item current-user"><div class="rank-name">1. ${this.playerName}</div><div class="rank-val val-diamond">${this.diamonds>0?`💎 ${this.diamonds}`:formatMoney(this.money)}</div></div>`; return; }
+                    const p=Object.keys(d).filter(k=>d[k]&&d[k].name&&!d[k].deleted).map(k=>({id:k,name:d[k].name,money:Number(d[k].money)||0,diamonds:Number(d[k].diamonds)||0})).sort((a,b)=>b.diamonds-a.diamonds||b.money-a.money);
+                    p.slice(0,20).forEach((e,i)=>{ 
+                        const div=document.createElement("div"); div.className="rank-item"+(e.id===this.playerId?" current-user":""); 
+                        div.innerHTML=`<div class="rank-name">${i+1}. ${e.name}</div><div class="rank-val ${e.diamonds>0?'val-diamond':'val-money'}">${e.diamonds>0?`💎 ${e.diamonds}`:formatMoney(e.money)}</div>`; 
+                        div.onclick = () => {
+                            if(e.id !== this.playerId) {
+                                this.confirmModalTitle = `🎁 Gửi tặng Slime`;
+                                this.confirmModalSubtitle = `Bạn muốn chọn 1 Slime của mình tặng cho ${e.name}?`;
+                                this.pendingConfirmButtons = [
+                                    { text: "Bắt đầu chọn", bg: "#14503c", action: () => { this.giftingTo = e; this.pendingConfirmButtons=null; showCustomAlert(`Bấm vào 1 Slime bất kỳ để tặng cho ${e.name}`,"info"); } },
+                                    { text: "Hủy", bg: "#283c50", action: () => { this.pendingConfirmButtons=null; } }
+                                ];
+                            }
+                        };
+                        l.appendChild(div); 
+                    });
+                });
+                
+                this.db.ref('gifts/' + this.playerId).on('child_added', snap => {
+                    const g = snap.val();
+                    if (g && g.strainId !== undefined && g.level) {
+                        const targetLab = this.labsData[g.labId] || this.labsData[0];
+                        const sts = LAB_STRAIN_SETS[g.labId] || LAB_STRAIN_SETS[0];
+                        const petInfo = sts.find(s => s.id === g.strainId);
+                        const petName = petInfo ? petInfo.name : "Slime Bí Ẩn";
+
+                        if (targetLab.slimes.length < targetLab.maxCapacity) {
+                            targetLab.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, g.labId, g.strainId, g.level));
+                            targetLab.collection[g.strainId] = true; 
+                            showCustomAlert(`🎁 [${g.fromName}] vừa tặng bạn: [${petName}] Lv.${g.level}! Đã vào Lab ${g.labId+1}`, "success");
+                        } else {
+                            this.money += 1000000;
+                            showCustomAlert(`🎁 [${g.fromName}] tặng bạn [${petName}] nhưng Lab đầy! Đã quy đổi thành 1 Triệu VNĐ.`, "info");
+                        }
+                    }
+                    snap.ref.remove(); 
+                });
+            }
+        } catch(e) {}
+    }
+    syncFirebase() { if(this.isDeleted||!this.leaderboardRef||!this.playerName)return; try{ this.leaderboardRef.child(this.playerId).set({name:this.playerName,money:this.money,diamonds:this.diamonds,updatedAt:Date.now()}); }catch(e){} }
+    getSlotPrice() { return Math.floor(1e9*(1+this.currentLabId*0.5)*Math.pow(1.2,Math.max(0,this.maxCapacity-20))); }
+   checkLoginStatus() {
+        const modal = document.getElementById("welcome-modal"); 
+        const sG = () => { if(!this.hasStarted){this.hasStarted=true; this.sound.init(this.currentLabId); this.loadGame(); this.syncFirebase(); this.start();} };
+        
+        if (this.auth) { 
+            this.auth.onAuthStateChanged(u => { 
+                if (u) { 
+                    const newPlayerId = "g_" + u.uid;
+                    const oldPlayerId = localStorage.getItem("slime_player_id");
+                    
+                    if (oldPlayerId && oldPlayerId.startsWith('usr_')) {
+                        const oldSaveKey = `slimeLab_Save_AllLabs_${this.serverName}_${oldPlayerId}`;
+                        const newSaveKey = `slimeLab_Save_AllLabs_${this.serverName}_${newPlayerId}`;
+                        const oldData = localStorage.getItem(oldSaveKey);
+                        if (oldData && !localStorage.getItem(newSaveKey)) {
+                            localStorage.setItem(newSaveKey, oldData); 
+                        }
+                    }
+
+                    const savedName = localStorage.getItem("slimeLab_playerName");
+                    this.playerName = savedName || u.displayName || u.email?.split('@')[0] || "Player"; 
+                    this.playerId = newPlayerId; 
+                    
+                    localStorage.setItem("slimeLab_playerName", this.playerName); 
+                    localStorage.setItem("slime_player_id", this.playerId); 
+                    
+                    modal.style.display = "none"; 
+                    sG(); 
+                } else { 
+                    const sN = localStorage.getItem("slimeLab_playerName"); 
+                    if(sN) { this.playerName=sN; modal.style.display="none"; sG(); }
+                    else { modal.style.display="flex"; this.setupLogin(); } 
+                } 
+            }); 
+        } else { 
+            const sN = localStorage.getItem("slimeLab_playerName"); 
+            if(sN) { this.playerName=sN; modal.style.display="none"; sG(); }
+            else { modal.style.display="flex"; this.setupLogin(); } 
+        }
+    }
+    setupLogin() {
+        const m=document.getElementById("welcome-modal"), n=document.getElementById("player-name"), sb=document.getElementById("start-btn"), gb=document.getElementById("google-btn");
+        const eG=(nm,pid)=>{ if(this.hasStarted)return; this.hasStarted=true; if(nm){this.playerName=nm;localStorage.setItem("slimeLab_playerName",nm);} if(pid){this.playerId=pid;localStorage.setItem("slime_player_id",pid);} m.style.display="none"; this.sound.init(this.currentLabId); this.loadGame(); this.syncFirebase(); this.start(); };
+        const sN=localStorage.getItem("slimeLab_playerName"); if(sN)n.value=sN;
+        sb.onclick=(e)=>{e.preventDefault();const nm=n.value.trim();if(nm.length<2){showCustomAlert("Vui lòng nhập tên từ 2 ký tự!");return;}eG(nm,null);};
+       gb.onclick=(e)=>{e.preventDefault();if(this.auth&&typeof firebase!=='undefined'){showCustomAlert("Đang mở cửa sổ đăng nhập...", "info"); this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(()=>{document.getElementById("html-alert-overlay").style.display="none";}).catch(er=>showCustomAlert("Lỗi đăng nhập: "+er.message));}else showCustomAlert("Máy chủ chưa sẵn sàng. Hãy nhập tên để chơi Offline!","info");};
+    }
+    getSaveKey() { return `slimeLab_Save_AllLabs_${this.serverName}_${this.playerId}`; }
+    loadGame() {
+        try{ const sd=localStorage.getItem(this.getSaveKey()); if(!sd)return; const d=JSON.parse(sd); this.currentLabId=Number(d.currentLabId)||0; this.sound.switchBGM(this.currentLabId); this.activeTheme=d.activeTheme||'default'; this.ownedThemes=d.ownedThemes||['default']; this.ownedSkins=d.ownedSkins||['skin_0']; this.ownedAuras=d.ownedAuras||['aura_0']; this.diamonds=Number(d.diamonds)||0; this.updateWorldDimensions(); this.camera.x=this.worldWidth/2; this.camera.y=this.worldHeight/2; this.clampCamera(); let gm=d.labsData?.[0]?.money!==undefined?Number(d.labsData[0].money)||1e5:1e5; if(d.labsData){ for(let i=0;i<10;i++){ if(d.labsData[i]){ const ld=d.labsData[i]; this.labsData[i].money=gm; this.labsData[i].maxCapacity=Number(ld.maxCapacity)||20; this.labsData[i].unlocked=ld.unlocked??(i===0); this.labsData[i].isPaused=!!ld.isPaused; this.labsData[i].collection=ld.collection||{}; this.labsData[i].slimes=(ld.slimes||[]).map(s=>{ const sl=new Slime(s.x,s.y,i,s.strainId,s.level,s.replicateTimer); sl.locked=!!s.locked; sl.isPaused=!!s.isPaused; sl.customSkin=s.customSkin||'skin_0'; sl.customAura=s.customAura||'none'; return sl; }); if(this.labsData[i].slimes.length===0&&i===0)this.labsData[i].slimes=[new Slime(this.worldWidth/2,this.worldHeight/2,0,0,1)]; } } } }catch(e){}
+    }
+    saveGame() {
+        if(this.isDeleted)return; try{ const el={}; for(let i=0;i<10;i++){ el[i]={money:this.labsData[i].money,maxCapacity:this.labsData[i].maxCapacity,unlocked:this.labsData[i].unlocked,isPaused:this.labsData[i].isPaused,collection:this.labsData[i].collection,slimes:this.labsData[i].slimes.map(s=>({x:s.x,y:s.y,strainId:s.strain.id,level:s.level,replicateTimer:s.replicateTimer,locked:s.locked,isPaused:s.isPaused,customSkin:s.customSkin,customAura:s.customAura}))}; } localStorage.setItem(this.getSaveKey(),JSON.stringify({currentLabId:this.currentLabId,activeTheme:this.activeTheme,ownedThemes:this.ownedThemes,ownedSkins:this.ownedSkins,ownedAuras:this.ownedAuras,diamonds:this.diamonds,labsData:el})); this.syncFirebase(); }catch(e){}
+    }
+    gatherAllPets() { const cx=this.worldWidth/2, cy=this.worldHeight/2; this.slimes.forEach(s=>{s.x=cx+(Math.random()-0.5)*150; s.y=cy+(Math.random()-0.5)*150;}); if(this.shockwaves)this.shockwaves.push(new Shockwave(cx,cy,'#00ffc8')); this.sound.playCoin(); }
+
+    setupEvents() {
+        const getCanvasPos = (e) => { const rect = this.canvas.getBoundingClientRect(); if(rect.width === 0 || rect.height === 0) return { x: 0, y: 0 }; let cx = e.clientX; let cy = e.clientY; if (cx === undefined && e.touches && e.touches.length > 0) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; } return { x: (cx - rect.left) * (CANVAS_W / rect.width), y: (cy - rect.top) * (CANVAS_H / rect.height) }; };
+        const toWP = (sx,sy) => ({ x:this.camera.x+(sx-(this.containerRect.left+this.containerRect.width/2))/this.camera.zoom, y:this.camera.y+(sy-(this.containerRect.top+this.containerRect.height/2))/this.camera.zoom });
+
+        this.canvas.addEventListener("pointerdown", (e) => {
+            e.preventDefault(); this.sound.init(this.currentLabId); this.activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY}); const sc = getCanvasPos(e);
+            if (this.activePointers.size === 2) { const p=Array.from(this.activePointers.values()); this.initialPinchDist=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y); this.initialZoom=this.camera.zoom; this.isDraggingCamera=false; this.draggedSlime=null; return; }
+            if (this.checkUIClick(sc.x, sc.y)) return;
+            if (sc.x>=this.containerRect.left&&sc.x<=this.containerRect.right&&sc.y>=this.containerRect.top&&sc.y<=this.containerRect.bottom) {
+                const w = toWP(sc.x, sc.y); let found = false;
+                for (let i = this.slimes.length-1; i>=0; i--) {
+                    const s = this.slimes[i];
+                    if (Math.hypot(s.x-w.x, s.y-w.y)<=Math.max(s.radius*1.5, 45)) { 
+                        if (this.giftingTo) {
+                            this.confirmModalTitle = `🎁 Gửi tặng ${s.strain.name}`;
+                            this.confirmModalSubtitle = `Tặng mức độ nào cho ${this.giftingTo.name}?`;
+                            this.pendingConfirmButtons = [
+                                { text: "Tặng Lv.1", bg: "#1e648c", action: () => { this.sendGift(s, 1); } },
+                                { text: `Tặng Lv.${s.level}`, bg: "#a02832", action: () => { this.sendGift(s, s.level); } },
+                                { text: "Hủy bỏ", bg: "#283c50", action: () => { this.giftingTo = null; this.pendingConfirmButtons=null; } }
+                            ];
+                            found=true; break;
+                        } else if (this.pauseState === 2) {
+                            s.isPaused = !s.isPaused; this.sound.playPop(); this.saveGame(); found=true; break;
+                        } else {
+                            this.draggedSlime=s; s.isDragged=true; this.dragStartX=sc.x; this.dragStartY=sc.y; this.isActuallyDragging=false; found=true; break; 
+                        }
+                    }
+                }
+                if (!found) { if(this.selectedSlime){this.selectedSlime.frozen=false;this.selectedSlime=null;} this.isDraggingCamera=true; this.lastPanPos={x:e.clientX,y:e.clientY}; }
+            }
+        }, {passive:false});
+
+        this.canvas.addEventListener("pointermove", (e) => {
+            if(!this.activePointers.has(e.pointerId))return; this.activePointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
+            if(this.activePointers.size===2&&this.initialPinchDist){ const p=Array.from(this.activePointers.values()); const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y); this.camera.zoom=Math.max(Math.max(this.containerRect.width/this.worldWidth,this.containerRect.height/this.worldHeight),Math.min(5,this.initialZoom*(d/this.initialPinchDist))); this.clampCamera(); return; }
+            if(this.draggedSlime){ const sc=getCanvasPos(e); if(Math.hypot(sc.x-this.dragStartX,sc.y-this.dragStartY)>5)this.isActuallyDragging=true; const w=toWP(sc.x,sc.y); this.draggedSlime.x=w.x; this.draggedSlime.y=w.y; return; }
+            if(this.isDraggingCamera){ const dx=e.clientX-this.lastPanPos.x, dy=e.clientY-this.lastPanPos.y; this.lastPanPos={x:e.clientX,y:e.clientY}; this.camera.x-=dx/this.camera.zoom; this.camera.y-=dy/this.camera.zoom; this.clampCamera(); }
+        });
+
+        window.addEventListener("pointerup", (e) => {
+            this.activePointers.delete(e.pointerId); if(this.activePointers.size<2)this.initialPinchDist=null;
+            if(this.draggedSlime){ const s=this.draggedSlime; s.isDragged=false; if(!this.isActuallyDragging){if(this.selectedSlime)this.selectedSlime.frozen=false; this.selectedSlime=s; s.frozen=true; this.sound.playPop();} this.draggedSlime=null; }
+            this.isDraggingCamera=false;
+        });
+
+        this.canvas.addEventListener("wheel", (e) => { e.preventDefault(); this.camera.zoom=Math.max(Math.max(this.containerRect.width/this.worldWidth,this.containerRect.height/this.worldHeight),Math.min(5,this.camera.zoom*(e.deltaY<0?1.15:0.85))); this.clampCamera(); }, {passive:false});
+    }
+
+    sendGift(slime, levelToSend) {
+        if (!this.db || !this.giftingTo) return;
+        this.db.ref('gifts/' + this.giftingTo.id).push({
+            fromName: this.playerName, strainId: slime.strain.id, level: levelToSend, labId: this.currentLabId, timestamp: Date.now()
+        }).then(() => {
+            showCustomAlert(`Gửi tặng thành công đến ${this.giftingTo.name}!`, "success");
+            this.slimes = this.slimes.filter(s => s !== slime);
+            this.giftingTo = null; this.pendingConfirmButtons = null;
+            this.saveGame();
+        }).catch(err => {
+            showCustomAlert(`Lỗi gửi tặng: ${err.message}`);
+            this.giftingTo = null; this.pendingConfirmButtons = null;
+        });
+    }
+
+    drawDynamicBackground(ctx, theme, w, h, xOffset=0, yOffset=0) {
+        const time = Date.now() * 0.001; ctx.save(); ctx.translate(xOffset, yOffset); ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip(); ctx.fillStyle = theme.bg || theme.containerBg; ctx.fillRect(0, 0, w, h);
+        if (theme.id.includes('cosmos') || theme.id.includes('nebula') || theme.id.includes('starlight')) { ctx.translate(w/2, h/2); ctx.rotate(time * 0.05); const maxR = Math.max(w, h); const grad = ctx.createRadialGradient(0,0,0, 0,0, maxR); grad.addColorStop(0, 'rgba(155, 89, 182, 0.15)'); grad.addColorStop(1, 'transparent'); ctx.fillStyle = grad; ctx.fillRect(-maxR, -maxR, maxR*2, maxR*2); for(let i = 0; i < 60; i++) { let r = (Math.sin(i * 999) * 0.5 + 0.5) * maxR; let a = i * 0.8 + time * (0.05 + (i % 5) * 0.01); ctx.fillStyle = `rgba(255,255,255,${Math.sin(time * 2 + i) * 0.5 + 0.5})`; ctx.beginPath(); ctx.arc(Math.cos(a) * r, Math.sin(a) * r, (i % 3) + 1.5, 0, Math.PI * 2); ctx.fill(); } }
+        else if (theme.id.includes('magma') || theme.id.includes('inferno')) { ctx.translate(w/2, h/2); ctx.strokeStyle = 'rgba(255, 69, 0, 0.8)'; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(0, 0, h * 0.3, 0, Math.PI * 2); ctx.stroke(); ctx.translate(-w/2, -h/2); for(let i = 0; i < 20; i++) { let px = (Math.sin(i * 99) * 0.5 + 0.5) * w; let speed = 20 + (i % 10) * 5; let py = h - ((time * speed + i * 100) % h); ctx.fillStyle = '#ff9f43'; ctx.beginPath(); ctx.arc(px, py, (i % 15) + 3, 0, Math.PI * 2); ctx.fill(); } }
+        else if (theme.id.includes('glacier') || theme.id.includes('sky')) { ctx.translate(w/2, h/2); ctx.strokeStyle = '#00a8ff'; ctx.lineWidth = 15; ctx.beginPath(); ctx.arc(0, 0, h * 0.3, 0, Math.PI * 2); ctx.stroke(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, h * 0.3, 0, Math.PI * 2); ctx.stroke(); ctx.translate(-w/2, -h/2); for(let i = 0; i < 25; i++) { let px = ((Math.cos(i * 99) * 0.5 + 0.5) * w) + Math.sin(time + i) * 20; let speed = 15 + (i % 5) * 5; let py = (time * speed + i * 50) % h; ctx.fillStyle = `rgba(255,255,255,${0.3 + (i % 5) * 0.1})`; ctx.beginPath(); ctx.arc(px, py, (i % 3) + 2, 0, Math.PI * 2); ctx.fill(); } }
+        else if (theme.id.includes('cyber') || theme.id.includes('matrix')) { ctx.fillStyle = theme.glass; ctx.font = 'bold 16px monospace'; for(let i = 0; i < 40; i++) { let px = (Math.sin(i * 77) * 0.5 + 0.5) * w; let speed = 40 + (i % 5) * 15; let py = (time * speed + i * 80) % h; ctx.fillText(Math.random() > 0.5 ? '1' : '0', px, py); } }
+        else if (theme.id.includes('singularity') || theme.id.includes('abyss')) { ctx.translate(w/2, h/2); ctx.strokeStyle = '#9b59b6'; ctx.lineWidth = 15; ctx.beginPath(); ctx.arc(0, 0, h * 0.3, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(0, 0, h * 0.28, 0, Math.PI * 2); ctx.fill(); for(let i = 0; i < 8; i++) { ctx.rotate(time * 0.5 + i); ctx.strokeStyle = `rgba(255, 105, 180, ${0.4 - i * 0.05})`; ctx.lineWidth = 30 + i * 10; ctx.beginPath(); ctx.ellipse(0, 0, w * 0.4, h * 0.2, 0, 0, Math.PI * 2); ctx.stroke(); } }
+        else if (theme.id.includes('zenith') || theme.id.includes('godrealm')) { ctx.translate(w/2, 0); for(let i = 0; i < 12; i++) { ctx.save(); ctx.rotate(i * Math.PI / 6 + Math.sin(time * 0.5) * 0.1); const grad = ctx.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, 'rgba(255, 215, 0, 0.2)'); grad.addColorStop(1, 'transparent'); ctx.fillStyle = grad; ctx.beginPath(); ctx.moveTo(-15, 0); ctx.lineTo(15, 0); ctx.lineTo(120, h); ctx.lineTo(-120, h); ctx.fill(); ctx.restore(); } }
+        else { ctx.strokeStyle = theme.grid; ctx.lineWidth = 1; const go = (time * 20) % 40; for (let x = go; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); } for (let y = go; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); } }
+        ctx.restore();
+    }
+
+    checkUIClick(x, y) {
+        if (this.pendingConfirmButtons) {
+            const mw = 480, mh = 180, mx = (CANVAS_W-mw)/2, my = (CANVAS_H-mh)/2;
+            const btnW = (440 - (this.pendingConfirmButtons.length-1)*15) / this.pendingConfirmButtons.length;
+            let clicked = false;
+            this.pendingConfirmButtons.forEach((btn, i) => {
+                if (this.isInside(x, y, {x: mx + 20 + i*(btnW+15), y: my + 115, w: btnW, h: 45})) { btn.action(); clicked = true; }
+            });
+            if(clicked) return true;
+            return true; 
+        }
+
+        const isM = this.showShop || this.showBook || this.showSettings || this.showLabModal;
+
+        if (!isM) {
+            if(this.isInside(x,y,this.gatherBtnRect)){ this.gatherAllPets(); return true; }
+            if(this.isInside(x,y,this.pauseBtnRect)){ 
+                this.pauseState = (this.pauseState + 1) % 3; 
+                this.curLabData.isPaused = (this.pauseState === 1);
+                this.sound.playPop(); return true; 
+            }
+        }
+
+        if (this.selectedSlime) {
+            if (this.actionPanelRect && this.isInside(x, y, this.actionPanelRect)) {
+                const s = this.selectedSlime;
+                if(this.isInside(x,y,this.btnSellOneRect)){ if(!s.locked){this.money+=Number(s.value)||0;this.sound.playCoin();this.slimes=this.slimes.filter(sl=>sl!==s);this.selectedSlime=null;this.saveGame();} return true; }
+                if(this.isInside(x,y,this.btnSellAllRect)){ const su=this.slimes.filter(sl=>sl.level===s.level&&sl.strain.id===s.strain.id&&!sl.locked); if(su.length>0){this.money+=su.reduce((a,c)=>a+(Number(c.value)||0),0);this.sound.playCoin();this.slimes=this.slimes.filter(sl=>!(sl.level===s.level&&sl.strain.id===s.strain.id&&!sl.locked));this.selectedSlime=null;this.saveGame();} return true; }
+                if(this.isInside(x,y,this.btnShopCustomRect)){ this.showShop=true; this.shopTab='skins'; return true; }
+                if(this.isInside(x,y,this.btnCollectRect)){ if(this.collection[s.strain.id]){showCustomAlert("Chủng này đã nằm trong Sách Bách Khoa!", "info");}else{this.collection[s.strain.id]=true;this.sound.playMutate();this.saveGame();showCustomAlert("Đã sưu tầm vào Sách!", "success");} return true; }
+                if(this.isInside(x,y,this.btnLockRect)){ s.locked=!s.locked; return true; }
+                return true;
+            } else { this.selectedSlime.frozen=false; this.selectedSlime=null; }
+        }
+
+        if (this.isInside(x, y, {x:CANVAS_W-125, y:12, w:110, h:44})) { this.showSettings=!this.showSettings; this.showBook=false; this.showShop=false; this.showLabModal=false; return true; }
+        if (this.showSettings) {
+            const px=CANVAS_W-400, py=65;
+            if(this.isInside(x,y,{x:px+270,y:py+15,w:40,h:30})){this.sound.setVolume(-0.1);return true;}
+            if(this.isInside(x,y,{x:px+320,y:py+15,w:40,h:30})){this.sound.setVolume(0.1);return true;}
+            if(this.isInside(x,y,{x:px+20,y:py+55,w:340,h:40})){this.sound.toggleMusic();return true;}
+            if(this.isInside(x,y,{x:px+20,y:py+105,w:340,h:44})){ this.showSettings=false; document.getElementById("custom-input-overlay").style.display="flex"; document.getElementById("custom-input-field").focus(); document.getElementById("custom-input-ok").onclick=()=>{const nn=document.getElementById("custom-input-field").value.trim();document.getElementById("custom-input-overlay").style.display="none";if(nn.length>=2){if(this.money>=1e7){this.money-=1e7;this.playerName=nn;localStorage.setItem("slimeLab_playerName",nn);this.sound.playCoin();this.saveGame();showCustomAlert("Đổi tên thành công!", "success");}else showCustomAlert("Không đủ 10Tr VNĐ!");}}; document.getElementById("custom-input-cancel").onclick=()=>document.getElementById("custom-input-overlay").style.display="none"; return true; }
+            if(this.isInside(x,y,{x:px+20,y:py+158,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="🚪 Bạn có chắc chắn muốn đăng xuất?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{if(this.auth)this.auth.signOut().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
+            if(this.isInside(x,y,{x:px+20,y:py+211,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="⚠️ XÓA VĨNH VIỄN TÀI KHOẢN NÀY?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{this.isDeleted=true;if(this.leaderboardRef)this.leaderboardRef.child(this.playerId).remove().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
+            if(!this.isInside(x,y,{x:px,y:py,w:380,h:285}))this.showSettings=false; return true;
+        }
+
+        if (this.isInside(x, y, {x:CANVAS_W-295, y:12, w:160, h:44})) { this.showBook=!this.showBook; this.showSettings=false; this.showShop=false; this.showLabModal=false; return true; }
+        if (this.showBook) {
+            const mx=40, my=25, mw=CANVAS_W-80, mh=670;
+            if(this.isInside(x,y,{x:mx+mw-50,y:my+12,w:38,h:38})||!this.isInside(x,y,{x:mx,y:my,w:mw,h:mh})){this.showBook=false;return true;}
+            const sts=LAB_STRAIN_SETS[this.currentLabId]||LAB_STRAIN_SETS[0]; const tp=Math.max(1,Math.ceil(sts.length/8));
+            if(this.isInside(x,y,{x:mx+30,y:my+mh-50,w:150,h:40})){ if (this.bookPage > 0) this.bookPage--; return true;}
+            if(this.isInside(x,y,{x:mx+mw-180,y:my+mh-50,w:150,h:40})){ if (this.bookPage < tp - 1) this.bookPage++; return true;}
+            
+            // TÍNH NĂNG ẨN: Nhấn 10 lần vào ô Pet Cấp Thần để triệu hồi
+            sts.slice(this.bookPage * 8, this.bookPage * 8 + 8).forEach((s, i) => {
+                const cx = mx + 25 + (i % 4) * 320, cy = my + 55 + Math.floor(i / 4) * 265;
+                if (this.isInside(x, y, {x: cx, y: cy, w: 300, h: 250})) {
+                    if (s.isGod) {
+                        if (!this.godClicks) this.godClicks = {};
+                        this.godClicks[s.id] = (this.godClicks[s.id] || 0) + 1;
+                        
+                        if (this.godClicks[s.id] >= 10) {
+                            this.godClicks[s.id] = 0;
+                            if (this.slimes.length < this.maxCapacity) {
+                                this.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, this.currentLabId, s.id, 1));
+                                this.sound.playMutate(); 
+                                this.saveGame();
+                                showCustomAlert(`✨ [MÃ GIAN LẬN] Đã triệu hồi thành công ${s.name}!`, "success");
+                            } else {
+                                showCustomAlert(`Bể đã đầy, không thể triệu hồi ${s.name}!`, "error");
+                            }
+                        }
+                    }
+                }
+            });
+            return true;
+        }
+
+        if (this.isInside(x, y, {x:CANVAS_W-445, y:12, w:140, h:44})) { this.showShop=!this.showShop; this.showBook=false; this.showSettings=false; this.showLabModal=false; return true; }
+        if (this.showShop) {
+            const mx=70, my=30, mw=CANVAS_W-140, mh=660;
+            if(this.isInside(x,y,{x:mx+mw-50,y:my+12,w:38,h:38})||!this.isInside(x,y,{x:mx,y:my,w:mw,h:mh})){this.showShop=false;return true;}
+            if(this.isInside(x,y,{x:mx+30,y:my+60,w:160,h:42})){this.shopTab='skins';this.shopPage=0;return true;}
+            if(this.isInside(x,y,{x:mx+200,y:my+60,w:200,h:42})){this.shopTab='auras';this.shopPage=0;return true;}
+            if(this.isInside(x,y,{x:mx+410,y:my+60,w:160,h:42})){this.shopTab='themes';this.shopPage=0;return true;}
+            if(this.isInside(x,y,{x:mx+580,y:my+60,w:160,h:42})){this.shopTab='exchange';return true;}
+
+            if (this.shopTab === 'exchange') {
+                const exBtn = { x: mx + mw/2 - 150, y: my + 300, w: 300, h: 55 };
+                if(this.isInside(x,y,exBtn)) {
+                    const diaCost = 1e114 * Math.pow(1000, this.diamonds); // 1 Septendecillion * 1000^diamonds
+                    if (this.money >= diaCost) {
+                        this.money -= diaCost;
+                        this.diamonds++;
+                        this.sound.playMutate();
+                        this.saveGame();
+                        showCustomAlert(`Chúc mừng! Bạn đã đổi thành công 1 💎 Kim Cương!`, "success");
+                    } else {
+                        showCustomAlert(`Không đủ tiền! Cần ${formatMoney(diaCost)}`, "error");
+                    }
+                }
+                return true;
+            }
+
+            const list=this.shopTab==='skins'?SKINS:(this.shopTab==='auras'?AURA_EFFECTS:TANK_THEMES);
+            const maxP=Math.max(0, Math.ceil(list.length/4)-1);
+            if(this.isInside(x,y,{x:mx+30,y:my+mh-50,w:150,h:40})){ if (this.shopPage > 0) this.shopPage--; return true;}
+            if(this.isInside(x,y,{x:mx+mw-180,y:my+mh-50,w:150,h:40})){ if (this.shopPage < maxP) this.shopPage++; return true;}
+
+            let clicked=false;
+            list.slice(this.shopPage*4,this.shopPage*4+4).forEach((item,idx)=>{
+                const ba={x:mx+30+mw-230,y:my+115+idx*105+22,w:150,h:46};
+                if(this.isInside(x,y,ba)){
+                    clicked=true;
+                    if(this.shopTab==='themes'){
+                        if(this.ownedThemes.includes(item.id)){this.activeTheme=item.id;this.saveGame();}
+                        else if(this.money>=item.price){this.money-=item.price;this.ownedThemes.push(item.id);this.activeTheme=item.id;this.sound.playMutate();this.saveGame();}
+                        else showCustomAlert(`Bạn không đủ tiền! Cần ${formatMoney(item.price)}`);
+                    } else if(this.shopTab==='skins'){
+                        if(this.money>=item.price){this.money-=item.price;this.sound.playMutate();this.showShop=false;this.pendingSkin=item.id;}
+                        else showCustomAlert(`Bạn không đủ tiền! Cần ${formatMoney(item.price)}`);
+                    } else {
+                        if(this.money>=item.price){this.money-=item.price;this.sound.playMutate();this.showShop=false;this.pendingAura=item.id;}
+                        else showCustomAlert(`Bạn không đủ tiền! Cần ${formatMoney(item.price)}`);
+                    }
+                }
+            });
+            if(clicked)return true;
+            return true;
+        }
+
+        if (this.isInside(x, y, {x:633,y:12,w:95,h:44})) { this.showLabModal=!this.showLabModal; this.showBook=false; this.showSettings=false; this.showShop=false; return true; }
+        if (this.showLabModal) {
+            const mx=80, my=30, mw=CANVAS_W-160, mh=660;
+            if(this.isInside(x,y,{x:mx+mw-50,y:my+12,w:38,h:38})||!this.isInside(x,y,{x:mx,y:my,w:mw,h:mh})){this.showLabModal=false;return true;}
+            let clk=false;
+            TANK_THEMES.slice(0,10).forEach((lab,idx)=>{
+                const r=Math.floor(idx/2), c=idx%2, lw=(mw-80)/2, lh=95;
+                const lx=mx+30+c*(lw+20), ly=my+60+r*(lh+12);
+                if(this.isInside(x,y,{x:lx+lw-140,y:ly+25,w:125,h:44})){
+                    clk=true;
+                    if(this.currentLabId!==idx){
+                        if(this.labsData[idx].unlocked){this.currentLabId=idx; this.sound.switchBGM(idx); this.updateWorldDimensions();this.camera.x=this.worldWidth/2;this.camera.y=this.worldHeight/2;this.clampCamera();this.showLabModal=false;this.saveGame();}
+                        else if(this.money>=lab.price){this.money-=lab.price;this.labsData[idx].unlocked=true;this.currentLabId=idx; this.sound.switchBGM(idx); this.updateWorldDimensions();this.camera.x=this.worldWidth/2;this.camera.y=this.worldHeight/2;this.clampCamera();this.showLabModal=false;this.sound.playMutate();this.saveGame();showCustomAlert(`Đã mở khóa Lab ${idx+1}!`, "success");}
+                        else showCustomAlert(`Bạn không đủ tiền mở khóa! Cần ${formatMoney(lab.price)}`);
+                    }
+                }
+            });
+            if(clk)return true;
+            return true;
+        }
+
+        if (this.isInside(x, y, {x:CANVAS_W-645,y:12,w:190,h:44})) { if(this.money>=1000&&this.slimes.length<this.maxCapacity){this.money-=1000;this.slimes.push(new Slime(this.worldWidth/2,this.worldHeight/2,this.currentLabId,null,1));this.sound.playPop();this.saveGame();} return true; }
+        if (this.isInside(x, y, {x:380,y:12,w:125,h:44})) { const c=this.getSlotPrice(); if(this.money>=c){this.money-=c;this.maxCapacity++;this.sound.playCoin();this.saveGame();}else showCustomAlert(`Không đủ tiền mở rộng! Cần ${formatMoney(c)}`); return true; }
+        if (this.isInside(x, y, {x:515,y:12,w:105,h:44})) { const spds=[0.5,1,1.5,2,3,4,5,6,7]; this.gameSpeed=spds[(spds.indexOf(this.gameSpeed)+1)%spds.length]; this.sound.playPop(); return true; }
+
+        const wX = this.camera.x+(x-(this.containerRect.left+this.containerRect.width/2))/this.camera.zoom;
+        const wY = this.camera.y+(y-(this.containerRect.top+this.containerRect.height/2))/this.camera.zoom;
+
+        if (x>=this.containerRect.left&&x<=this.containerRect.right&&y>=this.containerRect.top&&y<=this.containerRect.bottom) {
+            if (this.pendingSkin||this.pendingAura) {
+                for (let i=this.slimes.length-1; i>=0; i--) {
+                    const s=this.slimes[i];
+                    if (Math.hypot(s.x-wX,s.y-wY)<=Math.max(s.radius*1.5,45)) {
+                        if(this.pendingSkin){s.customSkin=this.pendingSkin;this.pendingSkin=null;}
+                        if(this.pendingAura){s.customAura=this.pendingAura;this.pendingAura=null;}
+                        this.sound.playCoin(); this.saveGame(); return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    isInside(px, py, rect) { return rect && px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h; }
+
+    update(dt) {
+        this.bubbles.forEach(b => b.update(this.gameSpeed));
+        
+        for (let i = this.effects.length - 1; i >= 0; i--) { this.effects[i].update(dt, this.gameSpeed); if (this.effects[i].life <= 0) this.effects.splice(i, 1); }
+        if (this.effects.length > 80) this.effects.shift();
+
+        for (let i = this.shockwaves.length - 1; i >= 0; i--) { this.shockwaves[i].update(dt, this.gameSpeed); if (this.shockwaves[i].life <= 0) this.shockwaves.splice(i, 1); }
+        if (this.shockwaves.length > 10) this.shockwaves.shift();
+
+        for (let l = 0; l < 10; l++) {
+            const lab = this.labsData[l];
+            if (!lab || !lab.unlocked || lab.slimes.length === 0) continue;
+            
+            const theme = TANK_THEMES[l] || TANK_THEMES[0];
+            const scale = theme.scale || 1.0;
+            const labWorldW = this.containerRect.width * 20 * scale;
+            const labWorldH = this.containerRect.height * 20 * scale;
+            const labBounds = { left: 0, top: 0, right: labWorldW, bottom: labWorldH };
+
+            const isCurrent = (l === this.currentLabId);
+            const nB = [], sS = [];
+            
+            lab.slimes.forEach(s => {
+                const r = s.update(dt, labBounds, this.effects, this.shockwaves, this.gameSpeed, lab.isPaused, isCurrent);
+                if (r === "DEAD") { if (isCurrent) this.effects.push(new Shockwave(s.x, s.y, '#ff4646')); return; }
+                sS.push(s);
+                if (r) nB.push(r);
+            });
+            
+            lab.slimes = sS;
+            for (let nb of nB) { 
+                if (lab.slimes.length < lab.maxCapacity) {
+                    lab.slimes.push(nb);
+                    if (isCurrent && !this.collection[nb.strain.id] && !this.pendingDiscoveryQueue.find(x=>x.id===nb.strain.id)) {
+                        this.pendingDiscoveryQueue.push(nb.strain);
+                    }
+                } else break; 
+            }
+        }
+
+        if (!this.pendingConfirmButtons && this.pendingDiscoveryQueue.length > 0) {
+            const newM = this.pendingDiscoveryQueue.shift();
+            this.confirmModalTitle = `✨ ĐỘT BIẾN MỚI TÌM THẤY!`;
+            this.confirmModalSubtitle = `Phát hiện: ${newM.name}. Thêm vào sách?`;
+            this.pendingConfirmButtons = [
+                { text: "Thêm vào Sách", bg: "#14503c", action: () => { this.collection[newM.id]=true; this.sound.playMutate(); this.saveGame(); this.pendingConfirmButtons=null; } },
+                { text: "Bỏ qua", bg: "#283c50", action: () => { this.pendingConfirmButtons=null; } }
+            ];
+        }
+        
+        if (performance.now() - this.lastSaveTime > 4000) { this.saveGame(); this.lastSaveTime = performance.now(); }
+    }
+
+    drawCustomConfirm(title, subtitle) {
+        const mw = 480, mh = 180, mx = (CANVAS_W - mw) / 2, my = (CANVAS_H - mh) / 2;
+        this.ctx.save(); this.ctx.fillStyle = "rgba(11, 19, 32, 0.98)"; this.ctx.fillRect(mx, my, mw, mh); this.ctx.strokeStyle = COLOR_WARNING; this.ctx.lineWidth = 3; this.ctx.strokeRect(mx, my, mw, mh);
+        this.ctx.fillStyle = "#ffd700"; this.ctx.font = "bold 18px Arial"; this.ctx.textAlign = "center"; this.ctx.textBaseline = "top"; this.ctx.fillText(title, mx + mw/2, my + 25, mw-40);
+        if (subtitle) { this.ctx.fillStyle = "#e6f5ff"; this.ctx.font = "16px Arial"; this.ctx.fillText(subtitle, mx + mw/2, my + 60, mw-40); }
+        
+        if (this.pendingConfirmButtons) {
+            const btnW = (440 - (this.pendingConfirmButtons.length-1)*15) / this.pendingConfirmButtons.length;
+            this.pendingConfirmButtons.forEach((btn, i) => {
+                this.drawButton({ x: mx + 20 + i*(btnW+15), y: my + 115, w: btnW, h: 45 }, btn.bg, null, btn.text, "#fff", "bold 15px Arial");
+            });
+        }
+        this.ctx.restore();
+    }
+
+    drawFloatingActionPanel() {
+        const s = this.selectedSlime; if (!s || !s.strain) return;
+        const panelW = 600, panelH = 480;
+        const px = this.containerRect.left + (this.containerRect.width - panelW) / 2, py = this.containerRect.top + (this.containerRect.height - panelH) / 2;
+        this.actionPanelRect = { x: px, y: py, w: panelW, h: panelH };
+        this.ctx.fillStyle = "rgba(16, 24, 38, 0.98)"; this.ctx.fillRect(px, py, panelW, panelH); this.ctx.strokeStyle = COLOR_ACCENT; this.ctx.lineWidth = 3; this.ctx.strokeRect(px, py, panelW, panelH);
+        this.ctx.fillStyle = s.strain.color || "#fff"; this.ctx.font = "bold 26px Arial"; this.ctx.fillText(`📊 THÔNG SỐ: ${s.strain.name}`, px + 25, py + 42);
+        this.ctx.fillStyle = "#a0c0db"; this.ctx.font = "17px Arial"; this.ctx.fillText(`• Cấp độ: Lv.${s.level} | Bậc: ${s.strain.tier} | Tâm trạng: ${s.strain.mood.toUpperCase()}`, px + 25, py + 72);
+        this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 18px Arial"; this.ctx.fillText(`• Giá trị bán: ${formatMoney(s.value)}`, px + 25, py + 100);
+        this.ctx.fillStyle = "#00ffc8"; this.ctx.font = "16px Arial"; this.ctx.fillText(`• Chu kỳ: ${(s.timerMax + (s.sameCloneCount * 5.0)).toFixed(1)}s | Đột biến: ${(s.strain.mutRate * 100).toFixed(6)}%`, px + 25, py + 128);
+        const sU = this.slimes.filter(i => i.level === s.level && i.strain.id === s.strain.id && !i.locked);
+        this.btnSellOneRect = { x: px + 20, y: py + 150, w: panelW-40, h: 54 }; this.btnSellAllRect = { x: px + 20, y: py + 215, w: panelW-40, h: 54 }; this.btnShopCustomRect = { x: px + 20, y: py + 280, w: panelW-40, h: 54 }; this.btnCollectRect = { x: px + 20, y: py + 345, w: panelW-40, h: 54 }; this.btnLockRect = { x: px + 20, y: py + 410, w: panelW-40, h: 44 };
+        this.drawButton(this.btnSellOneRect, !s.locked ? "#a02832" : "#464646", null, `💵 Bán 1 con (${formatMoney(s.value)})`, "#fff", "bold 17px Arial");
+        this.drawButton(this.btnSellAllRect, sU.length > 0 ? "#b44614" : "#3c3c3c", null, `💰 Bán hết ${s.strain.name} Lv.${s.level} (${sU.length} con)`, "#fff", "bold 17px Arial");
+        this.drawButton(this.btnShopCustomRect, "#5a2d82", "#be6eff", "🎨 Skin và Hiệu Ứng (Riêng Pet Này)", "#f0dcff", "bold 16px Arial");
+        this.drawButton(this.btnCollectRect, "#382866", null, "📥 Sưu Tầm vào Sách", "#fff", "bold 15px Arial");
+        this.drawButton(this.btnLockRect, !s.locked ? "#1e648c" : "#966414", null, s.locked ? "🔓 Mở Khóa" : "🔒 Khóa Lại", "#fff", "bold 14px Arial");
+    }
+
+    drawShopExchange() {
+        const mx = 70, my = 30, mw = CANVAS_W - 140, mh = 660;
+        this.ctx.fillStyle = "#e056fd"; this.ctx.font = "bold 28px Arial"; this.ctx.textAlign="center";
+        this.ctx.fillText(`💎 CỬA HÀNG QUY ĐỔI KIM CƯƠNG`, mx + mw/2, my + 150);
+        this.ctx.fillStyle = "#a0c0db"; this.ctx.font = "16px Arial"; 
+        this.ctx.fillText(`Kim cương giúp tăng vị trí của bạn trên bảng xếp hạng vĩnh viễn.`, mx + mw/2, my + 190);
+        
+        const diaCost = 1e114 * Math.pow(1000, this.diamonds);
+        this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 20px Arial";
+        this.ctx.fillText(`Tỷ giá hiện tại: 1 Kim Cương = ${formatMoney(diaCost)}`, mx + mw/2, my + 250);
+        
+        this.drawButton({ x: mx + mw/2 - 150, y: my + 300, w: 300, h: 55 }, "#14503c", COLOR_ACCENT, "Đổi 1 💎 Ngay", "#fff", "bold 18px Arial");
+        this.ctx.textAlign="start";
+    }
+
+    drawShopModal() {
+        const mx = 70, my = 30, mw = CANVAS_W - 140, mh = 660;
+        this.ctx.fillStyle = "#0c121c"; this.ctx.fillRect(mx, my, mw, mh); this.ctx.strokeStyle = "#00ffc8"; this.ctx.lineWidth = 2.5; this.ctx.strokeRect(mx, my, mw, mh);
+        this.ctx.fillStyle = "#ffd700"; this.ctx.font = "bold 22px Arial"; this.ctx.fillText("🛒 CỬA HÀNG PHÒNG THÍ NGHIỆM", mx + 30, my + 36);
+        this.drawButton({ x: mx + 30, y: my + 60, w: 160, h: 42 }, this.shopTab === 'skins' ? "#00ffc8" : "#1b2838", null, "Skin (100+)", this.shopTab === 'skins' ? "#000" : "#fff", "bold 14px Arial");
+        this.drawButton({ x: mx + 200, y: my + 60, w: 200, h: 42 }, this.shopTab === 'auras' ? "#00ffc8" : "#1b2838", null, "Aura (100+)", this.shopTab === 'auras' ? "#000" : "#fff", "bold 14px Arial");
+        this.drawButton({ x: mx + 410, y: my + 60, w: 160, h: 42 }, this.shopTab === 'themes' ? "#00ffc8" : "#1b2838", null, "Bể Mới", this.shopTab === 'themes' ? "#000" : "#fff", "bold 14px Arial");
+        this.drawButton({ x: mx + 580, y: my + 60, w: 160, h: 42 }, this.shopTab === 'exchange' ? "#00ffc8" : "#1b2838", null, "💎 Quy Đổi", this.shopTab === 'exchange' ? "#000" : "#fff", "bold 14px Arial");
+        
+        if (this.shopTab === 'exchange') { this.drawShopExchange(); } else {
+            const list = this.shopTab === 'skins' ? SKINS : (this.shopTab === 'auras' ? AURA_EFFECTS : TANK_THEMES);
+            const maxP = Math.max(0, Math.ceil(list.length / 4) - 1);
+            if (this.shopPage > maxP) this.shopPage = maxP;
+            const time = Date.now() * 0.003;
+            
+            list.slice(this.shopPage * 4, this.shopPage * 4 + 4).forEach((item, idx) => {
+                const r = { x: mx + 30, y: my + 115 + idx * 105, w: mw - 60, h: 90 };
+                let bt = item.price === 0 ? "Miễn phí" : "Mua", bb = "#238636";
+                if (this.shopTab === 'themes' && this.ownedThemes.includes(item.id)) { bt = this.activeTheme === item.id ? "Đang Dùng" : "Trang Bị"; bb = this.activeTheme === item.id ? "#3a4a5a" : "#1f6feb"; }
+                this.ctx.save();
+                try {
+                    this.ctx.beginPath(); this.ctx.rect(r.x, r.y, r.w, r.h); this.ctx.clip();
+                    this.ctx.fillStyle = "#141e2e"; this.ctx.fillRect(r.x, r.y, r.w, r.h);
+                    if (this.shopTab === 'themes') { this.drawDynamicBackground(this.ctx, item, r.w, r.h, r.x, r.y); } else {
+                        this.ctx.translate(r.x + 45, r.y + 45);
+                        if (item.id !== 'skin_0' && item.id !== 'aura_0') {
+                            const trueId = parseInt(item.id.replace('skin_', '').replace('aura_', '')) || 1;
+                            new MasterpieceArtRenderer(trueId, this.shopTab === 'skins' ? 'weapons' : 'auras').draw(this.ctx, 0, 0, time, 35, true);
+                        }
+                    }
+                } catch (err) { } finally { this.ctx.restore(); }
+                this.ctx.strokeStyle = "#28374b"; this.ctx.lineWidth = 2; this.ctx.strokeRect(r.x, r.y, r.w, r.h);
+                this.ctx.fillStyle = "#fff"; this.ctx.font = "bold 16px Arial"; this.ctx.fillText(item.name, r.x + (this.shopTab === 'themes' ? 20 : 95), r.y + 36);
+                this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 13.5px Arial"; this.ctx.fillText(item.price === 0 ? "Miễn phí" : `Giá: ${formatMoney(item.price)}`, r.x + (this.shopTab === 'themes' ? 20 : 95), r.y + 64);
+                this.drawButton({ x: r.x + r.w - 170, y: r.y + 22, w: 150, h: 46 }, bb, null, bt, "#fff", "bold 14px Arial");
+            });
+            this.drawButton({ x: mx + 30, y: my + mh - 50, w: 150, h: 40 }, this.shopPage > 0 ? "#283c50" : "#1a2430", null, "◀ Trước", "#fff", "bold 13px Arial");
+            this.drawButton({ x: mx + mw - 180, y: my + mh - 50, w: 150, h: 40 }, this.shopPage < maxP ? "#283c50" : "#1a2430", null, "Sau ▶", "#fff", "bold 13px Arial");
+        }
+        this.drawButton({ x: mx + mw - 50, y: my + 12, w: 38, h: 38 }, COLOR_WARNING, null, "✕", "#fff", "bold 16px Arial");
+    }
+
+    drawButton(rect, bg, bd, txt, tc, font) {
+        if (!rect) return; this.ctx.fillStyle = bg; this.ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+        if (bd) { this.ctx.strokeStyle = bd; this.ctx.lineWidth = 1.5; this.ctx.strokeRect(rect.x, rect.y, rect.w, rect.h); }
+        this.ctx.fillStyle = tc; this.ctx.font = font; this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle";
+        this.ctx.fillText(txt, rect.x + rect.w / 2, rect.y + rect.h / 2); this.ctx.textAlign = "start"; this.ctx.textBaseline = "alphabetic";
+    }
+
+    drawLabListModal() {
+        const mx = 80, my = 30, mw = CANVAS_W - 160, mh = 660;
+        this.ctx.fillStyle = "#0c121c"; this.ctx.fillRect(mx, my, mw, mh); this.ctx.strokeStyle = "#8e44ad"; this.ctx.lineWidth = 2.5; this.ctx.strokeRect(mx, my, mw, mh);
+        this.ctx.fillStyle = "#ffd700"; this.ctx.font = "bold 22px Arial"; this.ctx.fillText("🔬 DANH SÁCH BỂ THÍ NGHIỆM", mx + 30, my + 36);
+        TANK_THEMES.slice(0, 10).forEach((lab, i) => {
+            const lx = mx + 30 + (i % 2) * ((mw - 80) / 2 + 20), ly = my + 60 + Math.floor(i / 2) * 107; const ld = this.labsData[i], ic = (this.currentLabId === i);
+            this.ctx.fillStyle = ic ? "rgba(0,255,200,0.12)" : "#141e2e"; this.ctx.fillRect(lx, ly, (mw - 80) / 2, 95);
+            this.ctx.strokeStyle = ic ? "#00ffc8" : ld.unlocked ? "#28374b" : "#ff4646"; this.ctx.lineWidth = ic ? 2 : 1.5; this.ctx.strokeRect(lx, ly, (mw - 80) / 2, 95);
+            this.ctx.fillStyle = "#fff"; this.ctx.font = "bold 16px Arial"; this.ctx.fillText(`Lab ${i + 1}: ${lab.name}`, lx + 15, ly + 28);
+            this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 13px Arial"; this.ctx.fillText(lab.price === 0 ? "Mặc Định" : `Giá: ${formatMoney(lab.price)}`, lx + 15, ly + 50);
+            this.drawButton({ x: lx + (mw - 80) / 2 - 140, y: ly + 25, w: 125, h: 44 }, ic ? "#3a4a5a" : ld.unlocked ? "#1f6feb" : "#238636", null, ic ? "Đang Ở Đây" : ld.unlocked ? "Chuyển Đến" : "Mở Khóa", "#fff", "bold 13px Arial");
+        });
+        this.drawButton({ x: mx + mw - 50, y: my + 12, w: 38, h: 38 }, COLOR_WARNING, null, "✕", "#fff", "bold 16px Arial");
+    }
+
+    drawSettingsModal() {
+        const p = { x: CANVAS_W - 400, y: 65, w: 380, h: 285 };
+        this.ctx.fillStyle = "#141e2d"; this.ctx.fillRect(p.x, p.y, p.w, p.h); this.ctx.strokeStyle = COLOR_ACCENT; this.ctx.strokeRect(p.x, p.y, p.w, p.h);
+        this.ctx.fillStyle = COLOR_TEXT; this.ctx.font = "bold 14px Arial"; this.ctx.fillText(`Âm lượng: ${Math.round(this.sound.volume * 100)}%`, p.x + 20, p.y + 36);
+        this.drawButton({ x: p.x + p.w - 110, y: p.y + 15, w: 40, h: 30 }, "#283c50", null, "-", "#fff", "bold 16px Arial"); this.drawButton({ x: p.x + p.w - 60, y: p.y + 15, w: 40, h: 30 }, "#283c50", null, "+", "#fff", "bold 16px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 55, w: 340, h: 40 }, this.sound.musicPlaying ? "#1e5064" : "#5a2828", null, this.sound.musicPlaying ? "🎵 Nhạc: BẬT" : "🔇 Nhạc: TẮT", "#fff", "bold 13px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 105, w: 340, h: 44 }, "#a06414", COLOR_GOLD, "✏️ Đổi Tên (10Tr)", "#fff", "bold 13px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 158, w: 340, h: 44 }, "#1e648c", COLOR_ACCENT, "🚪 Đăng Xuất", "#fff", "bold 13px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 211, w: 340, h: 44 }, "#a02832", COLOR_WARNING, "🗑️ Xóa Tài Khoản", "#fff", "bold 13px Arial");
+    }
+
+    drawBookModal() {
+        const mx = 40, my = 25, mw = CANVAS_W - 80, mh = 670;
+        this.ctx.fillStyle = "#0e1520"; this.ctx.fillRect(mx, my, mw, mh); this.ctx.strokeStyle = "#aa5aff"; this.ctx.lineWidth = 2.5; this.ctx.strokeRect(mx, my, mw, mh);
+        const cL = TANK_THEMES[this.currentLabId] || TANK_THEMES[0]; const sts = LAB_STRAIN_SETS[this.currentLabId] || LAB_STRAIN_SETS[0];
+        this.ctx.fillStyle = "#dcbeff"; this.ctx.font = "bold 22px Arial"; this.ctx.fillText(`📖 BÁCH KHOA: ${cL.name.toUpperCase()}`, mx + 25, my + 36);
+        sts.slice(this.bookPage * 8, this.bookPage * 8 + 8).forEach((s, i) => {
+            const cx = mx + 25 + (i % 4) * 320, cy = my + 55 + Math.floor(i / 4) * 265; const u = Boolean(this.collection[s.id]);
+            this.ctx.fillStyle = u ? "#162234" : "#101620"; this.ctx.fillRect(cx, cy, 300, 250); this.ctx.strokeStyle = u ? s.color : "#283444"; this.ctx.lineWidth = u ? 2 : 1.5; this.ctx.strokeRect(cx, cy, 300, 250);
+            if (u) {
+                this.ctx.fillStyle = s.color; this.ctx.beginPath(); this.ctx.arc(cx + 55, cy + 55, 26, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.fillStyle = "#fff"; this.ctx.beginPath(); this.ctx.arc(cx + 48, cy + 52, 5.5, 0, Math.PI * 2); this.ctx.arc(cx + 62, cy + 52, 5.5, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.fillStyle = "#111"; this.ctx.beginPath(); this.ctx.arc(cx + 48, cy + 52, 2.5, 0, Math.PI * 2); this.ctx.arc(cx + 62, cy + 52, 2.5, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.font = "bold 15px Arial"; this.ctx.fillStyle = s.color; this.ctx.fillText(s.name, cx + 98, cy + 36);
+                this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 12.5px Arial"; this.ctx.fillText(`Bậc ${s.tier} | x${formatMoney(s.valMult)}`, cx + 98, cy + 56);
+                this.ctx.fillStyle = "#00ffc8"; this.ctx.font = "bold 12px Arial"; this.ctx.fillText("✓ ĐÃ SƯU TẦM", cx + 18, cy + 105);
+                this.ctx.fillStyle = "#b0c4de"; this.ctx.font = "11.5px Arial"; this.ctx.fillText(s.desc || "", cx + 18, cy + 132);
+            } else {
+                this.ctx.fillStyle = "#1e293b"; this.ctx.beginPath(); this.ctx.arc(cx + 55, cy + 55, 26, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.font = "bold 20px Arial"; this.ctx.fillStyle = "#64748b"; this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle"; this.ctx.fillText("🔒", cx + 55, cy + 55); this.ctx.textAlign = "start"; this.ctx.textBaseline = "alphabetic";
+                this.ctx.font = "bold 15px Arial"; this.ctx.fillText("Chưa Mở", cx + 98, cy + 36); this.ctx.font = "12px Arial"; this.ctx.fillText(`Bậc ${s.tier || '?'} | Bí ẩn`, cx + 98, cy + 56);
+                this.ctx.fillStyle = "#ff4646"; this.ctx.font = "bold 11.5px Arial"; this.ctx.fillText("🔒 CHƯA CÓ", cx + 18, cy + 105);
+            }
+        });
+        const tp = Math.max(1, Math.ceil(sts.length / 8));
+        this.drawButton({ x: mx + 30, y: my + mh - 50, w: 150, h: 40 }, this.bookPage > 0 ? "#283c50" : "#1a2430", null, "◀ Trang trước", "#fff", "bold 13px Arial");
+        this.drawButton({ x: mx + mw - 180, y: my + mh - 50, w: 150, h: 40 }, this.bookPage < tp - 1 ? "#283c50" : "#1a2430", null, "Trang sau ▶", "#fff", "bold 13px Arial");
+        this.drawButton({ x: mx + mw - 50, y: my + 12, w: 38, h: 38 }, COLOR_WARNING, null, "✕", "#fff", "bold 16px Arial");
+    }
+
+    draw() {
+        this.ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+        const cT = TANK_THEMES.find(t => t.id === this.activeTheme) || TANK_THEMES[0];
+        
+        this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 18px Arial"; 
+        this.ctx.fillText(this.diamonds>0 ? `💎 ${this.diamonds}` : `💰 ${formatMoney(this.money)}`, 20, 28);
+        this.ctx.fillStyle = "#7890a8"; this.ctx.font = "12px Arial"; this.ctx.fillText(`Người chơi: ${this.playerName || "Vô danh"} | Lab ${this.currentLabId + 1}: ${cT.name}`, 20, 48);
+        
+        this.drawButton({ x: 380, y: 12, w: 125, h: 44 }, "#a06414", COLOR_GOLD, `+1 Ô (${formatMoney(this.getSlotPrice())})`, "#fff", "bold 11px Arial");
+        this.drawButton({ x: 515, y: 12, w: 105, h: 44 }, "#19283c", COLOR_ACCENT, `⚡ ${this.gameSpeed.toFixed(1)}x`, "#e6f5ff", "bold 12px Arial");
+        this.drawButton({ x: 633, y: 12, w: 95, h: 44 }, "#8e44ad", "#d2b4de", "🔬 Lab", "#fff", "bold 13px Arial");
+        this.drawButton({ x: CANVAS_W - 645, y: 12, w: 190, h: 44 }, "#14503c", COLOR_ACCENT, "➕ Mua Thể Thực (1k)", "#e6f5ff", "bold 13px Arial");
+        this.drawButton({ x: CANVAS_W - 445, y: 12, w: 140, h: 44 }, "#5a2d82", "#be6eff", "🛒 Cửa Hàng", "#f0dcff", "bold 13px Arial");
+        this.drawButton({ x: CANVAS_W - 295, y: 12, w: 160, h: 44 }, "#372350", "#be6eff", "📖 Sách Sưu Tầm", "#f0dcff", "bold 13px Arial");
+        this.drawButton({ x: CANVAS_W - 125, y: 12, w: 110, h: 44 }, "#19283c", COLOR_ACCENT, "⚙ Cài Đặt", "#e6f5ff", "bold 13px Arial");
+
+        const cr = this.containerRect;
+        this.drawDynamicBackground(this.ctx, cT, cr.width, cr.height, cr.left, cr.top);
+        
+        this.ctx.save(); this.ctx.beginPath(); this.ctx.rect(cr.left, cr.top, cr.width, cr.height); this.ctx.clip();
+        this.ctx.save(); this.ctx.translate(cr.left + cr.width / 2, cr.top + cr.height / 2); this.ctx.scale(this.camera.zoom, this.camera.zoom); this.ctx.translate(-this.camera.x, -this.camera.y);
+        
+        this.bubbles.forEach(b => b.draw(this.ctx)); this.shockwaves.forEach(sw => sw.draw(this.ctx)); this.slimes.forEach(s => s.draw(this.ctx)); this.effects.forEach(e => e.draw(this.ctx));
+        this.ctx.restore(); this.ctx.restore();
+
+        const mO = this.showShop || this.showBook || this.showSettings || this.showLabModal;
+        
+        this.gatherBtnRect = { x: cr.left + 20, y: cr.bottom - 55, w: 110, h: 38 };
+        this.drawButton(this.gatherBtnRect, mO ? "#1a2430" : "#123b32", mO ? "#334155" : COLOR_ACCENT, "🌀 Tập Hợp", mO ? "#64748b" : "#fff", "bold 13px Arial");
+        
+        this.pauseBtnRect = { x: cr.right - 180, y: cr.bottom - 55, w: 165, h: 38 };
+        const pText = this.pauseState === 0 ? "▶ Chạy Bình Thường" : (this.pauseState === 1 ? "⏸ Dừng Bể Này" : "🎯 Chọn Dừng Lẻ");
+        const pColor = this.pauseState === 0 ? "#a05a14" : (this.pauseState === 1 ? "#8e44ad" : "#e056fd");
+        this.drawButton(this.pauseBtnRect, mO ? "#2a3442" : pColor, mO ? "#475569" : "#ffd700", pText, mO ? "#64748b" : "#fff", "bold 12px Arial");
+        
+        this.ctx.fillStyle = COLOR_TEXT; this.ctx.font = "bold 14px Arial"; this.ctx.fillText(`${this.slimes.length}/${this.maxCapacity}`, cr.left + 25, cr.top + 30);
+        this.ctx.fillStyle = "#28374b"; this.ctx.fillRect(cr.left, cr.top, cr.width, 16); this.ctx.fillRect(cr.left, cr.bottom - 16, cr.width, 16);
+        this.ctx.strokeStyle = cT.glass; this.ctx.lineWidth = 2.5; this.ctx.strokeRect(cr.left, cr.top, cr.width, cr.height);
+
+        if (this.selectedSlime) this.drawFloatingActionPanel();
+        if (this.showSettings) this.drawSettingsModal();
+        if (this.showBook) this.drawBookModal();
+        if (this.showShop) this.drawShopModal();
+        if (this.showLabModal) this.drawLabListModal();
+        
+        if (this.pendingConfirmButtons) this.drawCustomConfirm(this.confirmModalTitle, this.confirmModalSubtitle);
+    }
+
+    start() {
+        const loop = (now) => {
+            try { const dt = Math.min((now - this.lastTime) / 1000, 0.1); this.lastTime = now; this.update(dt); this.draw(); } 
+            catch (e) { console.error(e); } requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+    }
+}
+
+window.addEventListener("load", () => { new Game(); });
+</script>
+</body>
+</html>
