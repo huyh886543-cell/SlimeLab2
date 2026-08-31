@@ -468,7 +468,6 @@ class Game {
     initFirebase() {
         try {
             if (typeof firebase!=='undefined'&&!firebase.apps.length) {
-                // ĐIỀN MÃ CỦA BẠN VÀO ĐÂY ĐỂ HIỆN BẢNG XẾP HẠNG
                 firebase.initializeApp({ apiKey:"AIzaSyDzKd338xOMrNG8UGWPPMwjDdVyuMg3XW8", authDomain:"slime-lab-3cc86.firebaseapp.com", databaseURL:"https://slime-lab-3cc86-default-rtdb.asia-southeast1.firebasedatabase.app", projectId:"slime-lab-3cc86", storageBucket:"slime-lab-3cc86.firebasestorage.app", messagingSenderId:"1060591682150", appId:"1:1060591682150:web:64942ca562ec87fc4063a7" });
                 this.auth=firebase.auth(); this.db=firebase.database(); this.leaderboardRef=this.db.ref('leaderboard');
                 
@@ -517,7 +516,7 @@ class Game {
     }
     syncFirebase() { if(this.isDeleted||!this.leaderboardRef||!this.playerName)return; try{ this.leaderboardRef.child(this.playerId).set({name:this.playerName,money:this.money,diamonds:this.diamonds,updatedAt:Date.now()}); }catch(e){} }
     getSlotPrice() { return Math.floor(1e9*(1+this.currentLabId*0.5)*Math.pow(1.2,Math.max(0,this.maxCapacity-20))); }
-   checkLoginStatus() {
+    checkLoginStatus() {
         const modal = document.getElementById("welcome-modal"); 
         const sG = () => { if(!this.hasStarted){this.hasStarted=true; this.sound.init(this.currentLabId); this.loadGame(); this.syncFirebase(); this.start();} };
         
@@ -543,8 +542,17 @@ class Game {
                     localStorage.setItem("slimeLab_playerName", this.playerName); 
                     localStorage.setItem("slime_player_id", this.playerId); 
                     
-                    modal.style.display = "none"; 
-                    sG(); 
+                    // Kéo dữ liệu từ Cloud (nếu có) trước khi vào game
+                    this.db.ref('gameSaves/' + u.uid).once('value').then(snap => {
+                        if (snap.exists() && snap.val().saveData) {
+                            localStorage.setItem(this.getSaveKey(), snap.val().saveData);
+                        }
+                        modal.style.display = "none"; 
+                        sG(); 
+                    }).catch(() => {
+                        modal.style.display = "none"; 
+                        sG(); 
+                    });
                 } else { 
                     const sN = localStorage.getItem("slimeLab_playerName"); 
                     if(sN) { this.playerName=sN; modal.style.display="none"; sG(); }
@@ -562,7 +570,7 @@ class Game {
         const eG=(nm,pid)=>{ if(this.hasStarted)return; this.hasStarted=true; if(nm){this.playerName=nm;localStorage.setItem("slimeLab_playerName",nm);} if(pid){this.playerId=pid;localStorage.setItem("slime_player_id",pid);} m.style.display="none"; this.sound.init(this.currentLabId); this.loadGame(); this.syncFirebase(); this.start(); };
         const sN=localStorage.getItem("slimeLab_playerName"); if(sN)n.value=sN;
         sb.onclick=(e)=>{e.preventDefault();const nm=n.value.trim();if(nm.length<2){showCustomAlert("Vui lòng nhập tên từ 2 ký tự!");return;}eG(nm,null);};
-       gb.onclick=(e)=>{e.preventDefault();if(this.auth&&typeof firebase!=='undefined'){showCustomAlert("Đang mở cửa sổ đăng nhập...", "info"); this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(()=>{document.getElementById("html-alert-overlay").style.display="none";}).catch(er=>showCustomAlert("Lỗi đăng nhập: "+er.message));}else showCustomAlert("Máy chủ chưa sẵn sàng. Hãy nhập tên để chơi Offline!","info");};
+        gb.onclick=(e)=>{e.preventDefault();if(this.auth&&typeof firebase!=='undefined'){showCustomAlert("Đang mở cửa sổ đăng nhập...", "info"); this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(()=>{document.getElementById("html-alert-overlay").style.display="none";}).catch(er=>showCustomAlert("Lỗi đăng nhập: "+er.message));}else showCustomAlert("Máy chủ chưa sẵn sàng. Hãy nhập tên để chơi Offline!","info");};
     }
     getSaveKey() { return `slimeLab_Save_AllLabs_${this.serverName}_${this.playerId}`; }
     loadGame() {
@@ -690,10 +698,31 @@ class Game {
             if(this.isInside(x,y,{x:px+270,y:py+15,w:40,h:30})){this.sound.setVolume(-0.1);return true;}
             if(this.isInside(x,y,{x:px+320,y:py+15,w:40,h:30})){this.sound.setVolume(0.1);return true;}
             if(this.isInside(x,y,{x:px+20,y:py+55,w:340,h:40})){this.sound.toggleMusic();return true;}
-            if(this.isInside(x,y,{x:px+20,y:py+105,w:340,h:44})){ this.showSettings=false; document.getElementById("custom-input-overlay").style.display="flex"; document.getElementById("custom-input-field").focus(); document.getElementById("custom-input-ok").onclick=()=>{const nn=document.getElementById("custom-input-field").value.trim();document.getElementById("custom-input-overlay").style.display="none";if(nn.length>=2){if(this.money>=1e7){this.money-=1e7;this.playerName=nn;localStorage.setItem("slimeLab_playerName",nn);this.sound.playCoin();this.saveGame();showCustomAlert("Đổi tên thành công!", "success");}else showCustomAlert("Không đủ 10Tr VNĐ!");}}; document.getElementById("custom-input-cancel").onclick=()=>document.getElementById("custom-input-overlay").style.display="none"; return true; }
-            if(this.isInside(x,y,{x:px+20,y:py+158,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="🚪 Bạn có chắc chắn muốn đăng xuất?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{if(this.auth)this.auth.signOut().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
-            if(this.isInside(x,y,{x:px+20,y:py+211,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="⚠️ XÓA VĨNH VIỄN TÀI KHOẢN NÀY?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{this.isDeleted=true;if(this.leaderboardRef)this.leaderboardRef.child(this.playerId).remove().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
-            if(!this.isInside(x,y,{x:px,y:py,w:380,h:285}))this.showSettings=false; return true;
+            if(this.isInside(x,y,{x:px+20,y:py+105,w:340,h:44})){ 
+                this.showSettings=false; 
+                if(this.auth && this.auth.currentUser) {
+                    const localData = localStorage.getItem(this.getSaveKey());
+                    if(localData) {
+                        this.db.ref('gameSaves/' + this.auth.currentUser.uid).set({
+                            saveData: localData,
+                            lastUpdated: Date.now()
+                        }).then(() => {
+                            showCustomAlert("☁️ Đã sao lưu dữ liệu Đám mây an toàn!", "success");
+                        }).catch(e => {
+                            showCustomAlert("Lỗi lưu dữ liệu: " + e.message);
+                        });
+                    } else {
+                        showCustomAlert("Chưa có dữ liệu để lưu!", "info");
+                    }
+                } else {
+                    showCustomAlert("Bạn cần đăng nhập Google ở ngoài sảnh để dùng tính năng này!");
+                }
+                return true; 
+            }
+            if(this.isInside(x,y,{x:px+20,y:py+158,w:340,h:44})){ this.showSettings=false; document.getElementById("custom-input-overlay").style.display="flex"; document.getElementById("custom-input-field").focus(); document.getElementById("custom-input-ok").onclick=()=>{const nn=document.getElementById("custom-input-field").value.trim();document.getElementById("custom-input-overlay").style.display="none";if(nn.length>=2){if(this.money>=1e7){this.money-=1e7;this.playerName=nn;localStorage.setItem("slimeLab_playerName",nn);this.sound.playCoin();this.saveGame();showCustomAlert("Đổi tên thành công!", "success");}else showCustomAlert("Không đủ 10Tr VNĐ!");}}; document.getElementById("custom-input-cancel").onclick=()=>document.getElementById("custom-input-overlay").style.display="none"; return true; }
+            if(this.isInside(x,y,{x:px+20,y:py+211,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="🚪 Bạn có chắc chắn muốn đăng xuất?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{if(this.auth)this.auth.signOut().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
+            if(this.isInside(x,y,{x:px+20,y:py+264,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="⚠️ XÓA VĨNH VIỄN TÀI KHOẢN NÀY?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{this.isDeleted=true;if(this.leaderboardRef)this.leaderboardRef.child(this.playerId).remove().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
+            if(!this.isInside(x,y,{x:px,y:py,w:380,h:338}))this.showSettings=false; return true;
         }
 
         if (this.isInside(x, y, {x:CANVAS_W-295, y:12, w:160, h:44})) { this.showBook=!this.showBook; this.showSettings=false; this.showShop=false; this.showLabModal=false; return true; }
@@ -994,14 +1023,15 @@ class Game {
     }
 
     drawSettingsModal() {
-        const p = { x: CANVAS_W - 400, y: 65, w: 380, h: 285 };
+        const p = { x: CANVAS_W - 400, y: 65, w: 380, h: 338 };
         this.ctx.fillStyle = "#141e2d"; this.ctx.fillRect(p.x, p.y, p.w, p.h); this.ctx.strokeStyle = COLOR_ACCENT; this.ctx.strokeRect(p.x, p.y, p.w, p.h);
         this.ctx.fillStyle = COLOR_TEXT; this.ctx.font = "bold 14px Arial"; this.ctx.fillText(`Âm lượng: ${Math.round(this.sound.volume * 100)}%`, p.x + 20, p.y + 36);
         this.drawButton({ x: p.x + p.w - 110, y: p.y + 15, w: 40, h: 30 }, "#283c50", null, "-", "#fff", "bold 16px Arial"); this.drawButton({ x: p.x + p.w - 60, y: p.y + 15, w: 40, h: 30 }, "#283c50", null, "+", "#fff", "bold 16px Arial");
         this.drawButton({ x: p.x + 20, y: p.y + 55, w: 340, h: 40 }, this.sound.musicPlaying ? "#1e5064" : "#5a2828", null, this.sound.musicPlaying ? "🎵 Nhạc: BẬT" : "🔇 Nhạc: TẮT", "#fff", "bold 13px Arial");
-        this.drawButton({ x: p.x + 20, y: p.y + 105, w: 340, h: 44 }, "#a06414", COLOR_GOLD, "✏️ Đổi Tên (10Tr)", "#fff", "bold 13px Arial");
-        this.drawButton({ x: p.x + 20, y: p.y + 158, w: 340, h: 44 }, "#1e648c", COLOR_ACCENT, "🚪 Đăng Xuất", "#fff", "bold 13px Arial");
-        this.drawButton({ x: p.x + 20, y: p.y + 211, w: 340, h: 44 }, "#a02832", COLOR_WARNING, "🗑️ Xóa Tài Khoản", "#fff", "bold 13px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 105, w: 340, h: 44 }, "#14503c", COLOR_ACCENT, "☁️ Lưu Lên Đám Mây", "#fff", "bold 13px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 158, w: 340, h: 44 }, "#a06414", COLOR_GOLD, "✏️ Đổi Tên (10Tr)", "#fff", "bold 13px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 211, w: 340, h: 44 }, "#1e648c", COLOR_ACCENT, "🚪 Đăng Xuất", "#fff", "bold 13px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 264, w: 340, h: 44 }, "#a02832", COLOR_WARNING, "🗑️ Xóa Tài Khoản", "#fff", "bold 13px Arial");
     }
 
     drawBookModal() {
