@@ -882,19 +882,41 @@ update(dt) {
                 const r = s.update(dt, labBounds, this.effects, this.shockwaves, this.gameSpeed, lab.isPaused, isCurrent);
                 if (r === "DEAD") { if (isCurrent) this.effects.push(new Shockwave(s.x, s.y, '#ff4646')); return; }
                 sS.push(s);
-                if (r) nB.push(r);
+                // Lưu lại cả con mới (child) và con mẹ (parent) để xử lý
+                if (r) nB.push({ child: r, parent: s }); 
             });
             
             lab.slimes = sS;
-            for (let nb of nB) { 
+            for (let item of nB) { 
+                const nb = item.child;
+                const parent = item.parent;
+
                 if (lab.slimes.length < lab.maxCapacity) {
                     
-                    // --- GIỚI HẠN PET CẤP THẦN TỐI ĐA 4 CON MỖI CHỦNG ---
+                    // --- GIỚI HẠN 4 CON & TỰ THĂNG CẤP (TỶ LỆ 1%) ---
                     if (nb.strain.isGod) {
                         const godCount = lab.slimes.filter(x => x.strain.id === nb.strain.id).length;
-                        if (godCount >= 4) continue; // Hủy bỏ quá trình sinh/đột biến nếu đã đủ 4 con
+                        if (godCount >= 4) {
+                            // Phải đảm bảo con mẹ đúng là chủng Thần đó (không tính trường hợp pet thường đột biến ra)
+                            if (parent.strain.id === nb.strain.id) {
+                                // Tỷ lệ chính xác 1% (0.01)
+                                if (Math.random() < 0.01) {
+                                    parent.level += 1;
+                                    parent.radius = 32 + parent.level * 3.5; 
+                                    
+                                    // Cập nhật lại giá bán
+                                    const baseVal = Math.floor(Math.random() * 400) + 450;
+                                    const lm = 1 + (l * 1.5);
+                                    parent.value = Math.floor(baseVal * Math.pow(1.65, parent.level - 1) * (parent.strain.valMult || 1) * lm);
+                                    
+                                    // Nổ luồng sáng vàng khi thành công
+                                    if (isCurrent) this.shockwaves.push(new Shockwave(parent.x, parent.y, '#ffd700'));
+                                }
+                            }
+                            continue; // Bất kể thành công hay xịt 1%, đều hủy việc đẻ thêm con mới
+                        }
                     }
-                    // ---------------------------------------------------
+                    // ------------------------------------------------
 
                     lab.slimes.push(nb);
                     if (isCurrent && !this.collection[nb.strain.id] && !this.pendingDiscoveryQueue.find(x=>x.id===nb.strain.id)) {
