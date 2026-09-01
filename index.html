@@ -1128,7 +1128,22 @@ update(dt) {
     }
 }
 
-window.addEventListener("load", () => { new Game(); });
+window.addEventListener("load", () => { 
+    window.gameInstance = new Game(); 
+});
+
+// Tự động lưu lên Đám mây khi người chơi đóng trình duyệt/thoát game
+window.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'hidden' && window.gameInstance && window.gameInstance.auth && window.gameInstance.auth.currentUser) {
+        const localData = localStorage.getItem(window.gameInstance.getSaveKey());
+        if (localData) {
+            window.gameInstance.db.ref('gameSaves/' + window.gameInstance.auth.currentUser.uid).set({
+                saveData: localData,
+                lastUpdated: Date.now()
+            });
+        }
+    }
+});
 </script>
 </body>
 </html>
