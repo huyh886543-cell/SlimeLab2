@@ -856,7 +856,7 @@ class Game {
 
     isInside(px, py, rect) { return rect && px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h; }
 
-    update(dt) {
+update(dt) {
         this.bubbles.forEach(b => b.update(this.gameSpeed));
         
         for (let i = this.effects.length - 1; i >= 0; i--) { this.effects[i].update(dt, this.gameSpeed); if (this.effects[i].life <= 0) this.effects.splice(i, 1); }
@@ -888,6 +888,14 @@ class Game {
             lab.slimes = sS;
             for (let nb of nB) { 
                 if (lab.slimes.length < lab.maxCapacity) {
+                    
+                    // --- GIỚI HẠN PET CẤP THẦN TỐI ĐA 4 CON MỖI CHỦNG ---
+                    if (nb.strain.isGod) {
+                        const godCount = lab.slimes.filter(x => x.strain.id === nb.strain.id).length;
+                        if (godCount >= 4) continue; // Hủy bỏ quá trình sinh/đột biến nếu đã đủ 4 con
+                    }
+                    // ---------------------------------------------------
+
                     lab.slimes.push(nb);
                     if (isCurrent && !this.collection[nb.strain.id] && !this.pendingDiscoveryQueue.find(x=>x.id===nb.strain.id)) {
                         this.pendingDiscoveryQueue.push(nb.strain);
