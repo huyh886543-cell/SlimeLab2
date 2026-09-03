@@ -709,9 +709,42 @@ checkLoginStatus() {
         try{ const sd=localStorage.getItem(this.getSaveKey()); if(!sd)return; const d=JSON.parse(sd); this.currentLabId=Number(d.currentLabId)||0; this.sound.switchBGM(this.currentLabId); this.activeTheme=d.activeTheme||'default'; this.ownedThemes=d.ownedThemes||['default']; this.ownedSkins=d.ownedSkins||['skin_0']; this.ownedAuras=d.ownedAuras||['aura_0']; this.diamonds=Number(d.diamonds)||0; this.updateWorldDimensions(); this.camera.x=this.worldWidth/2; this.camera.y=this.worldHeight/2; this.clampCamera(); let gm=d.labsData?.[0]?.money!==undefined?Number(d.labsData[0].money)||1e5:1e5; if(d.labsData){ for(let i=0;i<10;i++){ if(d.labsData[i]){ const ld=d.labsData[i]; this.labsData[i].money=gm; this.labsData[i].maxCapacity=Number(ld.maxCapacity)||20; this.labsData[i].unlocked=ld.unlocked??(i===0); this.labsData[i].isPaused=!!ld.isPaused; this.labsData[i].collection=ld.collection||{}; this.labsData[i].slimes=(ld.slimes||[]).map(s=>{ const sl=new Slime(s.x,s.y,i,s.strainId,s.level,s.replicateTimer); sl.locked=!!s.locked; sl.isPaused=!!s.isPaused; sl.customSkin=s.customSkin||'skin_0'; sl.customAura=s.customAura||'none'; return sl; }); if(this.labsData[i].slimes.length===0&&i===0)this.labsData[i].slimes=[new Slime(this.worldWidth/2,this.worldHeight/2,0,0,1)]; } } } }catch(e){}
     }
    saveGame() {
-        if(this.isDeleted)return; try{ const el={}; for(let i=0;i<10;i++){ el[i]={money:this.labsData[i].money,maxCapacity:this.labsData[i].maxCapacity,unlocked:this.labsData[i].unlocked,isPaused:this.labsData[i].isPaused,collection:this.labsData[i].collection,slimes:this.labsData[i].slimes.map(s=>({x:s.x,y:s.y,strainId:s.strain.id,level:s.level,replicateTimer:s.replicateTimer,locked:s.locked,isPaused:s.isPaused,customSkin:s.customSkin,customAura:s.customAura}))}; } 
-        // Đã thêm lastUpdated: Date.now() vào localStorage để so sánh
-        localStorage.setItem(this.getSaveKey(),JSON.stringify({currentLabId:this.currentLabId,activeTheme:this.activeTheme,ownedThemes:this.ownedThemes,ownedSkins:this.ownedSkins,ownedAuras:this.ownedAuras,diamonds:this.diamonds,labsData:el, lastUpdated: Date.now()})); this.syncFirebase(); }catch(e){}
+        if(this.isDeleted) return; 
+        try { 
+            const el = {}; 
+            for(let i=0; i<10; i++){ 
+                const lab = this.labsData[i];
+                if (lab) {
+                    el[i] = {
+                        maxCapacity: lab.maxCapacity || 10,
+                        unlocked: lab.unlocked || false,
+                        isPaused: lab.isPaused || false,
+                        collection: lab.collection || {},
+                        slimes: (lab.slimes || []).map(s => ({
+                            x: s.x, y: s.y, strainId: s.strain.id, level: s.level, 
+                            replicateTimer: s.replicateTimer, locked: s.locked, 
+                            isPaused: s.isPaused, customSkin: s.customSkin, customAura: s.customAura
+                        }))
+                    }; 
+                }
+            } 
+            
+            const saveData = {
+                money: this.money || 0, // Lưu tiền tổng
+                diamonds: this.diamonds || 0, // Lưu kim cương
+                currentLabId: this.currentLabId || 0,
+                collection: this.collection || {}, // Lưu sách bộ sưu tập
+                activeTheme: this.activeTheme || 0,
+                ownedThemes: this.ownedThemes || [0],
+                ownedSkins: this.ownedSkins || [],
+                ownedAuras: this.ownedAuras || [],
+                labsData: el, // Lưu toàn bộ Slime
+                lastUpdated: Date.now() // Mốc thời gian để so sánh với Đám mây
+            };
+            
+            localStorage.setItem(this.getSaveKey(), JSON.stringify(saveData)); 
+            this.syncFirebase(); 
+        } catch(e) { console.error("Lỗi lưu game:", e); }
     }
     gatherAllPets() { const cx=this.worldWidth/2, cy=this.worldHeight/2; this.slimes.forEach(s=>{s.x=cx+(Math.random()-0.5)*150; s.y=cy+(Math.random()-0.5)*150;}); if(this.shockwaves)this.shockwaves.push(new Shockwave(cx,cy,'#00ffc8')); this.sound.playCoin(); }
 
