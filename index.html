@@ -101,6 +101,19 @@
         </div>
         <div id="game-wrapper"><canvas id="gameCanvas" width="1400" height="720"></canvas></div>
     </div>
+    <div id="dice-overlay" style="display: none; position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); justify-content: center; align-items: center; z-index: 100000; backdrop-filter: blur(4px);">
+        <div style="background-color: #111a28; border: 2px solid #e056fd; border-radius: 12px; width: min(320px, 85vw); padding: 25px 20px; text-align: center; box-shadow: 0 0 30px rgba(224, 86, 253, 0.3);">
+            <h3 style="color: #e056fd; font-size: 20px; font-weight: bold; margin-bottom: 10px;">🎲 XÚC XẮC NHÂN PHẨM</h3>
+            <p id="dice-target-name" style="color: #7890a8; font-size: 13px; margin-bottom: 20px;"></p>
+            <div id="dice-face" style="font-size: 80px; line-height: 1; margin-bottom: 20px; text-shadow: 0 0 20px rgba(224,86,253,0.8); transition: transform 0.1s;">❓</div>
+            <p style="color: #00ffc8; font-size: 12px; margin-bottom: 15px; line-height: 1.4;">
+                1-3: Bạn đền 10%-30% tài sản cho họ<br>
+                4-6: Cướp 15%-35% tài sản của họ
+            </p>
+            <button id="dice-roll-btn" style="width: 100%; padding: 12px; background-color: #5a2d82; color: #fff; border: 1px solid #be6eff; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; margin-bottom: 10px;">Gieo Xúc Xắc!</button>
+            <button id="dice-close-btn" style="width: 100%; padding: 10px; background-color: #283c50; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('dice-overlay').style.display='none'">Thoát</button>
+        </div>
+    </div>
 
 <script>
 const CANVAS_W = 1400; const CANVAS_H = 720;
@@ -190,7 +203,8 @@ for (let lab = 1; lab < 10; lab++) {
         })),
         ...Array.from({ length: 6 }, (_, i) => ({ 
             id: lab * 1000 + i, name: `⚡ Thần Linh Hệ ${lab} Cấp ${i + 1}`, tier: 11 + i, 
-            color: '#00ffc8', 
+            // Cấp màu sắc rực rỡ riêng biệt dựa theo Lab và Cấp bậc
+            color: `hsl(${(i * 50 + lab * 60) % 360}, 100%, 65%)`, 
             valMult: 50000000.0 * Math.pow(3.0, i) * lab, 
             mutRate: 0.000005 / (i + 1), mood: "divine", isGod: true 
         }))
@@ -475,11 +489,26 @@ class Game {
                     const l=document.getElementById("rank-list"); if(!l)return; const d=s.val(); l.innerHTML=""; 
                     if(!d){ if(this.playerName&&!this.isDeleted) l.innerHTML=`<div class="rank-item current-user"><div class="rank-name">1. ${this.playerName}</div><div class="rank-val val-diamond">${this.diamonds>0?`💎 ${this.diamonds}`:formatMoney(this.money)}</div></div>`; return; }
                     const p=Object.keys(d).filter(k=>d[k]&&d[k].name&&!d[k].deleted).map(k=>({id:k,name:d[k].name,money:Number(d[k].money)||0,diamonds:Number(d[k].diamonds)||0})).sort((a,b)=>b.diamonds-a.diamonds||b.money-a.money);
+                    
                     p.slice(0,20).forEach((e,i)=>{ 
                         const div=document.createElement("div"); div.className="rank-item"+(e.id===this.playerId?" current-user":""); 
                         div.innerHTML=`<div class="rank-name">${i+1}. ${e.name}</div><div class="rank-val ${e.diamonds>0?'val-diamond':'val-money'}">${e.diamonds>0?`💎 ${e.diamonds}`:formatMoney(e.money)}</div>`; 
-                        div.onclick = () => {
-                            if(e.id !== this.playerId) {
+                        
+                        // --- CƠ CHẾ BẤM GIỮ ĐỂ TRỘM (0.5s) ---
+                        let pressTimer = null;
+                        div.onpointerdown = (ev) => {
+                            if(e.id === this.playerId) return;
+                            pressTimer = setTimeout(() => {
+                                pressTimer = null;
+                                this.openDiceModal(e); // Bấm giữ lâu sẽ mở Bảng Xúc Xắc
+                            }, 500); 
+                        };
+                        
+                        const cancelPress = () => {
+                            if (pressTimer) {
+                                clearTimeout(pressTimer);
+                                pressTimer = null;
+                                // Click bình thường nhả tay sớm -> Mở bảng Tặng quà
                                 this.confirmModalTitle = `🎁 Gửi tặng Slime`;
                                 this.confirmModalSubtitle = `Bạn muốn chọn 1 Slime của mình tặng cho ${e.name}?`;
                                 this.pendingConfirmButtons = [
@@ -488,10 +517,15 @@ class Game {
                                 ];
                             }
                         };
+                        div.onpointerup = cancelPress;
+                        div.onpointerleave = cancelPress;
+                        // -------------------------------------
+
                         l.appendChild(div); 
                     });
                 });
                 
+                // Nhận quà tặng
                 this.db.ref('gifts/' + this.playerId).on('child_added', snap => {
                     const g = snap.val();
                     if (g && g.strainId !== undefined && g.level) {
@@ -505,18 +539,104 @@ class Game {
                             targetLab.collection[g.strainId] = true; 
                             showCustomAlert(`🎁 [${g.fromName}] vừa tặng bạn: [${petName}] Lv.${g.level}! Đã vào Lab ${g.labId+1}`, "success");
                         } else {
-                            this.money += 1000000;
-                            showCustomAlert(`🎁 [${g.fromName}] tặng bạn [${petName}] nhưng Lab đầy! Đã quy đổi thành 1 Triệu VNĐ.`, "info");
+                            this.money += 1000000000;
+                            showCustomAlert(`🎁 [${g.fromName}] tặng bạn [${petName}] nhưng Lab đầy! Đã quy đổi thành 1 Tỷ VNĐ.`, "info");
                         }
                     }
                     snap.ref.remove(); 
                 });
+
+                // Nhận thông báo bị cướp / được nộp phạt từ xúc xắc
+                this.db.ref('transactions/' + this.playerId).on('child_added', snap => {
+                    const tx = snap.val();
+                    if (tx && tx.amount) {
+                        if (tx.action === 'receive') {
+                            this.money += tx.amount;
+                            showCustomAlert(`🎉 [${tx.fromName}] vừa đổ xúc xắc xui xẻo và phải nộp phạt cho bạn: +${formatMoney(tx.amount)}`, "success");
+                        } else if (tx.action === 'stolen') {
+                            this.money = Math.max(0, this.money - tx.amount);
+                            showCustomAlert(`🚨 [${tx.fromName}] vừa CƯỚP MẤT của bạn: -${formatMoney(tx.amount)}`, "error");
+                        }
+                        this.saveGame();
+                    }
+                    snap.ref.remove();
+                });
             }
         } catch(e) {}
     }
+
+    // ============================================
+    // CÁC HÀM XỬ LÝ XÚC XẮC NHÂN PHẨM
+    // ============================================
+    openDiceModal(target) {
+        document.getElementById("dice-overlay").style.display = "flex";
+        document.getElementById("dice-target-name").innerHTML = `Mục tiêu: <b>${target.name}</b><br>Tài sản: ${formatMoney(target.money)}`;
+        const face = document.getElementById("dice-face");
+        face.innerText = "🎲"; face.style.transform = "rotate(0deg)";
+        
+        const rollBtn = document.getElementById("dice-roll-btn");
+        rollBtn.disabled = false; rollBtn.style.opacity = 1; rollBtn.innerText = "Gieo Xúc Xắc!";
+        
+        rollBtn.onclick = () => {
+            rollBtn.disabled = true; rollBtn.style.opacity = 0.5; rollBtn.innerText = "Đang gieo...";
+            this.sound.playMutate(); 
+            let rolls = 0;
+            const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+            
+            // Hiệu ứng chuyển mặt xúc xắc
+            const interval = setInterval(() => {
+                face.innerText = faces[Math.floor(Math.random() * 6)];
+                face.style.transform = `rotate(${(Math.random() - 0.5) * 60}deg) scale(${1 + Math.random()*0.2})`;
+                rolls++;
+                if (rolls > 20) {
+                    clearInterval(interval);
+                    const finalResult = Math.floor(Math.random() * 6) + 1; // 1 đến 6
+                    face.innerText = faces[finalResult - 1];
+                    face.style.transform = "rotate(0deg) scale(1.2)";
+                    this.sound.playCoin();
+                    setTimeout(() => this.processDiceResult(finalResult, target), 600);
+                }
+            }, 80);
+        };
+    }
+
+    processDiceResult(roll, target) {
+        let amount = 0; let type = ''; let msg = '';
+        
+        if (roll === 1) { amount = this.money * 0.1; type = 'lose'; msg = `Đổ ra 1: Đen đủi! Bạn phải nộp 10% tài sản cho ${target.name}.`; }
+        else if (roll === 2) { amount = this.money * 0.2; type = 'lose'; msg = `Đổ ra 2: Quá xui! Bạn phải nộp 20% tài sản cho ${target.name}.`; }
+        else if (roll === 3) { amount = this.money * 0.3; type = 'lose'; msg = `Đổ ra 3: Trắng tay! Bạn phải nộp 30% tài sản cho ${target.name}.`; }
+        else if (roll === 4) { amount = target.money * 0.15; type = 'win'; msg = `Đổ ra 4: Khá may! Bạn cướp được 15% tài sản của ${target.name}.`; }
+        else if (roll === 5) { amount = target.money * 0.25; type = 'win'; msg = `Đổ ra 5: Ngon ăn! Bạn cướp được 25% tài sản của ${target.name}.`; }
+        else if (roll === 6) { amount = target.money * 0.35; type = 'win'; msg = `Đổ ra 6: Trúng độc đắc! Bạn cướp được 35% tài sản của ${target.name}.`; }
+        
+        amount = Math.floor(amount);
+        if (amount <= 0) {
+            showCustomAlert("Đối phương (hoặc bạn) không có đồng nào để thực hiện giao dịch!", "info");
+        } else {
+            if (type === 'lose') {
+                this.money = Math.max(0, this.money - amount);
+                this.sendTransaction(target.id, 'receive', amount, this.playerName);
+                showCustomAlert(`${msg}<br><br>Bạn bị trừ: -${formatMoney(amount)}`, "error");
+            } else {
+                this.money += amount;
+                this.sendTransaction(target.id, 'stolen', amount, this.playerName);
+                showCustomAlert(`${msg}<br><br>Bạn nhận được: +${formatMoney(amount)}`, "success");
+            }
+            this.saveGame();
+        }
+        document.getElementById("dice-overlay").style.display = "none";
+    }
+
+    sendTransaction(targetId, action, amount, fromName) {
+        if (!this.db) return;
+        this.db.ref('transactions/' + targetId).push({
+            action: action, amount: amount, fromName: fromName, timestamp: Date.now()
+        });
+    }
     syncFirebase() { if(this.isDeleted||!this.leaderboardRef||!this.playerName)return; try{ this.leaderboardRef.child(this.playerId).set({name:this.playerName,money:this.money,diamonds:this.diamonds,updatedAt:Date.now()}); }catch(e){} }
     getSlotPrice() { return Math.floor(1e9*(1+this.currentLabId*0.5)*Math.pow(1.2,Math.max(0,this.maxCapacity-20))); }
-    checkLoginStatus() {
+checkLoginStatus() {
         const modal = document.getElementById("welcome-modal"); 
         const sG = () => { if(!this.hasStarted){this.hasStarted=true; this.sound.init(this.currentLabId); this.loadGame(); this.syncFirebase(); this.start();} };
         
@@ -542,10 +662,22 @@ class Game {
                     localStorage.setItem("slimeLab_playerName", this.playerName); 
                     localStorage.setItem("slime_player_id", this.playerId); 
                     
-                    // Kéo dữ liệu từ Cloud (nếu có) trước khi vào game
+                    // Kéo dữ liệu từ Cloud và SO SÁNH THỜI GIAN trước khi đè
                     this.db.ref('gameSaves/' + u.uid).once('value').then(snap => {
                         if (snap.exists() && snap.val().saveData) {
-                            localStorage.setItem(this.getSaveKey(), snap.val().saveData);
+                            const cloudData = snap.val();
+                            const localDataStr = localStorage.getItem(this.getSaveKey());
+                            let localTime = 0;
+                            
+                            // Đọc mốc thời gian của file lưu trên máy
+                            if (localDataStr) {
+                                try { localTime = JSON.parse(localDataStr).lastUpdated || 0; } catch(e){}
+                            }
+                            
+                            // NẾU Đám mây MỚI HƠN máy nội bộ -> Tải Đám mây đè xuống
+                            if ((cloudData.lastUpdated || 0) > localTime) {
+                                localStorage.setItem(this.getSaveKey(), cloudData.saveData);
+                            }
                         }
                         modal.style.display = "none"; 
                         sG(); 
@@ -576,8 +708,10 @@ class Game {
     loadGame() {
         try{ const sd=localStorage.getItem(this.getSaveKey()); if(!sd)return; const d=JSON.parse(sd); this.currentLabId=Number(d.currentLabId)||0; this.sound.switchBGM(this.currentLabId); this.activeTheme=d.activeTheme||'default'; this.ownedThemes=d.ownedThemes||['default']; this.ownedSkins=d.ownedSkins||['skin_0']; this.ownedAuras=d.ownedAuras||['aura_0']; this.diamonds=Number(d.diamonds)||0; this.updateWorldDimensions(); this.camera.x=this.worldWidth/2; this.camera.y=this.worldHeight/2; this.clampCamera(); let gm=d.labsData?.[0]?.money!==undefined?Number(d.labsData[0].money)||1e5:1e5; if(d.labsData){ for(let i=0;i<10;i++){ if(d.labsData[i]){ const ld=d.labsData[i]; this.labsData[i].money=gm; this.labsData[i].maxCapacity=Number(ld.maxCapacity)||20; this.labsData[i].unlocked=ld.unlocked??(i===0); this.labsData[i].isPaused=!!ld.isPaused; this.labsData[i].collection=ld.collection||{}; this.labsData[i].slimes=(ld.slimes||[]).map(s=>{ const sl=new Slime(s.x,s.y,i,s.strainId,s.level,s.replicateTimer); sl.locked=!!s.locked; sl.isPaused=!!s.isPaused; sl.customSkin=s.customSkin||'skin_0'; sl.customAura=s.customAura||'none'; return sl; }); if(this.labsData[i].slimes.length===0&&i===0)this.labsData[i].slimes=[new Slime(this.worldWidth/2,this.worldHeight/2,0,0,1)]; } } } }catch(e){}
     }
-    saveGame() {
-        if(this.isDeleted)return; try{ const el={}; for(let i=0;i<10;i++){ el[i]={money:this.labsData[i].money,maxCapacity:this.labsData[i].maxCapacity,unlocked:this.labsData[i].unlocked,isPaused:this.labsData[i].isPaused,collection:this.labsData[i].collection,slimes:this.labsData[i].slimes.map(s=>({x:s.x,y:s.y,strainId:s.strain.id,level:s.level,replicateTimer:s.replicateTimer,locked:s.locked,isPaused:s.isPaused,customSkin:s.customSkin,customAura:s.customAura}))}; } localStorage.setItem(this.getSaveKey(),JSON.stringify({currentLabId:this.currentLabId,activeTheme:this.activeTheme,ownedThemes:this.ownedThemes,ownedSkins:this.ownedSkins,ownedAuras:this.ownedAuras,diamonds:this.diamonds,labsData:el})); this.syncFirebase(); }catch(e){}
+   saveGame() {
+        if(this.isDeleted)return; try{ const el={}; for(let i=0;i<10;i++){ el[i]={money:this.labsData[i].money,maxCapacity:this.labsData[i].maxCapacity,unlocked:this.labsData[i].unlocked,isPaused:this.labsData[i].isPaused,collection:this.labsData[i].collection,slimes:this.labsData[i].slimes.map(s=>({x:s.x,y:s.y,strainId:s.strain.id,level:s.level,replicateTimer:s.replicateTimer,locked:s.locked,isPaused:s.isPaused,customSkin:s.customSkin,customAura:s.customAura}))}; } 
+        // Đã thêm lastUpdated: Date.now() vào localStorage để so sánh
+        localStorage.setItem(this.getSaveKey(),JSON.stringify({currentLabId:this.currentLabId,activeTheme:this.activeTheme,ownedThemes:this.ownedThemes,ownedSkins:this.ownedSkins,ownedAuras:this.ownedAuras,diamonds:this.diamonds,labsData:el, lastUpdated: Date.now()})); this.syncFirebase(); }catch(e){}
     }
     gatherAllPets() { const cx=this.worldWidth/2, cy=this.worldHeight/2; this.slimes.forEach(s=>{s.x=cx+(Math.random()-0.5)*150; s.y=cy+(Math.random()-0.5)*150;}); if(this.shockwaves)this.shockwaves.push(new Shockwave(cx,cy,'#00ffc8')); this.sound.playCoin(); }
 
@@ -733,24 +867,65 @@ class Game {
             if(this.isInside(x,y,{x:mx+30,y:my+mh-50,w:150,h:40})){ if (this.bookPage > 0) this.bookPage--; return true;}
             if(this.isInside(x,y,{x:mx+mw-180,y:my+mh-50,w:150,h:40})){ if (this.bookPage < tp - 1) this.bookPage++; return true;}
             
-            // TÍNH NĂNG ẨN: Nhấn 10 lần vào ô Pet Cấp Thần để triệu hồi
+            // TÍNH NĂNG ẨN: Combo triệu hồi Pet Thần (GIỚI HẠN 3 CON CHO MỖI CHỦNG)
             sts.slice(this.bookPage * 8, this.bookPage * 8 + 8).forEach((s, i) => {
                 const cx = mx + 25 + (i % 4) * 320, cy = my + 55 + Math.floor(i / 4) * 265;
                 if (this.isInside(x, y, {x: cx, y: cy, w: 300, h: 250})) {
                     if (s.isGod) {
                         if (!this.godClicks) this.godClicks = {};
-                        this.godClicks[s.id] = (this.godClicks[s.id] || 0) + 1;
                         
-                        if (this.godClicks[s.id] >= 10) {
-                            this.godClicks[s.id] = 0;
-                            if (this.slimes.length < this.maxCapacity) {
-                                this.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, this.currentLabId, s.id, 1));
-                                this.sound.playMutate(); 
-                                this.saveGame();
-                                showCustomAlert(`✨ [MÃ GIAN LẬN] Đã triệu hồi thành công ${s.name}!`, "success");
-                            } else {
-                                showCustomAlert(`Bể đã đầy, không thể triệu hồi ${s.name}!`, "error");
+                        const godList = sts.filter(g => g.isGod);
+                        const godIndex = godList.findIndex(g => g.id === s.id);
+                        
+                        if (godIndex === 0) {
+                            // --- KIỂM TRA BỘ ĐẾM THEO TỪNG CHỦNG ---
+                            const cheatKey = `slime_cheat_limit_strains_${this.playerId}`;
+                            let usedCheats = {};
+                            try { usedCheats = JSON.parse(localStorage.getItem(cheatKey)) || {}; } catch(e){}
+                            
+                            let comboTarget = null;
+                            for (let j = godList.length - 1; j > 0; j--) {
+                                if (this.godClicks[godList[j].id] >= j) { 
+                                    comboTarget = godList[j]; 
+                                    break; 
+                                }
                             }
+                            
+                            if (comboTarget) {
+                                let count = usedCheats[comboTarget.id] || 0;
+                                if (count >= 3) {
+                                    showCustomAlert(`⛔ Bạn đã dùng hết giới hạn 3 lần gọi cho chủng [${comboTarget.name}]!`, "error");
+                                    this.godClicks = {}; return;
+                                }
+                                if (this.slimes.length < this.maxCapacity) {
+                                    this.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, this.currentLabId, comboTarget.id, 1));
+                                    usedCheats[comboTarget.id] = count + 1; // Lưu lại số lần đã gọi chủng này
+                                    localStorage.setItem(cheatKey, JSON.stringify(usedCheats));
+                                    this.sound.playMutate(); this.saveGame();
+                                    showCustomAlert(`✨ [COMBO ẨN] Triệu hồi ${comboTarget.name}! (Còn ${2 - count} lần cho chủng này)`, "success");
+                                } else showCustomAlert(`Bể đã đầy, không thể triệu hồi!`, "error");
+                                this.godClicks = {}; 
+                            } else {
+                                this.godClicks[s.id] = (this.godClicks[s.id] || 0) + 1;
+                                if (this.godClicks[s.id] >= 10) {
+                                    let count = usedCheats[s.id] || 0;
+                                    if (count >= 3) {
+                                        showCustomAlert(`⛔ Bạn đã dùng hết giới hạn 3 lần gọi cho chủng [${s.name}]!`, "error");
+                                        this.godClicks = {}; return;
+                                    }
+                                    if (this.slimes.length < this.maxCapacity) {
+                                        this.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, this.currentLabId, s.id, 1));
+                                        usedCheats[s.id] = count + 1; // Lưu lại số lần đã gọi chủng này
+                                        localStorage.setItem(cheatKey, JSON.stringify(usedCheats));
+                                        this.sound.playMutate(); this.saveGame();
+                                        showCustomAlert(`✨ [MÃ GIAN LẬN] Triệu hồi ${s.name}! (Còn ${2 - count} lần cho chủng này)`, "success");
+                                    } else showCustomAlert(`Bể đã đầy, không thể triệu hồi!`, "error");
+                                    this.godClicks = {};
+                                } else this.sound.playPop(); 
+                            }
+                        } else {
+                            this.godClicks[s.id] = (this.godClicks[s.id] || 0) + 1;
+                            this.sound.playPop(); 
                         }
                     }
                 }
@@ -896,11 +1071,11 @@ update(dt) {
                     // --- GIỚI HẠN 4 CON & TỰ THĂNG CẤP (TỶ LỆ 1%) ---
                     if (nb.strain.isGod) {
                         const godCount = lab.slimes.filter(x => x.strain.id === nb.strain.id).length;
-                        if (godCount >= 4) {
+                        if (godCount >= 5) {
                             // Phải đảm bảo con mẹ đúng là chủng Thần đó (không tính trường hợp pet thường đột biến ra)
                             if (parent.strain.id === nb.strain.id) {
-                                // Tỷ lệ chính xác 1% (0.01)
-                                if (Math.random() < 0.01) {
+                                // Tỷ lệ chính xác 5% (0.05)
+                                if (Math.random() < 0.05) {
                                     parent.level += 1;
                                     parent.radius = 32 + parent.level * 3.5; 
                                     
