@@ -6,7 +6,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>🧪 Microbe & Slime Lab Simulator</title>
-    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#06090f">
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -41,8 +40,10 @@
         .rank-val { font-weight: bold; font-size: 11px; text-align: right;}
         .val-diamond { color: #e056fd; text-shadow: 0 0 5px rgba(224,86,253,0.5); }
         .val-money { color: #00ffc8; }
+        
         #game-wrapper { flex: 1; height: 100%; display: flex; position: relative; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; background-color: #0c1018; border-radius: 8px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.9); border: 1.5px solid #1c2838; }
+        
         #welcome-modal, #custom-input-overlay, #html-alert-overlay { position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); display: none; justify-content: center; align-items: center; z-index: 10000; }
         #custom-input-overlay { z-index: 20000; } #html-alert-overlay { z-index: 999999; backdrop-filter: blur(4px); }
         #welcome-panel, #custom-input-box, #html-alert-box { background-color: #111a28; border: 1.5px solid #00ffc8; border-radius: 10px; width: min(360px, 85vw); padding: 22px 18px; text-align: center; box-shadow: 0 0 25px rgba(0, 255, 200, 0.2); }
@@ -99,8 +100,24 @@
             <div id="rank-server">ONLINE SERVER 1</div>
             <div id="rank-list"><div style="text-align:center; padding:10px; font-size:10.5px; color:#6a829a;">Đang kết nối...</div></div>
         </div>
-        <div id="game-wrapper"><canvas id="gameCanvas" width="1400" height="720"></canvas></div>
+        
+        <div id="game-wrapper">
+            <canvas id="gameCanvas" width="1400" height="720"></canvas>
+            
+            <!-- Nút Ẩn/Hiện Bảng Quản Lý -->
+            <button onclick="const m = document.getElementById('strain-manager'); m.style.display = m.style.display === 'none' ? 'flex' : 'none';" style="position: absolute; top: 42px; left: 7px; z-index: 101; background: #1e3246; color: #00ffc8; border: 1.5px solid #3498db; padding: 6px 12px; border-radius: 6px; font-size: 9px; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); transition: 0.2s;">
+                📊 Bảng Quản Lý
+            </button>
+
+            <!-- Bảng danh sách -->
+            <div id="strain-manager" style="display: none; position: absolute; top: 70px; left: 22px; width: 230px; max-height: 45%; background: rgba(17, 26, 40, 0.85); border: 1px solid #3498db; border-radius: 8px; padding: 8px; flex-direction: column; z-index: 100; backdrop-filter: blur(4px);">
+                <h4 style="color: #00ffc8; margin: 0 0 8px 0; font-size: 12px; text-align: center;">DANH SÁCH CHỦNG LOẠI</h4>
+                <div id="strain-list" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;"></div>
+                <button onclick="if(window.gameInstance) window.gameInstance.sellAllNonGods()" style="background: #e74c3c; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold;">🗑️ Bán Tất Cả (Trừ Thần/Khóa)</button>
+            </div>
+        </div>
     </div>
+
     <div id="dice-overlay" style="display: none; position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); justify-content: center; align-items: center; z-index: 100000; backdrop-filter: blur(4px);">
         <div style="background-color: #111a28; border: 2px solid #e056fd; border-radius: 12px; width: min(320px, 85vw); padding: 25px 20px; text-align: center; box-shadow: 0 0 30px rgba(224, 86, 253, 0.3);">
             <h3 style="color: #e056fd; font-size: 20px; font-weight: bold; margin-bottom: 10px;">🎲 XÚC XẮC NHÂN PHẨM</h3>
@@ -112,6 +129,16 @@
             </p>
             <button id="dice-roll-btn" style="width: 100%; padding: 12px; background-color: #5a2d82; color: #fff; border: 1px solid #be6eff; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; margin-bottom: 10px;">Gieo Xúc Xắc!</button>
             <button id="dice-close-btn" style="width: 100%; padding: 10px; background-color: #283c50; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('dice-overlay').style.display='none'">Thoát</button>
+        </div>
+    </div>
+
+    <!-- Popup Lựa chọn Bán -->
+    <div id="sell-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000;">
+        <div style="background: #1a2533; border: 2px solid #f1c40f; padding: 20px; border-radius: 10px; text-align: center; width: 320px;">
+            <h3 id="sell-modal-title" style="color: #f1c40f; margin-top: 0; font-size: 18px;">Tùy chọn Bán</h3>
+            <button id="btn-sell-all" style="width: 100%; margin-bottom: 10px; padding: 12px; background: #c0392b; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Bán Tất Cả</button>
+            <button id="btn-sell-keep-highest" style="width: 100%; margin-bottom: 15px; padding: 12px; background: #2980b9; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Bán Tất Cả (Giữ 1 Pet Lv Cao Nhất)</button>
+            <button onclick="document.getElementById('sell-modal').style.display='none'" style="width: 100%; padding: 10px; background: #7f8c8d; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Hủy</button>
         </div>
     </div>
 
@@ -203,7 +230,6 @@ for (let lab = 1; lab < 10; lab++) {
         })),
         ...Array.from({ length: 6 }, (_, i) => ({ 
             id: lab * 1000 + i, name: `⚡ Thần Linh Hệ ${lab} Cấp ${i + 1}`, tier: 11 + i, 
-            // Cấp màu sắc rực rỡ riêng biệt dựa theo Lab và Cấp bậc
             color: `hsl(${(i * 50 + lab * 60) % 360}, 100%, 65%)`, 
             valMult: 50000000.0 * Math.pow(3.0, i) * lab, 
             mutRate: 0.000005 / (i + 1), mood: "divine", isGod: true 
@@ -349,73 +375,12 @@ class Slime {
     }
     draw(ctx) {
         ctx.save(); const r=this.radius; const time=Date.now()*0.003;
-        
         if(this.strain.isGod) { 
-            ctx.save(); ctx.translate(this.x, this.y);
-            const tier = this.strain.tier;
-            
-            if (tier === 11) {
-                const pulse = Math.sin(time * 3) * 0.2 + 1;
-                for(let i=0; i<3; i++) {
-                    ctx.save();
-                    ctx.rotate(time * (i%2===0?1:-1) + i * Math.PI/1.5);
-                    ctx.scale(1, 0.3);
-                    ctx.shadowBlur = 10; ctx.shadowColor = this.strain.color;
-                    ctx.strokeStyle = this.strain.color; ctx.lineWidth = 3;
-                    ctx.beginPath(); ctx.arc(0, 0, r * 2.5 * pulse, 0, Math.PI*2); ctx.stroke();
-                    ctx.beginPath(); ctx.arc(Math.cos(time*4)*r*2.5*pulse, Math.sin(time*4)*r*2.5*pulse, 4.5, 0, Math.PI*2);
-                    ctx.fillStyle = '#fff'; ctx.fill();
-                    ctx.restore();
-                }
-            } 
-            else if (tier === 12) {
-                ctx.rotate(time * 0.5);
-                for (let i = 0; i < 2; i++) {
-                    ctx.rotate(Math.PI / 6 * i + (i%2===0?time:-time));
-                    ctx.shadowBlur = 15; ctx.shadowColor = this.strain.color;
-                    ctx.strokeStyle = i===0 ? this.strain.color : "#fff"; 
-                    ctx.lineWidth = i===0 ? 3 : 1.5;
-                    ctx.beginPath();
-                    for(let j=0; j<6; j++) {
-                        const a = j * Math.PI / 3;
-                        const dist = r * 2.2 + Math.sin(time * 4) * 8;
-                        if(j===0) ctx.moveTo(Math.cos(a)*dist, Math.sin(a)*dist);
-                        else ctx.lineTo(Math.cos(a)*dist, Math.sin(a)*dist);
-                    }
-                    ctx.closePath(); ctx.stroke();
-                }
-            } 
-            else if (tier === 13) {
-                ctx.shadowBlur = 20; ctx.shadowColor = this.strain.color;
-                ctx.strokeStyle = this.strain.color; ctx.lineWidth = 2.5;
-                ctx.beginPath();
-                const spikes = 14;
-                for (let i = 0; i < spikes; i++) {
-                    const a = i * Math.PI * 2 / spikes + time * 2;
-                    const spikeR = r * 1.5 + Math.random() * r * 1.8; 
-                    if(i===0) ctx.moveTo(Math.cos(a)*spikeR, Math.sin(a)*spikeR);
-                    else ctx.lineTo(Math.cos(a)*spikeR, Math.sin(a)*spikeR);
-                }
-                ctx.closePath(); ctx.stroke();
-                ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 1.5;
-                ctx.beginPath(); ctx.arc(0, 0, r * 2.8 + Math.random()*5, 0, Math.PI*2); ctx.stroke();
-            } 
-            else if (tier >= 14) {
-                const grad = ctx.createRadialGradient(0,0,r*0.5, 0,0,r*3.5);
-                grad.addColorStop(0, "rgba(0,0,0,0.9)");
-                grad.addColorStop(0.4, this.strain.color);
-                grad.addColorStop(1, "transparent");
-                ctx.beginPath(); ctx.arc(0,0, r*3.5, 0, Math.PI*2);
-                ctx.fillStyle = grad; ctx.fill();
-
-                ctx.rotate(-time * 0.4);
-                ctx.strokeStyle = "#ffd700"; ctx.lineWidth = 2;
-                ctx.shadowBlur = 10; ctx.shadowColor = "#ffd700";
-                for(let i=0; i<8; i++) {
-                    ctx.rotate(Math.PI / 4);
-                    ctx.beginPath(); ctx.ellipse(0, r*1.2, r*0.8, r*2.2, 0, 0, Math.PI*2); ctx.stroke();
-                }
-            }
+            ctx.save(); ctx.translate(this.x, this.y); const tier = this.strain.tier;
+            if (tier === 11) { const pulse = Math.sin(time * 3) * 0.2 + 1; for(let i=0; i<3; i++) { ctx.save(); ctx.rotate(time * (i%2===0?1:-1) + i * Math.PI/1.5); ctx.scale(1, 0.3); ctx.shadowBlur = 10; ctx.shadowColor = this.strain.color; ctx.strokeStyle = this.strain.color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, r * 2.5 * pulse, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(Math.cos(time*4)*r*2.5*pulse, Math.sin(time*4)*r*2.5*pulse, 4.5, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore(); } } 
+            else if (tier === 12) { ctx.rotate(time * 0.5); for (let i = 0; i < 2; i++) { ctx.rotate(Math.PI / 6 * i + (i%2===0?time:-time)); ctx.shadowBlur = 15; ctx.shadowColor = this.strain.color; ctx.strokeStyle = i===0 ? this.strain.color : "#fff"; ctx.lineWidth = i===0 ? 3 : 1.5; ctx.beginPath(); for(let j=0; j<6; j++) { const a = j * Math.PI / 3; const dist = r * 2.2 + Math.sin(time * 4) * 8; if(j===0) ctx.moveTo(Math.cos(a)*dist, Math.sin(a)*dist); else ctx.lineTo(Math.cos(a)*dist, Math.sin(a)*dist); } ctx.closePath(); ctx.stroke(); } } 
+            else if (tier === 13) { ctx.shadowBlur = 20; ctx.shadowColor = this.strain.color; ctx.strokeStyle = this.strain.color; ctx.lineWidth = 2.5; ctx.beginPath(); const spikes = 14; for (let i = 0; i < spikes; i++) { const a = i * Math.PI * 2 / spikes + time * 2; const spikeR = r * 1.5 + Math.random() * r * 1.8; if(i===0) ctx.moveTo(Math.cos(a)*spikeR, Math.sin(a)*spikeR); else ctx.lineTo(Math.cos(a)*spikeR, Math.sin(a)*spikeR); } ctx.closePath(); ctx.stroke(); ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, r * 2.8 + Math.random()*5, 0, Math.PI*2); ctx.stroke(); } 
+            else if (tier >= 14) { const grad = ctx.createRadialGradient(0,0,r*0.5, 0,0,r*3.5); grad.addColorStop(0, "rgba(0,0,0,0.9)"); grad.addColorStop(0.4, this.strain.color); grad.addColorStop(1, "transparent"); ctx.beginPath(); ctx.arc(0,0, r*3.5, 0, Math.PI*2); ctx.fillStyle = grad; ctx.fill(); ctx.rotate(-time * 0.4); ctx.strokeStyle = "#ffd700"; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = "#ffd700"; for(let i=0; i<8; i++) { ctx.rotate(Math.PI / 4); ctx.beginPath(); ctx.ellipse(0, r*1.2, r*0.8, r*2.2, 0, 0, Math.PI*2); ctx.stroke(); } }
             ctx.restore();
         }
 
@@ -426,20 +391,11 @@ class Slime {
         
         ctx.fillStyle=this.strain.color; 
         if(this.strain.isGod) { ctx.shadowBlur = 25; ctx.shadowColor = this.strain.color; }
-        ctx.fill(); ctx.shadowBlur = 0;
-        ctx.strokeStyle="rgba(0,0,0,0.28)"; ctx.lineWidth=3; ctx.stroke();
-        
+        ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle="rgba(0,0,0,0.28)"; ctx.lineWidth=3; ctx.stroke();
         ctx.fillStyle="rgba(255,255,255,0.4)"; ctx.beginPath(); ctx.ellipse(this.x-r*0.35,this.y-r*0.35,r*0.28,r*0.14,-Math.PI/4,0,Math.PI*2); ctx.fill();
         
-        if (this.strain.isGod) {
-            ctx.fillStyle="#fff"; ctx.shadowBlur = 12; ctx.shadowColor = "#fff";
-            ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.25,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.25,0,Math.PI*2); ctx.fill();
-            ctx.shadowBlur = 0; ctx.fillStyle=this.strain.color; 
-            ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.12,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.12,0,Math.PI*2); ctx.fill();
-        } else {
-            ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.2,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.2,0,Math.PI*2); ctx.fill();
-            ctx.fillStyle="#141414"; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.1,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.1,0,Math.PI*2); ctx.fill();
-        }
+        if (this.strain.isGod) { ctx.fillStyle="#fff"; ctx.shadowBlur = 12; ctx.shadowColor = "#fff"; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.25,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.25,0,Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; ctx.fillStyle=this.strain.color; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.12,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.12,0,Math.PI*2); ctx.fill(); } 
+        else { ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.2,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.2,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#141414"; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.1,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.1,0,Math.PI*2); ctx.fill(); }
         ctx.restore();
         
         if(this.customSkin&&this.customSkin!=='skin_0'){ const sId=parseInt(this.customSkin.replace('skin_',''))||1; new MasterpieceArtRenderer(sId,'weapons').draw(ctx,this.x,this.y,time,r,false); }
@@ -452,6 +408,7 @@ class Slime {
 
 class Game {
     constructor() {
+        this.lockedStrains = {};
         this.canvas = document.getElementById("gameCanvas"); this.ctx = this.canvas.getContext("2d");
         this.sound = new SoundEngine(); this.serverName = "SỐ 1"; this.currentLabId = 0;
         this.activeTheme = 'default'; this.ownedThemes = ['default']; this.gameSpeed = 1.0; 
@@ -493,22 +450,14 @@ class Game {
                     p.slice(0,20).forEach((e,i)=>{ 
                         const div=document.createElement("div"); div.className="rank-item"+(e.id===this.playerId?" current-user":""); 
                         div.innerHTML=`<div class="rank-name">${i+1}. ${e.name}</div><div class="rank-val ${e.diamonds>0?'val-diamond':'val-money'}">${e.diamonds>0?`💎 ${e.diamonds}`:formatMoney(e.money)}</div>`; 
-                        
-                        // --- CƠ CHẾ BẤM GIỮ ĐỂ TRỘM (0.5s) ---
                         let pressTimer = null;
                         div.onpointerdown = (ev) => {
                             if(e.id === this.playerId) return;
-                            pressTimer = setTimeout(() => {
-                                pressTimer = null;
-                                this.openDiceModal(e); // Bấm giữ lâu sẽ mở Bảng Xúc Xắc
-                            }, 500); 
+                            pressTimer = setTimeout(() => { pressTimer = null; this.openDiceModal(e); }, 500); 
                         };
-                        
                         const cancelPress = () => {
                             if (pressTimer) {
-                                clearTimeout(pressTimer);
-                                pressTimer = null;
-                                // Click bình thường nhả tay sớm -> Mở bảng Tặng quà
+                                clearTimeout(pressTimer); pressTimer = null;
                                 this.confirmModalTitle = `🎁 Gửi tặng Slime`;
                                 this.confirmModalSubtitle = `Bạn muốn chọn 1 Slime của mình tặng cho ${e.name}?`;
                                 this.pendingConfirmButtons = [
@@ -517,15 +466,11 @@ class Game {
                                 ];
                             }
                         };
-                        div.onpointerup = cancelPress;
-                        div.onpointerleave = cancelPress;
-                        // -------------------------------------
-
+                        div.onpointerup = cancelPress; div.onpointerleave = cancelPress;
                         l.appendChild(div); 
                     });
                 });
                 
-                // Nhận quà tặng
                 this.db.ref('gifts/' + this.playerId).on('child_added', snap => {
                     const g = snap.val();
                     if (g && g.strainId !== undefined && g.level) {
@@ -533,7 +478,6 @@ class Game {
                         const sts = LAB_STRAIN_SETS[g.labId] || LAB_STRAIN_SETS[0];
                         const petInfo = sts.find(s => s.id === g.strainId);
                         const petName = petInfo ? petInfo.name : "Slime Bí Ẩn";
-
                         if (targetLab.slimes.length < targetLab.maxCapacity) {
                             targetLab.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, g.labId, g.strainId, g.level));
                             targetLab.collection[g.strainId] = true; 
@@ -546,17 +490,11 @@ class Game {
                     snap.ref.remove(); 
                 });
 
-                // Nhận thông báo bị cướp / được nộp phạt từ xúc xắc
                 this.db.ref('transactions/' + this.playerId).on('child_added', snap => {
                     const tx = snap.val();
                     if (tx && tx.amount) {
-                        if (tx.action === 'receive') {
-                            this.money += tx.amount;
-                            showCustomAlert(`🎉 [${tx.fromName}] vừa đổ xúc xắc xui xẻo và phải nộp phạt cho bạn: +${formatMoney(tx.amount)}`, "success");
-                        } else if (tx.action === 'stolen') {
-                            this.money = Math.max(0, this.money - tx.amount);
-                            showCustomAlert(`🚨 [${tx.fromName}] vừa CƯỚP MẤT của bạn: -${formatMoney(tx.amount)}`, "error");
-                        }
+                        if (tx.action === 'receive') { this.money += tx.amount; showCustomAlert(`🎉 [${tx.fromName}] vừa đổ xúc xắc xui xẻo và phải nộp phạt cho bạn: +${formatMoney(tx.amount)}`, "success"); } 
+                        else if (tx.action === 'stolen') { this.money = Math.max(0, this.money - tx.amount); showCustomAlert(`🚨 [${tx.fromName}] vừa CƯỚP MẤT của bạn: -${formatMoney(tx.amount)}`, "error"); }
                         this.saveGame();
                     }
                     snap.ref.remove();
@@ -565,36 +503,25 @@ class Game {
         } catch(e) {}
     }
 
-    // ============================================
-    // CÁC HÀM XỬ LÝ XÚC XẮC NHÂN PHẨM
-    // ============================================
     openDiceModal(target) {
         document.getElementById("dice-overlay").style.display = "flex";
         document.getElementById("dice-target-name").innerHTML = `Mục tiêu: <b>${target.name}</b><br>Tài sản: ${formatMoney(target.money)}`;
         const face = document.getElementById("dice-face");
         face.innerText = "🎲"; face.style.transform = "rotate(0deg)";
-        
         const rollBtn = document.getElementById("dice-roll-btn");
         rollBtn.disabled = false; rollBtn.style.opacity = 1; rollBtn.innerText = "Gieo Xúc Xắc!";
-        
         rollBtn.onclick = () => {
             rollBtn.disabled = true; rollBtn.style.opacity = 0.5; rollBtn.innerText = "Đang gieo...";
-            this.sound.playMutate(); 
-            let rolls = 0;
-            const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
-            
-            // Hiệu ứng chuyển mặt xúc xắc
+            this.sound.playMutate(); let rolls = 0; const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
             const interval = setInterval(() => {
                 face.innerText = faces[Math.floor(Math.random() * 6)];
                 face.style.transform = `rotate(${(Math.random() - 0.5) * 60}deg) scale(${1 + Math.random()*0.2})`;
                 rolls++;
                 if (rolls > 20) {
                     clearInterval(interval);
-                    const finalResult = Math.floor(Math.random() * 6) + 1; // 1 đến 6
-                    face.innerText = faces[finalResult - 1];
-                    face.style.transform = "rotate(0deg) scale(1.2)";
-                    this.sound.playCoin();
-                    setTimeout(() => this.processDiceResult(finalResult, target), 600);
+                    const finalResult = Math.floor(Math.random() * 6) + 1; 
+                    face.innerText = faces[finalResult - 1]; face.style.transform = "rotate(0deg) scale(1.2)";
+                    this.sound.playCoin(); setTimeout(() => this.processDiceResult(finalResult, target), 600);
                 }
             }, 80);
         };
@@ -602,7 +529,6 @@ class Game {
 
     processDiceResult(roll, target) {
         let amount = 0; let type = ''; let msg = '';
-        
         if (roll === 1) { amount = this.money * 0.1; type = 'lose'; msg = `Đổ ra 1: Đen đủi! Bạn phải nộp 10% tài sản cho ${target.name}.`; }
         else if (roll === 2) { amount = this.money * 0.2; type = 'lose'; msg = `Đổ ra 2: Quá xui! Bạn phải nộp 20% tài sản cho ${target.name}.`; }
         else if (roll === 3) { amount = this.money * 0.3; type = 'lose'; msg = `Đổ ra 3: Trắng tay! Bạn phải nộp 30% tài sản cho ${target.name}.`; }
@@ -611,91 +537,42 @@ class Game {
         else if (roll === 6) { amount = target.money * 0.35; type = 'win'; msg = `Đổ ra 6: Trúng độc đắc! Bạn cướp được 35% tài sản của ${target.name}.`; }
         
         amount = Math.floor(amount);
-        if (amount <= 0) {
-            showCustomAlert("Đối phương (hoặc bạn) không có đồng nào để thực hiện giao dịch!", "info");
-        } else {
-            if (type === 'lose') {
-                this.money = Math.max(0, this.money - amount);
-                this.sendTransaction(target.id, 'receive', amount, this.playerName);
-                showCustomAlert(`${msg}<br><br>Bạn bị trừ: -${formatMoney(amount)}`, "error");
-            } else {
-                this.money += amount;
-                this.sendTransaction(target.id, 'stolen', amount, this.playerName);
-                showCustomAlert(`${msg}<br><br>Bạn nhận được: +${formatMoney(amount)}`, "success");
-            }
+        if (amount <= 0) { showCustomAlert("Đối phương (hoặc bạn) không có đồng nào để thực hiện giao dịch!", "info"); } else {
+            if (type === 'lose') { this.money = Math.max(0, this.money - amount); this.sendTransaction(target.id, 'receive', amount, this.playerName); showCustomAlert(`${msg}<br><br>Bạn bị trừ: -${formatMoney(amount)}`, "error"); } 
+            else { this.money += amount; this.sendTransaction(target.id, 'stolen', amount, this.playerName); showCustomAlert(`${msg}<br><br>Bạn nhận được: +${formatMoney(amount)}`, "success"); }
             this.saveGame();
         }
         document.getElementById("dice-overlay").style.display = "none";
     }
 
-    sendTransaction(targetId, action, amount, fromName) {
-        if (!this.db) return;
-        this.db.ref('transactions/' + targetId).push({
-            action: action, amount: amount, fromName: fromName, timestamp: Date.now()
-        });
-    }
+    sendTransaction(targetId, action, amount, fromName) { if (!this.db) return; this.db.ref('transactions/' + targetId).push({ action: action, amount: amount, fromName: fromName, timestamp: Date.now() }); }
     syncFirebase() { if(this.isDeleted||!this.leaderboardRef||!this.playerName)return; try{ this.leaderboardRef.child(this.playerId).set({name:this.playerName,money:this.money,diamonds:this.diamonds,updatedAt:Date.now()}); }catch(e){} }
     getSlotPrice() { return Math.floor(1e9*(1+this.currentLabId*0.5)*Math.pow(1.2,Math.max(0,this.maxCapacity-20))); }
-checkLoginStatus() {
+    
+    checkLoginStatus() {
         const modal = document.getElementById("welcome-modal"); 
         const sG = () => { if(!this.hasStarted){this.hasStarted=true; this.sound.init(this.currentLabId); this.loadGame(); this.syncFirebase(); this.start();} };
-        
         if (this.auth) { 
             this.auth.onAuthStateChanged(u => { 
                 if (u) { 
-                    const newPlayerId = "g_" + u.uid;
-                    const oldPlayerId = localStorage.getItem("slime_player_id");
-                    
-                    if (oldPlayerId && oldPlayerId.startsWith('usr_')) {
-                        const oldSaveKey = `slimeLab_Save_AllLabs_${this.serverName}_${oldPlayerId}`;
-                        const newSaveKey = `slimeLab_Save_AllLabs_${this.serverName}_${newPlayerId}`;
-                        const oldData = localStorage.getItem(oldSaveKey);
-                        if (oldData && !localStorage.getItem(newSaveKey)) {
-                            localStorage.setItem(newSaveKey, oldData); 
-                        }
-                    }
-
-                    const savedName = localStorage.getItem("slimeLab_playerName");
-                    this.playerName = savedName || u.displayName || u.email?.split('@')[0] || "Player"; 
-                    this.playerId = newPlayerId; 
-                    
-                    localStorage.setItem("slimeLab_playerName", this.playerName); 
-                    localStorage.setItem("slime_player_id", this.playerId); 
-                    
-                    // Kéo dữ liệu từ Cloud và SO SÁNH THỜI GIAN trước khi đè
+                    const newPlayerId = "g_" + u.uid; const oldPlayerId = localStorage.getItem("slime_player_id");
+                    if (oldPlayerId && oldPlayerId.startsWith('usr_')) { const oldSaveKey = `slimeLab_Save_AllLabs_${this.serverName}_${oldPlayerId}`; const newSaveKey = `slimeLab_Save_AllLabs_${this.serverName}_${newPlayerId}`; const oldData = localStorage.getItem(oldSaveKey); if (oldData && !localStorage.getItem(newSaveKey)) { localStorage.setItem(newSaveKey, oldData); } }
+                    const savedName = localStorage.getItem("slimeLab_playerName"); this.playerName = savedName || u.displayName || u.email?.split('@')[0] || "Player"; this.playerId = newPlayerId; 
+                    localStorage.setItem("slimeLab_playerName", this.playerName); localStorage.setItem("slime_player_id", this.playerId); 
                     this.db.ref('gameSaves/' + u.uid).once('value').then(snap => {
                         if (snap.exists() && snap.val().saveData) {
-                            const cloudData = snap.val();
-                            const localDataStr = localStorage.getItem(this.getSaveKey());
-                            let localTime = 0;
-                            
-                            // Đọc mốc thời gian của file lưu trên máy
-                            if (localDataStr) {
-                                try { localTime = JSON.parse(localDataStr).lastUpdated || 0; } catch(e){}
-                            }
-                            
-                            // NẾU Đám mây MỚI HƠN máy nội bộ -> Tải Đám mây đè xuống
-                            if ((cloudData.lastUpdated || 0) > localTime) {
-                                localStorage.setItem(this.getSaveKey(), cloudData.saveData);
-                            }
+                            const cloudData = snap.val(); const localDataStr = localStorage.getItem(this.getSaveKey()); let localTime = 0;
+                            if (localDataStr) { try { localTime = JSON.parse(localDataStr).lastUpdated || 0; } catch(e){} }
+                            if ((cloudData.lastUpdated || 0) > localTime) { localStorage.setItem(this.getSaveKey(), cloudData.saveData); }
                         }
-                        modal.style.display = "none"; 
-                        sG(); 
-                    }).catch(() => {
-                        modal.style.display = "none"; 
-                        sG(); 
-                    });
+                        modal.style.display = "none"; sG(); 
+                    }).catch(() => { modal.style.display = "none"; sG(); });
                 } else { 
                     const sN = localStorage.getItem("slimeLab_playerName"); 
-                    if(sN) { this.playerName=sN; modal.style.display="none"; sG(); }
-                    else { modal.style.display="flex"; this.setupLogin(); } 
+                    if(sN) { this.playerName=sN; modal.style.display="none"; sG(); } else { modal.style.display="flex"; this.setupLogin(); } 
                 } 
             }); 
-        } else { 
-            const sN = localStorage.getItem("slimeLab_playerName"); 
-            if(sN) { this.playerName=sN; modal.style.display="none"; sG(); }
-            else { modal.style.display="flex"; this.setupLogin(); } 
-        }
+        } else { const sN = localStorage.getItem("slimeLab_playerName"); if(sN) { this.playerName=sN; modal.style.display="none"; sG(); } else { modal.style.display="flex"; this.setupLogin(); } }
     }
     setupLogin() {
         const m=document.getElementById("welcome-modal"), n=document.getElementById("player-name"), sb=document.getElementById("start-btn"), gb=document.getElementById("google-btn");
@@ -705,17 +582,40 @@ checkLoginStatus() {
         gb.onclick=(e)=>{e.preventDefault();if(this.auth&&typeof firebase!=='undefined'){showCustomAlert("Đang mở cửa sổ đăng nhập...", "info"); this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(()=>{document.getElementById("html-alert-overlay").style.display="none";}).catch(er=>showCustomAlert("Lỗi đăng nhập: "+er.message));}else showCustomAlert("Máy chủ chưa sẵn sàng. Hãy nhập tên để chơi Offline!","info");};
     }
     getSaveKey() { return `slimeLab_Save_AllLabs_${this.serverName}_${this.playerId}`; }
+    
     loadGame() {
-        try{ const sd=localStorage.getItem(this.getSaveKey()); if(!sd)return; const d=JSON.parse(sd); this.currentLabId=Number(d.currentLabId)||0; this.sound.switchBGM(this.currentLabId); this.activeTheme=d.activeTheme||'default'; this.ownedThemes=d.ownedThemes||['default']; this.ownedSkins=d.ownedSkins||['skin_0']; this.ownedAuras=d.ownedAuras||['aura_0']; this.diamonds=Number(d.diamonds)||0; this.updateWorldDimensions(); this.camera.x=this.worldWidth/2; this.camera.y=this.worldHeight/2; this.clampCamera(); let gm=d.labsData?.[0]?.money!==undefined?Number(d.labsData[0].money)||1e5:1e5; if(d.labsData){ for(let i=0;i<10;i++){ if(d.labsData[i]){ const ld=d.labsData[i]; this.labsData[i].money=gm; this.labsData[i].maxCapacity=Number(ld.maxCapacity)||20; this.labsData[i].unlocked=ld.unlocked??(i===0); this.labsData[i].isPaused=!!ld.isPaused; this.labsData[i].collection=ld.collection||{}; this.labsData[i].slimes=(ld.slimes||[]).map(s=>{ const sl=new Slime(s.x,s.y,i,s.strainId,s.level,s.replicateTimer); sl.locked=!!s.locked; sl.isPaused=!!s.isPaused; sl.customSkin=s.customSkin||'skin_0'; sl.customAura=s.customAura||'none'; return sl; }); if(this.labsData[i].slimes.length===0&&i===0)this.labsData[i].slimes=[new Slime(this.worldWidth/2,this.worldHeight/2,0,0,1)]; } } } }catch(e){}
+        try { 
+            const sd=localStorage.getItem(this.getSaveKey()); if(!sd)return; const d=JSON.parse(sd); 
+            this.currentLabId=Number(d.currentLabId)||0; this.sound.switchBGM(this.currentLabId); 
+            this.activeTheme=d.activeTheme||'default'; this.ownedThemes=d.ownedThemes||['default']; 
+            this.ownedSkins=d.ownedSkins||['skin_0']; this.ownedAuras=d.ownedAuras||['aura_0']; 
+            this.diamonds=Number(d.diamonds)||0; this.lockedStrains = d.lockedStrains || {}; 
+            
+            this.updateWorldDimensions(); this.camera.x=this.worldWidth/2; this.camera.y=this.worldHeight/2; this.clampCamera(); 
+            let gm=d.labsData?.[0]?.money!==undefined?Number(d.labsData[0].money)||1e5:1e5; 
+            if(d.labsData){ 
+                for(let i=0;i<10;i++){ 
+                    if(d.labsData[i]){ 
+                        const ld=d.labsData[i]; this.labsData[i].money=gm; this.labsData[i].maxCapacity=Number(ld.maxCapacity)||20; 
+                        this.labsData[i].unlocked=ld.unlocked??(i===0); this.labsData[i].isPaused=!!ld.isPaused; this.labsData[i].collection=ld.collection||{}; 
+                        this.labsData[i].slimes=(ld.slimes||[]).map(s=>{ 
+                            const sl=new Slime(s.x,s.y,i,s.strainId,s.level,s.replicateTimer); sl.locked=!!s.locked; sl.isPaused=!!s.isPaused; sl.customSkin=s.customSkin||'skin_0'; sl.customAura=s.customAura||'none'; return sl; 
+                        }); 
+                        if(this.labsData[i].slimes.length===0&&i===0)this.labsData[i].slimes=[new Slime(this.worldWidth/2,this.worldHeight/2,0,0,1)]; 
+                    } 
+                } 
+            } 
+        }catch(e){}
     }
-saveGame() {
+
+    saveGame() {
         if(this.isDeleted) return; 
         try { 
             const el = {}; 
             for (let i = 0; i < 10; i++) { 
                 if (this.labsData[i]) {
                     el[i] = {
-                        money: this.labsData[i].money || 0, // Đã đưa tiền về đúng vị trí gốc
+                        money: this.labsData[i].money || 0,
                         maxCapacity: this.labsData[i].maxCapacity || 10,
                         unlocked: this.labsData[i].unlocked || false,
                         isPaused: this.labsData[i].isPaused || false,
@@ -728,20 +628,15 @@ saveGame() {
                     }; 
                 }
             } 
-            
             localStorage.setItem(this.getSaveKey(), JSON.stringify({
-                currentLabId: this.currentLabId || 0,
-                activeTheme: this.activeTheme || 0,
-                ownedThemes: this.ownedThemes || [0],
-                ownedSkins: this.ownedSkins || [],
-                ownedAuras: this.ownedAuras || [],
-                diamonds: this.diamonds || 0,
-                labsData: el,
-                lastUpdated: Date.now() // Mốc thời gian để so sánh
-            })); 
+                currentLabId: this.currentLabId || 0, activeTheme: this.activeTheme || 0, ownedThemes: this.ownedThemes || [0],
+                ownedSkins: this.ownedSkins || [], ownedAuras: this.ownedAuras || [], diamonds: this.diamonds || 0,
+                lockedStrains: this.lockedStrains || {}, labsData: el, lastUpdated: Date.now()
+            }));
             this.syncFirebase(); 
-        } catch(e) { console.error("Lỗi lưu game:", e); }
+        } catch(e) {}
     }
+    
     gatherAllPets() { const cx=this.worldWidth/2, cy=this.worldHeight/2; this.slimes.forEach(s=>{s.x=cx+(Math.random()-0.5)*150; s.y=cy+(Math.random()-0.5)*150;}); if(this.shockwaves)this.shockwaves.push(new Shockwave(cx,cy,'#00ffc8')); this.sound.playCoin(); }
 
     setupEvents() {
@@ -799,13 +694,8 @@ saveGame() {
             fromName: this.playerName, strainId: slime.strain.id, level: levelToSend, labId: this.currentLabId, timestamp: Date.now()
         }).then(() => {
             showCustomAlert(`Gửi tặng thành công đến ${this.giftingTo.name}!`, "success");
-            this.slimes = this.slimes.filter(s => s !== slime);
-            this.giftingTo = null; this.pendingConfirmButtons = null;
-            this.saveGame();
-        }).catch(err => {
-            showCustomAlert(`Lỗi gửi tặng: ${err.message}`);
-            this.giftingTo = null; this.pendingConfirmButtons = null;
-        });
+            this.slimes = this.slimes.filter(s => s !== slime); this.giftingTo = null; this.pendingConfirmButtons = null; this.saveGame();
+        }).catch(err => { showCustomAlert(`Lỗi gửi tặng: ${err.message}`); this.giftingTo = null; this.pendingConfirmButtons = null; });
     }
 
     drawDynamicBackground(ctx, theme, w, h, xOffset=0, yOffset=0) {
@@ -825,22 +715,15 @@ saveGame() {
             const mw = 480, mh = 180, mx = (CANVAS_W-mw)/2, my = (CANVAS_H-mh)/2;
             const btnW = (440 - (this.pendingConfirmButtons.length-1)*15) / this.pendingConfirmButtons.length;
             let clicked = false;
-            this.pendingConfirmButtons.forEach((btn, i) => {
-                if (this.isInside(x, y, {x: mx + 20 + i*(btnW+15), y: my + 115, w: btnW, h: 45})) { btn.action(); clicked = true; }
-            });
-            if(clicked) return true;
-            return true; 
+            this.pendingConfirmButtons.forEach((btn, i) => { if (this.isInside(x, y, {x: mx + 20 + i*(btnW+15), y: my + 115, w: btnW, h: 45})) { btn.action(); clicked = true; } });
+            if(clicked) return true; return true; 
         }
 
         const isM = this.showShop || this.showBook || this.showSettings || this.showLabModal;
 
         if (!isM) {
             if(this.isInside(x,y,this.gatherBtnRect)){ this.gatherAllPets(); return true; }
-            if(this.isInside(x,y,this.pauseBtnRect)){ 
-                this.pauseState = (this.pauseState + 1) % 3; 
-                this.curLabData.isPaused = (this.pauseState === 1);
-                this.sound.playPop(); return true; 
-            }
+            if(this.isInside(x,y,this.pauseBtnRect)){ this.pauseState = (this.pauseState + 1) % 3; this.curLabData.isPaused = (this.pauseState === 1); this.sound.playPop(); return true; }
         }
 
         if (this.selectedSlime) {
@@ -866,20 +749,9 @@ saveGame() {
                 if(this.auth && this.auth.currentUser) {
                     const localData = localStorage.getItem(this.getSaveKey());
                     if(localData) {
-                        this.db.ref('gameSaves/' + this.auth.currentUser.uid).set({
-                            saveData: localData,
-                            lastUpdated: Date.now()
-                        }).then(() => {
-                            showCustomAlert("☁️ Đã sao lưu dữ liệu Đám mây an toàn!", "success");
-                        }).catch(e => {
-                            showCustomAlert("Lỗi lưu dữ liệu: " + e.message);
-                        });
-                    } else {
-                        showCustomAlert("Chưa có dữ liệu để lưu!", "info");
-                    }
-                } else {
-                    showCustomAlert("Bạn cần đăng nhập Google ở ngoài sảnh để dùng tính năng này!");
-                }
+                        this.db.ref('gameSaves/' + this.auth.currentUser.uid).set({ saveData: localData, lastUpdated: Date.now() }).then(() => { showCustomAlert("☁️ Đã sao lưu dữ liệu Đám mây an toàn!", "success"); }).catch(e => { showCustomAlert("Lỗi lưu dữ liệu: " + e.message); });
+                    } else { showCustomAlert("Chưa có dữ liệu để lưu!", "info"); }
+                } else { showCustomAlert("Bạn cần đăng nhập Google ở ngoài sảnh để dùng tính năng này!"); }
                 return true; 
             }
             if(this.isInside(x,y,{x:px+20,y:py+158,w:340,h:44})){ this.showSettings=false; document.getElementById("custom-input-overlay").style.display="flex"; document.getElementById("custom-input-field").focus(); document.getElementById("custom-input-ok").onclick=()=>{const nn=document.getElementById("custom-input-field").value.trim();document.getElementById("custom-input-overlay").style.display="none";if(nn.length>=2){if(this.money>=1e7){this.money-=1e7;this.playerName=nn;localStorage.setItem("slimeLab_playerName",nn);this.sound.playCoin();this.saveGame();showCustomAlert("Đổi tên thành công!", "success");}else showCustomAlert("Không đủ 10Tr VNĐ!");}}; document.getElementById("custom-input-cancel").onclick=()=>document.getElementById("custom-input-overlay").style.display="none"; return true; }
@@ -896,66 +768,40 @@ saveGame() {
             if(this.isInside(x,y,{x:mx+30,y:my+mh-50,w:150,h:40})){ if (this.bookPage > 0) this.bookPage--; return true;}
             if(this.isInside(x,y,{x:mx+mw-180,y:my+mh-50,w:150,h:40})){ if (this.bookPage < tp - 1) this.bookPage++; return true;}
             
-            // TÍNH NĂNG ẨN: Combo triệu hồi Pet Thần (GIỚI HẠN 3 CON CHO MỖI CHỦNG)
             sts.slice(this.bookPage * 8, this.bookPage * 8 + 8).forEach((s, i) => {
                 const cx = mx + 25 + (i % 4) * 320, cy = my + 55 + Math.floor(i / 4) * 265;
                 if (this.isInside(x, y, {x: cx, y: cy, w: 300, h: 250})) {
                     if (s.isGod) {
                         if (!this.godClicks) this.godClicks = {};
-                        
-                        const godList = sts.filter(g => g.isGod);
-                        const godIndex = godList.findIndex(g => g.id === s.id);
-                        
+                        const godList = sts.filter(g => g.isGod); const godIndex = godList.findIndex(g => g.id === s.id);
                         if (godIndex === 0) {
-                            // --- KIỂM TRA BỘ ĐẾM THEO TỪNG CHỦNG ---
                             const cheatKey = `slime_cheat_limit_strains_${this.playerId}`;
-                            let usedCheats = {};
-                            try { usedCheats = JSON.parse(localStorage.getItem(cheatKey)) || {}; } catch(e){}
-                            
+                            let usedCheats = {}; try { usedCheats = JSON.parse(localStorage.getItem(cheatKey)) || {}; } catch(e){}
                             let comboTarget = null;
-                            for (let j = godList.length - 1; j > 0; j--) {
-                                if (this.godClicks[godList[j].id] >= j) { 
-                                    comboTarget = godList[j]; 
-                                    break; 
-                                }
-                            }
-                            
+                            for (let j = godList.length - 1; j > 0; j--) { if (this.godClicks[godList[j].id] >= j) { comboTarget = godList[j]; break; } }
                             if (comboTarget) {
                                 let count = usedCheats[comboTarget.id] || 0;
-                                if (count >= 3) {
-                                    showCustomAlert(`⛔ Bạn đã dùng hết giới hạn 3 lần gọi cho chủng [${comboTarget.name}]!`, "error");
-                                    this.godClicks = {}; return;
-                                }
+                                if (count >= 3) { showCustomAlert(`⛔ Bạn đã dùng hết giới hạn 3 lần gọi cho chủng [${comboTarget.name}]!`, "error"); this.godClicks = {}; return; }
                                 if (this.slimes.length < this.maxCapacity) {
                                     this.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, this.currentLabId, comboTarget.id, 1));
-                                    usedCheats[comboTarget.id] = count + 1; // Lưu lại số lần đã gọi chủng này
-                                    localStorage.setItem(cheatKey, JSON.stringify(usedCheats));
-                                    this.sound.playMutate(); this.saveGame();
-                                    showCustomAlert(`✨ [COMBO ẨN] Triệu hồi ${comboTarget.name}! (Còn ${2 - count} lần cho chủng này)`, "success");
+                                    usedCheats[comboTarget.id] = count + 1; localStorage.setItem(cheatKey, JSON.stringify(usedCheats));
+                                    this.sound.playMutate(); this.saveGame(); showCustomAlert(`✨ [COMBO ẨN] Triệu hồi ${comboTarget.name}! (Còn ${2 - count} lần)`, "success");
                                 } else showCustomAlert(`Bể đã đầy, không thể triệu hồi!`, "error");
                                 this.godClicks = {}; 
                             } else {
                                 this.godClicks[s.id] = (this.godClicks[s.id] || 0) + 1;
                                 if (this.godClicks[s.id] >= 10) {
                                     let count = usedCheats[s.id] || 0;
-                                    if (count >= 3) {
-                                        showCustomAlert(`⛔ Bạn đã dùng hết giới hạn 3 lần gọi cho chủng [${s.name}]!`, "error");
-                                        this.godClicks = {}; return;
-                                    }
+                                    if (count >= 3) { showCustomAlert(`⛔ Bạn đã dùng hết giới hạn 3 lần gọi cho chủng [${s.name}]!`, "error"); this.godClicks = {}; return; }
                                     if (this.slimes.length < this.maxCapacity) {
                                         this.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, this.currentLabId, s.id, 1));
-                                        usedCheats[s.id] = count + 1; // Lưu lại số lần đã gọi chủng này
-                                        localStorage.setItem(cheatKey, JSON.stringify(usedCheats));
-                                        this.sound.playMutate(); this.saveGame();
-                                        showCustomAlert(`✨ [MÃ GIAN LẬN] Triệu hồi ${s.name}! (Còn ${2 - count} lần cho chủng này)`, "success");
+                                        usedCheats[s.id] = count + 1; localStorage.setItem(cheatKey, JSON.stringify(usedCheats));
+                                        this.sound.playMutate(); this.saveGame(); showCustomAlert(`✨ [MÃ GIAN LẬN] Triệu hồi ${s.name}! (Còn ${2 - count} lần)`, "success");
                                     } else showCustomAlert(`Bể đã đầy, không thể triệu hồi!`, "error");
                                     this.godClicks = {};
                                 } else this.sound.playPop(); 
                             }
-                        } else {
-                            this.godClicks[s.id] = (this.godClicks[s.id] || 0) + 1;
-                            this.sound.playPop(); 
-                        }
+                        } else { this.godClicks[s.id] = (this.godClicks[s.id] || 0) + 1; this.sound.playPop(); }
                     }
                 }
             });
@@ -974,16 +820,9 @@ saveGame() {
             if (this.shopTab === 'exchange') {
                 const exBtn = { x: mx + mw/2 - 150, y: my + 300, w: 300, h: 55 };
                 if(this.isInside(x,y,exBtn)) {
-                    const diaCost = 1e114 * Math.pow(1000, this.diamonds); // 1 Septendecillion * 1000^diamonds
-                    if (this.money >= diaCost) {
-                        this.money -= diaCost;
-                        this.diamonds++;
-                        this.sound.playMutate();
-                        this.saveGame();
-                        showCustomAlert(`Chúc mừng! Bạn đã đổi thành công 1 💎 Kim Cương!`, "success");
-                    } else {
-                        showCustomAlert(`Không đủ tiền! Cần ${formatMoney(diaCost)}`, "error");
-                    }
+                    const diaCost = 1e114 * Math.pow(1000, this.diamonds);
+                    if (this.money >= diaCost) { this.money -= diaCost; this.diamonds++; this.sound.playMutate(); this.saveGame(); showCustomAlert(`Chúc mừng! Bạn đã đổi thành công 1 💎 Kim Cương!`, "success"); } 
+                    else { showCustomAlert(`Không đủ tiền! Cần ${formatMoney(diaCost)}`, "error"); }
                 }
                 return true;
             }
@@ -1011,8 +850,7 @@ saveGame() {
                     }
                 }
             });
-            if(clicked)return true;
-            return true;
+            if(clicked)return true; return true;
         }
 
         if (this.isInside(x, y, {x:633,y:12,w:95,h:44})) { this.showLabModal=!this.showLabModal; this.showBook=false; this.showSettings=false; this.showShop=false; return true; }
@@ -1021,8 +859,7 @@ saveGame() {
             if(this.isInside(x,y,{x:mx+mw-50,y:my+12,w:38,h:38})||!this.isInside(x,y,{x:mx,y:my,w:mw,h:mh})){this.showLabModal=false;return true;}
             let clk=false;
             TANK_THEMES.slice(0,10).forEach((lab,idx)=>{
-                const r=Math.floor(idx/2), c=idx%2, lw=(mw-80)/2, lh=95;
-                const lx=mx+30+c*(lw+20), ly=my+60+r*(lh+12);
+                const r=Math.floor(idx/2), c=idx%2, lw=(mw-80)/2, lh=95; const lx=mx+30+c*(lw+20), ly=my+60+r*(lh+12);
                 if(this.isInside(x,y,{x:lx+lw-140,y:ly+25,w:125,h:44})){
                     clk=true;
                     if(this.currentLabId!==idx){
@@ -1032,8 +869,7 @@ saveGame() {
                     }
                 }
             });
-            if(clk)return true;
-            return true;
+            if(clk)return true; return true;
         }
 
         if (this.isInside(x, y, {x:CANVAS_W-645,y:12,w:190,h:44})) { if(this.money>=1000&&this.slimes.length<this.maxCapacity){this.money-=1000;this.slimes.push(new Slime(this.worldWidth/2,this.worldHeight/2,this.currentLabId,null,1));this.sound.playPop();this.saveGame();} return true; }
@@ -1060,7 +896,7 @@ saveGame() {
 
     isInside(px, py, rect) { return rect && px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h; }
 
-update(dt) {
+    update(dt) {
         this.bubbles.forEach(b => b.update(this.gameSpeed));
         
         for (let i = this.effects.length - 1; i >= 0; i--) { this.effects[i].update(dt, this.gameSpeed); if (this.effects[i].life <= 0) this.effects.splice(i, 1); }
@@ -1073,88 +909,66 @@ update(dt) {
             const lab = this.labsData[l];
             if (!lab || !lab.unlocked || lab.slimes.length === 0) continue;
             
-            const theme = TANK_THEMES[l] || TANK_THEMES[0];
-            const scale = theme.scale || 1.0;
-            const labWorldW = this.containerRect.width * 20 * scale;
-            const labWorldH = this.containerRect.height * 20 * scale;
+            const theme = TANK_THEMES[l] || TANK_THEMES[0]; const scale = theme.scale || 1.0;
+            const labWorldW = this.containerRect.width * 20 * scale; const labWorldH = this.containerRect.height * 20 * scale;
             const labBounds = { left: 0, top: 0, right: labWorldW, bottom: labWorldH };
-
-            const isCurrent = (l === this.currentLabId);
-            const nB = [], sS = [];
+            const isCurrent = (l === this.currentLabId); const nB = [], sS = [];
             
             lab.slimes.forEach(s => {
                 const r = s.update(dt, labBounds, this.effects, this.shockwaves, this.gameSpeed, lab.isPaused, isCurrent);
                 if (r === "DEAD") { if (isCurrent) this.effects.push(new Shockwave(s.x, s.y, '#ff4646')); return; }
-                sS.push(s);
-                // Lưu lại cả con mới (child) và con mẹ (parent) để xử lý
-                if (r) nB.push({ child: r, parent: s }); 
+                sS.push(s); if (r) nB.push({ child: r, parent: s }); 
             });
             
             lab.slimes = sS;
             for (let item of nB) { 
-                const nb = item.child;
-                const parent = item.parent;
-
+                const nb = item.child; const parent = item.parent;
                 if (lab.slimes.length < lab.maxCapacity) {
-                    
-                    // --- GIỚI HẠN 4 CON & TỰ THĂNG CẤP (TỶ LỆ 1%) ---
                     if (nb.strain.isGod) {
                         const godCount = lab.slimes.filter(x => x.strain.id === nb.strain.id).length;
-                        if (godCount >= 5) {
-                            // Phải đảm bảo con mẹ đúng là chủng Thần đó (không tính trường hợp pet thường đột biến ra)
+                        if (godCount >= 4) {
                             if (parent.strain.id === nb.strain.id) {
-                                // Tỷ lệ chính xác 5% (0.05)
                                 if (Math.random() < 0.05) {
-                                    parent.level += 1;
-                                    parent.radius = 32 + parent.level * 3.5; 
-                                    
-                                    // Cập nhật lại giá bán
-                                    const baseVal = Math.floor(Math.random() * 400) + 450;
-                                    const lm = 1 + (l * 1.5);
+                                    parent.level += 1; parent.radius = 32 + parent.level * 3.5; 
+                                    const baseVal = Math.floor(Math.random() * 400) + 450; const lm = 1 + (l * 1.5);
                                     parent.value = Math.floor(baseVal * Math.pow(1.65, parent.level - 1) * (parent.strain.valMult || 1) * lm);
-                                    
-                                    // Nổ luồng sáng vàng khi thành công
                                     if (isCurrent) this.shockwaves.push(new Shockwave(parent.x, parent.y, '#ffd700'));
                                 }
                             }
-                            continue; // Bất kể thành công hay xịt 1%, đều hủy việc đẻ thêm con mới
+                            continue; 
                         }
                     }
-                    // ------------------------------------------------
-
                     lab.slimes.push(nb);
-                    if (isCurrent && !this.collection[nb.strain.id] && !this.pendingDiscoveryQueue.find(x=>x.id===nb.strain.id)) {
-                        this.pendingDiscoveryQueue.push(nb.strain);
-                    }
+                    if (isCurrent && !this.collection[nb.strain.id] && !this.pendingDiscoveryQueue.find(x=>x.id===nb.strain.id)) { this.pendingDiscoveryQueue.push(nb.strain); }
                 } else break; 
             }
         }
 
         if (!this.pendingConfirmButtons && this.pendingDiscoveryQueue.length > 0) {
             const newM = this.pendingDiscoveryQueue.shift();
-            this.confirmModalTitle = `✨ ĐỘT BIẾN MỚI TÌM THẤY!`;
-            this.confirmModalSubtitle = `Phát hiện: ${newM.name}. Thêm vào sách?`;
+            this.confirmModalTitle = `✨ ĐỘT BIẾN MỚI TÌM THẤY!`; this.confirmModalSubtitle = `Phát hiện: ${newM.name}. Thêm vào sách?`;
             this.pendingConfirmButtons = [
                 { text: "Thêm vào Sách", bg: "#14503c", action: () => { this.collection[newM.id]=true; this.sound.playMutate(); this.saveGame(); this.pendingConfirmButtons=null; } },
                 { text: "Bỏ qua", bg: "#283c50", action: () => { this.pendingConfirmButtons=null; } }
             ];
         }
         
-        if (performance.now() - this.lastSaveTime > 4000) { this.saveGame(); this.lastSaveTime = performance.now(); }
-    }
+       if (performance.now() - this.lastSaveTime > 4000) { this.saveGame(); this.lastSaveTime = performance.now(); }
+        
+        // Làm mới UI 1.5s một lần (giảm lag) và CHỈ LÀM MỚI KHI KHÔNG BỊ CHẠM
+        this.uiTimer = (this.uiTimer || 0) + dt;
+        if (this.uiTimer > 1.5) {
+            if (!this.isPressingStrain) this.updateStrainManagerUI();
+            this.uiTimer = 0;
+        }
+    } // Đóng hàm update(dt)
 
     drawCustomConfirm(title, subtitle) {
         const mw = 480, mh = 180, mx = (CANVAS_W - mw) / 2, my = (CANVAS_H - mh) / 2;
         this.ctx.save(); this.ctx.fillStyle = "rgba(11, 19, 32, 0.98)"; this.ctx.fillRect(mx, my, mw, mh); this.ctx.strokeStyle = COLOR_WARNING; this.ctx.lineWidth = 3; this.ctx.strokeRect(mx, my, mw, mh);
         this.ctx.fillStyle = "#ffd700"; this.ctx.font = "bold 18px Arial"; this.ctx.textAlign = "center"; this.ctx.textBaseline = "top"; this.ctx.fillText(title, mx + mw/2, my + 25, mw-40);
         if (subtitle) { this.ctx.fillStyle = "#e6f5ff"; this.ctx.font = "16px Arial"; this.ctx.fillText(subtitle, mx + mw/2, my + 60, mw-40); }
-        
-        if (this.pendingConfirmButtons) {
-            const btnW = (440 - (this.pendingConfirmButtons.length-1)*15) / this.pendingConfirmButtons.length;
-            this.pendingConfirmButtons.forEach((btn, i) => {
-                this.drawButton({ x: mx + 20 + i*(btnW+15), y: my + 115, w: btnW, h: 45 }, btn.bg, null, btn.text, "#fff", "bold 15px Arial");
-            });
-        }
+        if (this.pendingConfirmButtons) { const btnW = (440 - (this.pendingConfirmButtons.length-1)*15) / this.pendingConfirmButtons.length; this.pendingConfirmButtons.forEach((btn, i) => { this.drawButton({ x: mx + 20 + i*(btnW+15), y: my + 115, w: btnW, h: 45 }, btn.bg, null, btn.text, "#fff", "bold 15px Arial"); }); }
         this.ctx.restore();
     }
 
@@ -1183,11 +997,9 @@ update(dt) {
         this.ctx.fillText(`💎 CỬA HÀNG QUY ĐỔI KIM CƯƠNG`, mx + mw/2, my + 150);
         this.ctx.fillStyle = "#a0c0db"; this.ctx.font = "16px Arial"; 
         this.ctx.fillText(`Kim cương giúp tăng vị trí của bạn trên bảng xếp hạng vĩnh viễn.`, mx + mw/2, my + 190);
-        
         const diaCost = 1e114 * Math.pow(1000, this.diamonds);
         this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 20px Arial";
         this.ctx.fillText(`Tỷ giá hiện tại: 1 Kim Cương = ${formatMoney(diaCost)}`, mx + mw/2, my + 250);
-        
         this.drawButton({ x: mx + mw/2 - 150, y: my + 300, w: 300, h: 55 }, "#14503c", COLOR_ACCENT, "Đổi 1 💎 Ngay", "#fff", "bold 18px Arial");
         this.ctx.textAlign="start";
     }
@@ -1300,14 +1112,13 @@ update(dt) {
     draw() {
         this.ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
         const cT = TANK_THEMES.find(t => t.id === this.activeTheme) || TANK_THEMES[0];
-        
         this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 18px Arial"; 
         this.ctx.fillText(this.diamonds>0 ? `💎 ${this.diamonds}` : `💰 ${formatMoney(this.money)}`, 20, 28);
         this.ctx.fillStyle = "#7890a8"; this.ctx.font = "12px Arial"; this.ctx.fillText(`Người chơi: ${this.playerName || "Vô danh"} | Lab ${this.currentLabId + 1}: ${cT.name}`, 20, 48);
         
         this.drawButton({ x: 380, y: 12, w: 125, h: 44 }, "#a06414", COLOR_GOLD, `+1 Ô (${formatMoney(this.getSlotPrice())})`, "#fff", "bold 11px Arial");
         this.drawButton({ x: 515, y: 12, w: 105, h: 44 }, "#19283c", COLOR_ACCENT, `⚡ ${this.gameSpeed.toFixed(1)}x`, "#e6f5ff", "bold 12px Arial");
-        this.drawButton({ x: 633, y: 12, w: 95, h: 44 }, "#8e44ad", "#d2b4de", "🔬 Lab", "#fff", "bold 13px Arial");
+        this.drawButton({ x: 633, y: 12, w: 111, h: 44 }, "#8e44ad", "#d2b4de", "🔬 Lab", "#fff", "bold 13px Arial");
         this.drawButton({ x: CANVAS_W - 645, y: 12, w: 190, h: 44 }, "#14503c", COLOR_ACCENT, "➕ Mua Thể Thực (1k)", "#e6f5ff", "bold 13px Arial");
         this.drawButton({ x: CANVAS_W - 445, y: 12, w: 140, h: 44 }, "#5a2d82", "#be6eff", "🛒 Cửa Hàng", "#f0dcff", "bold 13px Arial");
         this.drawButton({ x: CANVAS_W - 295, y: 12, w: 160, h: 44 }, "#372350", "#be6eff", "📖 Sách Sưu Tầm", "#f0dcff", "bold 13px Arial");
@@ -1315,7 +1126,6 @@ update(dt) {
 
         const cr = this.containerRect;
         this.drawDynamicBackground(this.ctx, cT, cr.width, cr.height, cr.left, cr.top);
-        
         this.ctx.save(); this.ctx.beginPath(); this.ctx.rect(cr.left, cr.top, cr.width, cr.height); this.ctx.clip();
         this.ctx.save(); this.ctx.translate(cr.left + cr.width / 2, cr.top + cr.height / 2); this.ctx.scale(this.camera.zoom, this.camera.zoom); this.ctx.translate(-this.camera.x, -this.camera.y);
         
@@ -1323,16 +1133,16 @@ update(dt) {
         this.ctx.restore(); this.ctx.restore();
 
         const mO = this.showShop || this.showBook || this.showSettings || this.showLabModal;
-        
         this.gatherBtnRect = { x: cr.left + 20, y: cr.bottom - 55, w: 110, h: 38 };
         this.drawButton(this.gatherBtnRect, mO ? "#1a2430" : "#123b32", mO ? "#334155" : COLOR_ACCENT, "🌀 Tập Hợp", mO ? "#64748b" : "#fff", "bold 13px Arial");
-        
         this.pauseBtnRect = { x: cr.right - 180, y: cr.bottom - 55, w: 165, h: 38 };
         const pText = this.pauseState === 0 ? "▶ Chạy Bình Thường" : (this.pauseState === 1 ? "⏸ Dừng Bể Này" : "🎯 Chọn Dừng Lẻ");
         const pColor = this.pauseState === 0 ? "#a05a14" : (this.pauseState === 1 ? "#8e44ad" : "#e056fd");
         this.drawButton(this.pauseBtnRect, mO ? "#2a3442" : pColor, mO ? "#475569" : "#ffd700", pText, mO ? "#64748b" : "#fff", "bold 12px Arial");
         
-        this.ctx.fillStyle = COLOR_TEXT; this.ctx.font = "bold 14px Arial"; this.ctx.fillText(`${this.slimes.length}/${this.maxCapacity}`, cr.left + 25, cr.top + 30);
+        this.ctx.fillStyle = COLOR_TEXT; this.ctx.font = "bold 14px Arial"; 
+        this.ctx.fillText(`${this.slimes.length}/${this.maxCapacity}`, cr.left + 200, cr.top + 30);
+        
         this.ctx.fillStyle = "#28374b"; this.ctx.fillRect(cr.left, cr.top, cr.width, 16); this.ctx.fillRect(cr.left, cr.bottom - 16, cr.width, 16);
         this.ctx.strokeStyle = cT.glass; this.ctx.lineWidth = 2.5; this.ctx.strokeRect(cr.left, cr.top, cr.width, cr.height);
 
@@ -1345,29 +1155,155 @@ update(dt) {
         if (this.pendingConfirmButtons) this.drawCustomConfirm(this.confirmModalTitle, this.confirmModalSubtitle);
     }
 
+    updateStrainManagerUI() {
+        const lab = this.labsData[this.currentLabId]; const listDiv = document.getElementById('strain-list');
+        if (!lab || !listDiv) return;
+        const groups = {};
+        lab.slimes.forEach(s => {
+            if (!groups[s.strain.id]) groups[s.strain.id] = { strain: s.strain, slimes: [], highestLv: 0 };
+            groups[s.strain.id].slimes.push(s);
+            if (s.level > groups[s.strain.id].highestLv) groups[s.strain.id].highestLv = s.level;
+        });
+        const sortedGroups = Object.values(groups).sort((a, b) => b.strain.tier - a.strain.tier);
+        listDiv.innerHTML = '';
+        sortedGroups.forEach(g => {
+            const isLocked = this.lockedStrains[g.strain.id];
+            const div = document.createElement('div');
+            div.style.cssText = `background: ${isLocked ? '#2c3e50' : '#1e3246'}; color: ${g.strain.color}; padding: 7px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; justify-content: space-between; border: 1px solid ${isLocked ? '#f1c40f' : 'transparent'}; transition: 0.1s; user-select: none;`;
+            div.innerHTML = `<span>${isLocked ? '🔒 ' : ''}Bậc ${g.strain.tier}: ${g.strain.name}</span> <span>(x${g.slimes.length})</span>`;
+            
+            // Xử lý chống trượt và nhận diện Nhấn/Giữ chuẩn xác
+            // Xử lý chống trượt và cấm vẽ lại UI khi đang chạm
+            let pressTimer;
+            let isLongPress = false;
+            let startY = 0;
+
+            div.onpointerdown = (e) => {
+                this.isPressingStrain = true; // Khóa cấm vẽ lại bảng
+                isLongPress = false;
+                startY = e.clientY;
+                div.style.transform = "scale(0.95)"; 
+                
+                pressTimer = setTimeout(() => {
+                    isLongPress = true; 
+                    this.lockedStrains[g.strain.id] = !this.lockedStrains[g.strain.id];
+                    showCustomAlert(this.lockedStrains[g.strain.id] ? `🔒 Đã khóa chủng [${g.strain.name}]` : `🔓 Đã mở khóa [${g.strain.name}]`, "info");
+                    this.isPressingStrain = false; // Xử lý xong, mở khóa vẽ lại
+                    this.updateStrainManagerUI(); 
+                    pressTimer = null;
+                }, 2000); 
+            };
+
+            div.onpointermove = (e) => {
+                // Hủy nếu vuốt tay trượt quá 10px
+                if (Math.abs(e.clientY - startY) > 10) {
+                    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+                    this.isPressingStrain = false; 
+                    div.style.transform = "scale(1)";
+                }
+            };
+
+            div.onpointerup = (e) => {
+                div.style.transform = "scale(1)";
+                this.isPressingStrain = false; // Mở khóa vẽ lại
+                if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+                
+                // Nếu chỉ bấm 1 lần (nhả tay trước 2 giây) -> Hiện Menu Bán
+                if (!isLongPress) {
+                    this.openSellModal(g.strain.id, g.strain.name);
+                }
+            };
+
+            div.onpointerleave = () => { 
+                div.style.transform = "scale(1)"; 
+                this.isPressingStrain = false; // Mở khóa vẽ lại
+                if(pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
+            };
+            listDiv.appendChild(div);
+        });
+    }
+
+    openSellModal(strainId, strainName) {
+        document.getElementById('sell-modal').style.display = 'flex';
+        document.getElementById('sell-modal-title').innerText = `Bán: ${strainName}`;
+        document.getElementById('btn-sell-all').onclick = () => { this.executeSell(strainId, false); document.getElementById('sell-modal').style.display = 'none'; };
+        document.getElementById('btn-sell-keep-highest').onclick = () => { this.executeSell(strainId, true); document.getElementById('sell-modal').style.display = 'none'; };
+    }
+
+    executeSell(strainId, keepHighest) {
+        const lab = this.labsData[this.currentLabId]; 
+        let totalValue = 0;
+        
+        // BƯỚC 1: Tìm mức Level cao nhất của chủng này (trong số các con chưa khóa)
+        let maxLevel = 0;
+        if (keepHighest) {
+            lab.slimes.forEach(s => {
+                if (s.strain.id === strainId && !s.locked && s.level > maxLevel) {
+                    maxLevel = s.level;
+                }
+            });
+        }
+        
+        // BƯỚC 2: Bắt đầu lọc để Bán / Giữ lại
+        lab.slimes = lab.slimes.filter(s => {
+            if (s.strain.id === strainId && !s.locked) {
+                // Nếu chế độ giữ được bật VÀ con pet này đạt mức Max Level -> Giữ lại toàn bộ
+                if (keepHighest && s.level === maxLevel) { 
+                    return true; // KHÔNG XÓA
+                } 
+                
+                // Các con cấp thấp hơn sẽ bị bán
+                totalValue += s.value || 0;
+                if (this.currentLabId === this.currentLabId) this.effects.push(new Shockwave(s.x, s.y, '#f1c40f')); 
+                return false; // XÓA
+            }
+            return true;
+        });
+
+        if (totalValue > 0) { 
+            this.money += totalValue; 
+            this.sound.playCoin(); 
+            showCustomAlert(`💰 Đã bán thu về ${formatMoney(totalValue)}`, "success"); 
+            this.saveGame(); 
+        } else if (keepHighest) {
+            // Nếu không bán được đồng nào (do tất cả đều là level cao nhất)
+            showCustomAlert(`Tất cả Pet chủng này đều đang ở cấp cao nhất (Lv.${maxLevel}) nên đã được giữ lại an toàn!`, "info");
+        }
+    }
+
+    sellAllNonGods() {
+        document.getElementById('strain-manager').style.display = 'none'; 
+        this.confirmModalTitle = `⚠️ XÁC NHẬN BÁN TẤT CẢ?`;
+        this.confirmModalSubtitle = `(Giữ lại Thần, Pet đang khóa và Chủng đã khóa)`;
+        this.pendingConfirmButtons = [
+            { text: "Bán Tất Cả", bg: "#c0392b", action: () => {
+                const lab = this.labsData[this.currentLabId]; 
+                let totalValue = 0;
+                lab.slimes = lab.slimes.filter(s => {
+                    if (s.strain.isGod || s.locked || this.lockedStrains[s.strain.id]) return true;
+                    totalValue += s.value || 0;
+                    if (this.currentLabId === this.currentLabId) this.effects.push(new Shockwave(s.x, s.y, '#e74c3c'));
+                    return false;
+                });
+                if (totalValue > 0) { this.money += totalValue; this.sound.playCoin(); showCustomAlert(`🧹 Dọn dẹp thành công! Nhận được ${formatMoney(totalValue)}`, "success"); this.saveGame(); } 
+                else { showCustomAlert(`Không có Pet nào hợp lệ để bán!`, "info"); }
+                this.pendingConfirmButtons = null; 
+            }},
+            { text: "Hủy", bg: "#283c50", action: () => { this.pendingConfirmButtons = null; } }
+        ];
+    }
+
     start() {
-        const loop = (now) => {
-            try { const dt = Math.min((now - this.lastTime) / 1000, 0.1); this.lastTime = now; this.update(dt); this.draw(); } 
-            catch (e) { console.error(e); } requestAnimationFrame(loop);
-        };
+        const loop = (now) => { try { const dt = Math.min((now - this.lastTime) / 1000, 0.1); this.lastTime = now; this.update(dt); this.draw(); } catch (e) { console.error(e); } requestAnimationFrame(loop); };
         requestAnimationFrame(loop);
     }
 }
 
-window.addEventListener("load", () => { 
-    window.gameInstance = new Game(); 
-});
-
-// Tự động lưu lên Đám mây khi người chơi đóng trình duyệt/thoát game
+window.addEventListener("load", () => { window.gameInstance = new Game(); });
 window.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'hidden' && window.gameInstance && window.gameInstance.auth && window.gameInstance.auth.currentUser) {
         const localData = localStorage.getItem(window.gameInstance.getSaveKey());
-        if (localData) {
-            window.gameInstance.db.ref('gameSaves/' + window.gameInstance.auth.currentUser.uid).set({
-                saveData: localData,
-                lastUpdated: Date.now()
-            });
-        }
+        if (localData) { window.gameInstance.db.ref('gameSaves/' + window.gameInstance.auth.currentUser.uid).set({ saveData: localData, lastUpdated: Date.now() }); }
     }
 });
 </script>
