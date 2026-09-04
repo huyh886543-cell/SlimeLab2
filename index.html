@@ -105,7 +105,7 @@
             <canvas id="gameCanvas" width="1400" height="720"></canvas>
             
             <!-- Nút Ẩn/Hiện Bảng Quản Lý -->
-            <button onclick="const m = document.getElementById('strain-manager'); m.style.display = m.style.display === 'none' ? 'flex' : 'none';" style="position: absolute; top: 42px; left: 7px; z-index: 101; background: #1e3246; color: #00ffc8; border: 1.5px solid #3498db; padding: 6px 12px; border-radius: 6px; font-size: 9px; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); transition: 0.2s;">
+            <button onclick="const m = document.getElementById('strain-manager'); m.style.display = m.style.display === 'none' ? 'flex' : 'none';" style="position: absolute; top: 35px; left: 7px; z-index: 101; background: #1e3246; color: #00ffc8; border: 1.5px solid #3498db; padding: 6px 12px; border-radius: 6px; font-size: 9px; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); transition: 0.2s;">
                 📊 Bảng Quản Lý
             </button>
 
@@ -1141,7 +1141,7 @@ class Game {
         this.drawButton(this.pauseBtnRect, mO ? "#2a3442" : pColor, mO ? "#475569" : "#ffd700", pText, mO ? "#64748b" : "#fff", "bold 12px Arial");
         
         this.ctx.fillStyle = COLOR_TEXT; this.ctx.font = "bold 14px Arial"; 
-        this.ctx.fillText(`${this.slimes.length}/${this.maxCapacity}`, cr.left + 200, cr.top + 30);
+        this.ctx.fillText(`${this.slimes.length}/${this.maxCapacity}`, cr.left + 220, cr.top + 30);
         
         this.ctx.fillStyle = "#28374b"; this.ctx.fillRect(cr.left, cr.top, cr.width, 16); this.ctx.fillRect(cr.left, cr.bottom - 16, cr.width, 16);
         this.ctx.strokeStyle = cT.glass; this.ctx.lineWidth = 2.5; this.ctx.strokeRect(cr.left, cr.top, cr.width, cr.height);
