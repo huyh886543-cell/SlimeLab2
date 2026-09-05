@@ -1208,9 +1208,15 @@ class Game {
                 this.isPressingStrain = false; // Mở khóa vẽ lại
                 if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
                 
-                // Nếu chỉ bấm 1 lần (nhả tay trước 2 giây) -> Hiện Menu Bán
+                // Nếu bấm 1 lần (nhả tay trước 2 giây)
                 if (!isLongPress) {
-                    this.openSellModal(g.strain.id, g.strain.name);
+                    if (!this.lockedStrains[g.strain.id]) {
+                        // 1. Nếu chủng CHƯA KHÓA -> Mở bảng tùy chọn bán
+                        this.openSellModal(g.strain.id, g.strain.name);
+                    } else {
+                        // 2. Nếu chủng ĐÃ KHÓA -> Tự động Bán tất cả và Giữ lại các Pet max level
+                        this.executeSell(g.strain.id, true);
+                    }
                 }
             };
 
