@@ -960,7 +960,25 @@ class Game {
                 return true; 
             }
             if(this.isInside(x,y,{x:px+20,y:py+211,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="🚪 Bạn có chắc chắn muốn đăng xuất?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{if(this.auth)this.auth.signOut().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
-            if(this.isInside(x,y,{x:px+20,y:py+264,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="⚠️ XÓA VĨNH VIỄN TÀI KHOẢN NÀY?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{this.isDeleted=true;if(this.leaderboardRef)this.leaderboardRef.child(this.playerId).remove().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
+            if(this.isInside(x,y,{x:px+20,y:py+264,w:340,h:44})){ 
+                this.showSettings=false; 
+                this.confirmModalTitle="⚠️ XÓA VĨNH VIỄN TÀI KHOẢN NÀY?"; 
+                this.confirmModalSubtitle="Cảnh báo: Dữ liệu Đám mây cũng sẽ bị xóa sạch!"; 
+                this.pendingConfirmButtons=[
+                    {text:"Xác Nhận",bg:"#a02832",action:()=>{
+                        this.isDeleted=true;
+                        const p1 = this.leaderboardRef ? this.leaderboardRef.child(this.playerId).remove() : Promise.resolve();
+                        const p2 = (this.auth && this.auth.currentUser) ? this.db.ref('gameSaves/' + this.auth.currentUser.uid).remove() : Promise.resolve();
+                        Promise.all([p1, p2]).finally(() => {
+                            if(this.auth) this.auth.signOut();
+                            localStorage.clear();
+                            window.location.reload();
+                        });
+                    }},
+                    {text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}
+                ]; 
+                return true; 
+            }
             if(!this.isInside(x,y,{x:px,y:py,w:380,h:338}))this.showSettings=false; return true;
         }
 
