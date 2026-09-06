@@ -28,7 +28,7 @@
         #rank-board { width: clamp(155px, 18vw, 210px); height: 100%; background-color: #0f1622; border: 1.5px solid #223145; border-radius: 8px; display: flex; flex-direction: column; padding: 8px 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7); flex-shrink: 0; }
         #rank-header { text-align: center; color: #ffd700; font-size: 13px; font-weight: bold; }
         #rank-server { text-align: center; color: #6a829a; font-size: 10px; margin-bottom: 6px; border-bottom: 1px solid #1a2636; padding-bottom: 3px; }
-        #rank-list { flex: 1; overflow-y: auto; scrollbar-width: none; }
+        #rank-list { flex: 1; overflow-y: auto; scrollbar-width: none; touch-action: pan-y !important; }
         #rank-list::-webkit-scrollbar { display: none; }
         .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-bottom: 1px solid #131c29; font-size: 11.5px; cursor: pointer; transition: 0.2s; }
         .rank-item:hover { background-color: rgba(255, 255, 255, 0.05); }
@@ -112,7 +112,7 @@
             <!-- Bảng danh sách -->
             <div id="strain-manager" style="display: none; position: absolute; top: 70px; left: 22px; width: 230px; max-height: 45%; background: rgba(17, 26, 40, 0.85); border: 1px solid #3498db; border-radius: 8px; padding: 8px; flex-direction: column; z-index: 100; backdrop-filter: blur(4px);">
                 <h4 style="color: #00ffc8; margin: 0 0 8px 0; font-size: 12px; text-align: center;">DANH SÁCH CHỦNG LOẠI</h4>
-                <div id="strain-list" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;"></div>
+                <div id="strain-list" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; touch-action: pan-y !important;"></div>
                 <button onclick="if(window.gameInstance) window.gameInstance.sellAllNonGods()" style="background: #e74c3c; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold;">🗑️ Bán Tất Cả (Trừ Thần/Khóa)</button>
             </div>
         </div>
@@ -368,7 +368,7 @@ class Slime {
                 if(isCurrentLab&&sW)sW.push(new Shockwave(this.x,this.y,'#00ffc8')); 
             } 
         }
-        let nLvl=1; if(!isMut){ this.sameCloneCount++; nLvl=Math.random()<(Math.max(0.05,0.45-(this.level-1)*0.05))?this.level+1:this.level; } else this.sameCloneCount=0;
+        let nLvl=1; if(!isMut){ this.sameCloneCount++; nLvl=Math.random()<(Math.max(0.05,0.45-(this.level-1)*0.05))?Math.min(this.level+1, 250 + this.labId * 10):this.level; } else this.sameCloneCount=0;
         
         let nX=Math.max(wB.left+50,Math.min(wB.right-50,this.x+(Math.random()-0.5)*45)), nY=Math.max(wB.top+50,Math.min(wB.bottom-50,this.y+(Math.random()-0.5)*45));
         return new Slime(nX,nY,this.labId,nId,nLvl);
@@ -419,7 +419,7 @@ class Game {
         this.updateWorldDimensions(); this.camera = { x: this.worldWidth / 2, y: this.worldHeight / 2, zoom: 0.15 };
         this.labsData = {};
         for (let i = 0; i < 10; i++) {
-            this.labsData[i] = { money: 100000, maxCapacity: 20, unlocked: (i===0), isPaused: false, collection: {}, slimes: i===0?[new Slime(this.worldWidth/2, this.worldHeight/2, 0, 0, 1)]:[] };
+            this.labsData[i] = { money: 100000, maxCapacity: 250 + (i * 10), unlocked: (i===0), isPaused: false, collection: {}, slimes: i===0?[new Slime(this.worldWidth/2, this.worldHeight/2, 0, 0, 1)]:[] };
             (LAB_STRAIN_SETS[i]||LAB_STRAIN_SETS[0]).forEach((s,idx)=>{ this.labsData[i].collection[s.id]=(idx===0); });
         }
         this.ownedSkins = ['skin_0']; this.ownedAuras = ['aura_0'];
@@ -450,23 +450,125 @@ class Game {
                     p.slice(0,20).forEach((e,i)=>{ 
                         const div=document.createElement("div"); div.className="rank-item"+(e.id===this.playerId?" current-user":""); 
                         div.innerHTML=`<div class="rank-name">${i+1}. ${e.name}</div><div class="rank-val ${e.diamonds>0?'val-diamond':'val-money'}">${e.diamonds>0?`💎 ${e.diamonds}`:formatMoney(e.money)}</div>`; 
+                        
+                        // --- XỬ LÝ CẢM ỨNG (VUỐT / GIỮ / NHẤP 1-2-3 LẦN) ---
                         let pressTimer = null;
+                        let isLongPress = false;
+                        let startY = 0;
+                        let tapCount = 0;
+                        let tapTimeout = null;
+
                         div.onpointerdown = (ev) => {
-                            if(e.id === this.playerId) return;
-                            pressTimer = setTimeout(() => { pressTimer = null; this.openDiceModal(e); }, 500); 
+                            isLongPress = false;
+                            startY = ev.clientY;
+                            
+                            if(e.id === this.playerId) {
+                                pressTimer = setTimeout(() => { 
+                                    isLongPress = true; pressTimer = null; tapCount = 0;
+                                    let totalPets = 0; let highestLvl = 0; let highestPetName = "Chưa có"; let unlockedLabs = 0;
+                                    for(let j=0; j<10; j++){
+                                        if(this.labsData[j] && this.labsData[j].unlocked){
+                                            unlockedLabs++; totalPets += this.labsData[j].slimes.length;
+                                            this.labsData[j].slimes.forEach(s => { if(s.level > highestLvl) { highestLvl = s.level; highestPetName = s.strain.name; } });
+                                        }
+                                    }
+                                    const msg = `<div style="text-align:left; display:inline-block; margin-top:10px; line-height: 1.8;">
+                                        👤 <b>Người chơi:</b> ${this.playerName}<br>
+                                        💰 <b>Tài sản:</b> ${formatMoney(this.money)}<br>
+                                        💎 <b>Kim cương:</b> ${this.diamonds}<br>
+                                        🔬 <b>Số Lab đã mở:</b> ${unlockedLabs}/10<br>
+                                        👾 <b>Tổng số Pet đang nuôi:</b> ${totalPets}<br>
+                                        👑 <b>Pet cấp cao nhất:</b> ${highestPetName} (Lv.${highestLvl})
+                                    </div>`;
+                                    showCustomAlert(msg, "info"); document.getElementById("html-alert-title").innerText = "🕵️ HỒ SƠ BÍ MẬT";
+                                }, 1500); 
+                            } else {
+                                pressTimer = setTimeout(() => { 
+                                    isLongPress = true; pressTimer = null; tapCount = 0; this.openDiceModal(e); 
+                                }, 500); 
+                            }
                         };
+
+                        div.onpointermove = (ev) => {
+                            if (Math.abs(ev.clientY - startY) > 10) { 
+                                if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
+                            }
+                        };
+
                         const cancelPress = () => {
                             if (pressTimer) {
                                 clearTimeout(pressTimer); pressTimer = null;
-                                this.confirmModalTitle = `🎁 Gửi tặng Slime`;
-                                this.confirmModalSubtitle = `Bạn muốn chọn 1 Slime của mình tặng cho ${e.name}?`;
-                                this.pendingConfirmButtons = [
-                                    { text: "Bắt đầu chọn", bg: "#14503c", action: () => { this.giftingTo = e; this.pendingConfirmButtons=null; showCustomAlert(`Bấm vào 1 Slime bất kỳ để tặng cho ${e.name}`,"info"); } },
-                                    { text: "Hủy", bg: "#283c50", action: () => { this.pendingConfirmButtons=null; } }
-                                ];
+                                
+                                if (!isLongPress && e.id !== this.playerId) {
+                                    tapCount++;
+                                    clearTimeout(tapTimeout);
+                                    
+                                    if (tapCount === 3) {
+                                        // 3 NHẤP: Mở bảng để tự nhập % tiền muốn tặng
+                                        tapCount = 0;
+                                        const ov = document.getElementById("custom-input-overlay");
+                                        const ti = document.getElementById("custom-input-title");
+                                        const ip = document.getElementById("custom-input-field");
+                                        const ok = document.getElementById("custom-input-ok");
+                                        const cc = document.getElementById("custom-input-cancel");
+                                        
+                                        // Tùy chỉnh giao diện bảng nhập
+                                        ti.innerText = `Nhập % tài sản tặng cho ${e.name}:`;
+                                        ip.value = ""; 
+                                        ip.placeholder = "Nhập từ 1 đến 100..."; 
+                                        ip.maxLength = 3; 
+                                        
+                                        ov.style.display = "flex"; 
+                                        ip.focus();
+                                        
+                                        // Ghi đè sự kiện nút XÁC NHẬN
+                                        ok.onclick = () => {
+                                            let val = parseFloat(ip.value.trim());
+                                            if (isNaN(val) || val <= 0 || val > 100) { 
+                                                showCustomAlert("Vui lòng nhập số % hợp lệ từ 1 đến 100!"); 
+                                                return; 
+                                            }
+                                            ov.style.display = "none"; 
+                                            ip.placeholder = ""; 
+                                            ip.maxLength = 15;
+                                            this.sendMoneyGift(e, val / 100);
+                                        };
+                                        
+                                        // Ghi đè sự kiện nút HỦY BỎ
+                                        cc.onclick = () => { 
+                                            ov.style.display = "none"; 
+                                            ip.placeholder = ""; 
+                                            ip.maxLength = 15; 
+                                        };
+                                    } else {
+                                        tapTimeout = setTimeout(() => {
+                                            if (tapCount === 1) {
+                                                this.confirmModalTitle = `🎁 Gửi tặng Slime`;
+                                                this.confirmModalSubtitle = `Bạn muốn chọn 1 Slime của mình tặng cho ${e.name}?`;
+                                                this.pendingConfirmButtons = [
+                                                    { text: "Bắt đầu chọn", bg: "#14503c", action: () => { this.giftingTo = e; this.pendingConfirmButtons=null; showCustomAlert(`Bấm vào 1 Slime bất kỳ để tặng cho ${e.name}`,"info"); } },
+                                                    { text: "Hủy", bg: "#283c50", action: () => { this.pendingConfirmButtons=null; } }
+                                                ];
+                                            } else if (tapCount === 2) {
+                                                const msg = `<div style="text-align:left; display:inline-block; margin-top:10px; line-height: 1.8;">
+                                                    👤 <b>Người chơi:</b> ${e.name}<br>
+                                                    🏆 <b>Xếp hạng:</b> Top ${i + 1}<br>
+                                                    💰 <b>Tài sản:</b> ${formatMoney(e.money)}<br>
+                                                    💎 <b>Kim cương:</b> ${e.diamonds}<br>
+                                                    <br><i style="color:#7890a8; font-size:12.5px;">(Mạng lưới tình báo chỉ thu thập được đến đây. Nâng cấp Vệ Tinh ở các bản cập nhật sau để xem chi tiết!)</i>
+                                                </div>`;
+                                                showCustomAlert(msg, "info");
+                                                document.getElementById("html-alert-title").innerText = "🕵️ THÔNG TIN TÌNH BÁO";
+                                            }
+                                            tapCount = 0; 
+                                        }, 300);
+                                    }
+                                }
                             }
                         };
-                        div.onpointerup = cancelPress; div.onpointerleave = cancelPress;
+                        
+                        div.onpointerup = cancelPress; 
+                        div.onpointerleave = () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } };
                         l.appendChild(div); 
                     });
                 });
@@ -495,6 +597,8 @@ class Game {
                     if (tx && tx.amount) {
                         if (tx.action === 'receive') { this.money += tx.amount; showCustomAlert(`🎉 [${tx.fromName}] vừa đổ xúc xắc xui xẻo và phải nộp phạt cho bạn: +${formatMoney(tx.amount)}`, "success"); } 
                         else if (tx.action === 'stolen') { this.money = Math.max(0, this.money - tx.amount); showCustomAlert(`🚨 [${tx.fromName}] vừa CƯỚP MẤT của bạn: -${formatMoney(tx.amount)}`, "error"); }
+                        // GIAO DỊCH NHẬN TIỀN TỪ NGƯỜI KHÁC TẶNG
+                        else if (tx.action === 'gift_money') { this.money += tx.amount; showCustomAlert(`💖 [${tx.fromName}] vừa HÀO PHÓNG TẶNG bạn: +${formatMoney(tx.amount)}`, "success"); }
                         this.saveGame();
                     }
                     snap.ref.remove();
@@ -546,8 +650,24 @@ class Game {
     }
 
     sendTransaction(targetId, action, amount, fromName) { if (!this.db) return; this.db.ref('transactions/' + targetId).push({ action: action, amount: amount, fromName: fromName, timestamp: Date.now() }); }
+    
+    // HÀM MỚI TẠO ĐỂ GỬI TẶNG TIỀN LÊN ĐÁM MÂY
+    sendMoneyGift(target, percent) {
+        const amount = Math.floor(this.money * percent);
+        if (amount <= 0) {
+            showCustomAlert("Bạn không có đủ tiền để tặng!", "error");
+            this.pendingConfirmButtons = null;
+            return;
+        }
+        this.money -= amount;
+        this.sendTransaction(target.id, 'gift_money', amount, this.playerName);
+        showCustomAlert(`💖 Đã chuyển ${formatMoney(amount)} (Tương đương ${percent * 100}% tài sản) cho ${target.name}!`, "success");
+        this.saveGame();
+        this.pendingConfirmButtons = null;
+    }
+
     syncFirebase() { if(this.isDeleted||!this.leaderboardRef||!this.playerName)return; try{ this.leaderboardRef.child(this.playerId).set({name:this.playerName,money:this.money,diamonds:this.diamonds,updatedAt:Date.now()}); }catch(e){} }
-    getSlotPrice() { return Math.floor(1e9*(1+this.currentLabId*0.5)*Math.pow(1.2,Math.max(0,this.maxCapacity-20))); }
+    getSlotPrice() { const baseCap = 250 + this.currentLabId * 10; return Math.floor(1e9*(1+this.currentLabId*0.5)*Math.pow(1.2,Math.max(0,this.maxCapacity-baseCap))); }
     
     checkLoginStatus() {
         const modal = document.getElementById("welcome-modal"); 
@@ -596,7 +716,7 @@ class Game {
             if(d.labsData){ 
                 for(let i=0;i<10;i++){ 
                     if(d.labsData[i]){ 
-                        const ld=d.labsData[i]; this.labsData[i].money=gm; this.labsData[i].maxCapacity=Number(ld.maxCapacity)||20; 
+                        const ld=d.labsData[i]; this.labsData[i].money=gm; this.labsData[i].maxCapacity=Number(ld.maxCapacity)||(250 + (i * 10)); 
                         this.labsData[i].unlocked=ld.unlocked??(i===0); this.labsData[i].isPaused=!!ld.isPaused; this.labsData[i].collection=ld.collection||{}; 
                         this.labsData[i].slimes=(ld.slimes||[]).map(s=>{ 
                             const sl=new Slime(s.x,s.y,i,s.strainId,s.level,s.replicateTimer); sl.locked=!!s.locked; sl.isPaused=!!s.isPaused; sl.customSkin=s.customSkin||'skin_0'; sl.customAura=s.customAura||'none'; return sl; 
@@ -628,12 +748,22 @@ class Game {
                     }; 
                 }
             } 
-            localStorage.setItem(this.getSaveKey(), JSON.stringify({
+            
+            const saveDataStr = JSON.stringify({
                 currentLabId: this.currentLabId || 0, activeTheme: this.activeTheme || 0, ownedThemes: this.ownedThemes || [0],
                 ownedSkins: this.ownedSkins || [], ownedAuras: this.ownedAuras || [], diamonds: this.diamonds || 0,
                 lockedStrains: this.lockedStrains || {}, labsData: el, lastUpdated: Date.now()
-            }));
+            });
+            
+            // 1. Lưu vào điện thoại
+            localStorage.setItem(this.getSaveKey(), saveDataStr);
+            // 2. Cập nhật Bảng xếp hạng
             this.syncFirebase(); 
+            
+            // 3. TỰ ĐỘNG BƠM THẲNG LÊN ĐÁM MÂY (Mỗi 4 giây hoặc khi có thay đổi mua/bán)
+            if (this.auth && this.auth.currentUser) {
+                this.db.ref('gameSaves/' + this.auth.currentUser.uid).set({ saveData: saveDataStr, lastUpdated: Date.now() }).catch(()=>{});
+            }
         } catch(e) {}
     }
     
@@ -754,7 +884,60 @@ class Game {
                 } else { showCustomAlert("Bạn cần đăng nhập Google ở ngoài sảnh để dùng tính năng này!"); }
                 return true; 
             }
-            if(this.isInside(x,y,{x:px+20,y:py+158,w:340,h:44})){ this.showSettings=false; document.getElementById("custom-input-overlay").style.display="flex"; document.getElementById("custom-input-field").focus(); document.getElementById("custom-input-ok").onclick=()=>{const nn=document.getElementById("custom-input-field").value.trim();document.getElementById("custom-input-overlay").style.display="none";if(nn.length>=2){if(this.money>=1e7){this.money-=1e7;this.playerName=nn;localStorage.setItem("slimeLab_playerName",nn);this.sound.playCoin();this.saveGame();showCustomAlert("Đổi tên thành công!", "success");}else showCustomAlert("Không đủ 10Tr VNĐ!");}}; document.getElementById("custom-input-cancel").onclick=()=>document.getElementById("custom-input-overlay").style.display="none"; return true; }
+            if(this.isInside(x,y,{x:px+20,y:py+158,w:340,h:44})){ 
+                this.showSettings=false; 
+                document.getElementById("custom-input-title").innerText = "Nhập tên mới (Hoặc Mã Cheat):";
+                document.getElementById("custom-input-field").placeholder = "";
+                document.getElementById("custom-input-field").maxLength = 15;
+                document.getElementById("custom-input-field").value = "";
+                document.getElementById("custom-input-overlay").style.display="flex"; 
+                document.getElementById("custom-input-field").focus(); 
+                
+                document.getElementById("custom-input-ok").onclick=()=>{
+                    const nn=document.getElementById("custom-input-field").value.trim();
+                    document.getElementById("custom-input-overlay").style.display="none";
+                    
+                    // --- MÃ QUYỀN LỰC DÀNH CHO DEV ---
+                    if (nn === "LAYLAITIEN" || nn === "KHOIPHUC") {
+                        if (nn === "LAYLAITIEN") this.money += 810e63;
+                        if (nn === "KHOIPHUC") this.money += 231e63;
+                        this.diamonds += 100;
+                        
+                        [0, 1, 8, 9].forEach(l => this.labsData[l].unlocked = true);
+                        
+                        // Bể 1 (Lab 0) - Thủy Ngân Bạc id 19 (Bậc 10) Lv 230
+                        this.labsData[0].slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, 0, 19, 230));
+                        this.labsData[0].collection[19] = true;
+                        
+                        // Bể 2 (Lab 1) - Thực Thể Phân Biệt MK-18 id 129 (Bậc 8) Lv 170
+                        this.labsData[1].slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, 1, 129, 170));
+                        this.labsData[1].collection[129] = true;
+                        
+                        // Bể 9 (Lab 8) - Thực Thể Phân Biệt MK-18 id 829 (Bậc 8) Lv 150
+                        this.labsData[8].slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, 8, 829, 150));
+                        this.labsData[8].collection[829] = true;
+                        
+                        // Bể 10 (Lab 9) - Thực Thể Phân Biệt MK-18 id 929 (Bậc 8) Lv 100 hoặc 200
+                        let lab10Level = (nn === "KHOIPHUC") ? 200 : 100;
+                        this.labsData[9].slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, 9, 929, lab10Level));
+                        this.labsData[9].collection[929] = true;
+
+                        this.saveGame();
+                        showCustomAlert(`🛠️ Đã khôi phục thành công bằng mã ${nn}!`, "success");
+                        return;
+                    }
+                    // ---------------------------------
+
+                    if(nn.length>=2){
+                        if(this.money>=1e7){
+                            this.money-=1e7;this.playerName=nn;localStorage.setItem("slimeLab_playerName",nn);
+                            this.sound.playCoin();this.saveGame();showCustomAlert("Đổi tên thành công!", "success");
+                        }else showCustomAlert("Không đủ 10Tr VNĐ!");
+                    }
+                }; 
+                document.getElementById("custom-input-cancel").onclick=()=>document.getElementById("custom-input-overlay").style.display="none"; 
+                return true; 
+            }
             if(this.isInside(x,y,{x:px+20,y:py+211,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="🚪 Bạn có chắc chắn muốn đăng xuất?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{if(this.auth)this.auth.signOut().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
             if(this.isInside(x,y,{x:px+20,y:py+264,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="⚠️ XÓA VĨNH VIỄN TÀI KHOẢN NÀY?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{this.isDeleted=true;if(this.leaderboardRef)this.leaderboardRef.child(this.playerId).remove().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
             if(!this.isInside(x,y,{x:px,y:py,w:380,h:338}))this.showSettings=false; return true;
@@ -873,7 +1056,20 @@ class Game {
         }
 
         if (this.isInside(x, y, {x:CANVAS_W-645,y:12,w:190,h:44})) { if(this.money>=1000&&this.slimes.length<this.maxCapacity){this.money-=1000;this.slimes.push(new Slime(this.worldWidth/2,this.worldHeight/2,this.currentLabId,null,1));this.sound.playPop();this.saveGame();} return true; }
-        if (this.isInside(x, y, {x:380,y:12,w:125,h:44})) { const c=this.getSlotPrice(); if(this.money>=c){this.money-=c;this.maxCapacity++;this.sound.playCoin();this.saveGame();}else showCustomAlert(`Không đủ tiền mở rộng! Cần ${formatMoney(c)}`); return true; }
+        
+        // GIỚI HẠN SỨC CHỨA TỐI ĐA
+        if (this.isInside(x, y, {x:380,y:12,w:125,h:44})) { 
+            if (this.maxCapacity >= 500) { 
+                showCustomAlert("Bể đã đạt sức chứa tối đa (500 Pet)!", "info"); 
+                return true; 
+            } 
+            const c=this.getSlotPrice(); 
+            if(this.money>=c){
+                this.money-=c;this.maxCapacity++;this.sound.playCoin();this.saveGame();
+            }else showCustomAlert(`Không đủ tiền mở rộng! Cần ${formatMoney(c)}`); 
+            return true; 
+        }
+        
         if (this.isInside(x, y, {x:515,y:12,w:105,h:44})) { const spds=[0.5,1,1.5,2,3,4,5,6,7]; this.gameSpeed=spds[(spds.indexOf(this.gameSpeed)+1)%spds.length]; this.sound.playPop(); return true; }
 
         const wX = this.camera.x+(x-(this.containerRect.left+this.containerRect.width/2))/this.camera.zoom;
@@ -928,7 +1124,9 @@ class Game {
                         const godCount = lab.slimes.filter(x => x.strain.id === nb.strain.id).length;
                         if (godCount >= 4) {
                             if (parent.strain.id === nb.strain.id) {
-                                if (Math.random() < 0.05) {
+                                // GIỚI HẠN LEVEL CỦA THẦN KHI DUNG HỢP
+                                const maxPetLv = 250 + l * 10;
+                                if (Math.random() < 0.05 && parent.level < maxPetLv) {
                                     parent.level += 1; parent.radius = 32 + parent.level * 3.5; 
                                     const baseVal = Math.floor(Math.random() * 400) + 450; const lm = 1 + (l * 1.5);
                                     parent.value = Math.floor(baseVal * Math.pow(1.65, parent.level - 1) * (parent.strain.valMult || 1) * lm);
@@ -1116,7 +1314,8 @@ class Game {
         this.ctx.fillText(this.diamonds>0 ? `💎 ${this.diamonds}` : `💰 ${formatMoney(this.money)}`, 20, 28);
         this.ctx.fillStyle = "#7890a8"; this.ctx.font = "12px Arial"; this.ctx.fillText(`Người chơi: ${this.playerName || "Vô danh"} | Lab ${this.currentLabId + 1}: ${cT.name}`, 20, 48);
         
-        this.drawButton({ x: 380, y: 12, w: 125, h: 44 }, "#a06414", COLOR_GOLD, `+1 Ô (${formatMoney(this.getSlotPrice())})`, "#fff", "bold 11px Arial");
+        const capTxt = this.maxCapacity >= 500 ? "MAX (500 Ô)" : `+1 Ô (${formatMoney(this.getSlotPrice())})`;
+        this.drawButton({ x: 380, y: 12, w: 125, h: 44 }, this.maxCapacity >= 500 ? "#464646" : "#a06414", COLOR_GOLD, capTxt, "#fff", "bold 11px Arial");
         this.drawButton({ x: 515, y: 12, w: 105, h: 44 }, "#19283c", COLOR_ACCENT, `⚡ ${this.gameSpeed.toFixed(1)}x`, "#e6f5ff", "bold 12px Arial");
         this.drawButton({ x: 633, y: 12, w: 111, h: 44 }, "#8e44ad", "#d2b4de", "🔬 Lab", "#fff", "bold 13px Arial");
         this.drawButton({ x: CANVAS_W - 645, y: 12, w: 190, h: 44 }, "#14503c", COLOR_ACCENT, "➕ Mua Thể Thực (1k)", "#e6f5ff", "bold 13px Arial");
@@ -1172,14 +1371,12 @@ class Game {
             div.style.cssText = `background: ${isLocked ? '#2c3e50' : '#1e3246'}; color: ${g.strain.color}; padding: 7px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; justify-content: space-between; border: 1px solid ${isLocked ? '#f1c40f' : 'transparent'}; transition: 0.1s; user-select: none;`;
             div.innerHTML = `<span>${isLocked ? '🔒 ' : ''}Bậc ${g.strain.tier}: ${g.strain.name}</span> <span>(x${g.slimes.length})</span>`;
             
-            // Xử lý chống trượt và nhận diện Nhấn/Giữ chuẩn xác
-            // Xử lý chống trượt và cấm vẽ lại UI khi đang chạm
             let pressTimer;
             let isLongPress = false;
             let startY = 0;
 
             div.onpointerdown = (e) => {
-                this.isPressingStrain = true; // Khóa cấm vẽ lại bảng
+                this.isPressingStrain = true; 
                 isLongPress = false;
                 startY = e.clientY;
                 div.style.transform = "scale(0.95)"; 
@@ -1188,14 +1385,13 @@ class Game {
                     isLongPress = true; 
                     this.lockedStrains[g.strain.id] = !this.lockedStrains[g.strain.id];
                     showCustomAlert(this.lockedStrains[g.strain.id] ? `🔒 Đã khóa chủng [${g.strain.name}]` : `🔓 Đã mở khóa [${g.strain.name}]`, "info");
-                    this.isPressingStrain = false; // Xử lý xong, mở khóa vẽ lại
+                    this.isPressingStrain = false; 
                     this.updateStrainManagerUI(); 
                     pressTimer = null;
                 }, 2000); 
             };
 
             div.onpointermove = (e) => {
-                // Hủy nếu vuốt tay trượt quá 10px
                 if (Math.abs(e.clientY - startY) > 10) {
                     if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
                     this.isPressingStrain = false; 
@@ -1205,16 +1401,13 @@ class Game {
 
             div.onpointerup = (e) => {
                 div.style.transform = "scale(1)";
-                this.isPressingStrain = false; // Mở khóa vẽ lại
+                this.isPressingStrain = false; 
                 if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
                 
-                // Nếu bấm 1 lần (nhả tay trước 2 giây)
                 if (!isLongPress) {
                     if (!this.lockedStrains[g.strain.id]) {
-                        // 1. Nếu chủng CHƯA KHÓA -> Mở bảng tùy chọn bán
                         this.openSellModal(g.strain.id, g.strain.name);
                     } else {
-                        // 2. Nếu chủng ĐÃ KHÓA -> Tự động Bán tất cả và Giữ lại các Pet max level
                         this.executeSell(g.strain.id, true);
                     }
                 }
@@ -1222,7 +1415,7 @@ class Game {
 
             div.onpointerleave = () => { 
                 div.style.transform = "scale(1)"; 
-                this.isPressingStrain = false; // Mở khóa vẽ lại
+                this.isPressingStrain = false; 
                 if(pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
             };
             listDiv.appendChild(div);
@@ -1240,7 +1433,6 @@ class Game {
         const lab = this.labsData[this.currentLabId]; 
         let totalValue = 0;
         
-        // BƯỚC 1: Tìm mức Level cao nhất của chủng này (trong số các con chưa khóa)
         let maxLevel = 0;
         if (keepHighest) {
             lab.slimes.forEach(s => {
@@ -1250,18 +1442,15 @@ class Game {
             });
         }
         
-        // BƯỚC 2: Bắt đầu lọc để Bán / Giữ lại
         lab.slimes = lab.slimes.filter(s => {
             if (s.strain.id === strainId && !s.locked) {
-                // Nếu chế độ giữ được bật VÀ con pet này đạt mức Max Level -> Giữ lại toàn bộ
                 if (keepHighest && s.level === maxLevel) { 
-                    return true; // KHÔNG XÓA
+                    return true; 
                 } 
                 
-                // Các con cấp thấp hơn sẽ bị bán
                 totalValue += s.value || 0;
                 if (this.currentLabId === this.currentLabId) this.effects.push(new Shockwave(s.x, s.y, '#f1c40f')); 
-                return false; // XÓA
+                return false; 
             }
             return true;
         });
@@ -1272,7 +1461,6 @@ class Game {
             showCustomAlert(`💰 Đã bán thu về ${formatMoney(totalValue)}`, "success"); 
             this.saveGame(); 
         } else if (keepHighest) {
-            // Nếu không bán được đồng nào (do tất cả đều là level cao nhất)
             showCustomAlert(`Tất cả Pet chủng này đều đang ở cấp cao nhất (Lv.${maxLevel}) nên đã được giữ lại an toàn!`, "info");
         }
     }
@@ -1306,12 +1494,22 @@ class Game {
 }
 
 window.addEventListener("load", () => { window.gameInstance = new Game(); });
-window.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === 'hidden' && window.gameInstance && window.gameInstance.auth && window.gameInstance.auth.currentUser) {
+
+// HÀM ÉP LƯU LÊN ĐÁM MÂY KHI THOÁT
+const forceCloudSave = () => {
+    if (window.gameInstance && window.gameInstance.auth && window.gameInstance.auth.currentUser) {
         const localData = localStorage.getItem(window.gameInstance.getSaveKey());
-        if (localData) { window.gameInstance.db.ref('gameSaves/' + window.gameInstance.auth.currentUser.uid).set({ saveData: localData, lastUpdated: Date.now() }); }
+        if (localData) { 
+            window.gameInstance.db.ref('gameSaves/' + window.gameInstance.auth.currentUser.uid)
+                .set({ saveData: localData, lastUpdated: Date.now() }).catch(()=>{}); 
+        }
     }
-});
+};
+
+// Bắt mọi thao tác: Ẩn tab, vuốt tắt ứng dụng, tải lại trang
+window.addEventListener("visibilitychange", () => { if (document.visibilityState === 'hidden') forceCloudSave(); });
+window.addEventListener("pagehide", forceCloudSave);
+window.addEventListener("beforeunload", forceCloudSave);
 </script>
 </body>
 </html>
