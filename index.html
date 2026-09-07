@@ -16,7 +16,14 @@
     <script>
         window.addEventListener("DOMContentLoaded", () => {
             const bgm = document.getElementById("bgm-stardew");
-            if (bgm) { bgm.volume = 0.4; window.addEventListener("pointerdown", () => { if (bgm.paused) bgm.play().catch(e=>console.log(e)); }, { once: true }); }
+            if (bgm) { 
+                bgm.volume = 0.4; 
+                window.addEventListener("pointerdown", () => { 
+                    // Kiểm tra nếu game đã tải và người dùng từng tắt nhạc thì KHÔNG cho tự động phát
+                    if (window.gameInstance && window.gameInstance.sound && !window.gameInstance.sound.musicPlaying) return;
+                    if (bgm.paused) bgm.play().catch(e=>console.log(e)); 
+                }, { once: true }); 
+            }
         });
     </script>
     <style>
@@ -111,7 +118,7 @@
                 📊 Bảng Quản Lý
             </button>
 
-            <div id="strain-manager" style="display: none; position: absolute; top: 70px; left: 22px; width: 230px; max-height: 45%; background: rgba(17, 26, 40, 0.85); border: 1px solid #3498db; border-radius: 8px; padding: 8px; flex-direction: column; z-index: 100; backdrop-filter: blur(4px);">
+            <div id="strain-manager" style="display: none; position: absolute; top: 70px; left: 22px; width: 230px; max-height: 45%; background: rgba(17, 26, 40, 0.92); border: 1px solid #3498db; border-radius: 8px; padding: 8px; flex-direction: column; z-index: 100; backdrop-filter: blur(4px);">
                 <h4 style="color: #00ffc8; margin: 0 0 8px 0; font-size: 12px; text-align: center;">DANH SÁCH CHỦNG LOẠI</h4>
                 <div id="strain-list" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; touch-action: pan-y !important; -webkit-overflow-scrolling: touch;"></div>
                 <button onclick="if(window.gameInstance) window.gameInstance.sellAllNonGods()" style="background: #e74c3c; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold;">🗑️ Bán Tất Cả (Trừ Thần/Khóa)</button>
@@ -309,12 +316,19 @@ class MasterpieceArtRenderer {
 class SoundEngine {
     constructor() { this.ctx = null; this.volume = 0.5; this.musicPlaying = true; this.currentTrackId = -1; }
     init(labId = 0) { try { if(!this.ctx) { this.ctx=new (window.AudioContext||window.webkitAudioContext)(); } if(this.ctx.state==="suspended") this.ctx.resume(); this.switchBGM(labId); } catch(e){} }
-    switchBGM(labId) { if (this.currentTrackId === labId) return; this.currentTrackId = labId; const b = document.getElementById("bgm-stardew"); if (b) { b.src = `music_${labId}.mp3`; b.load(); b.volume = this.volume; if (this.musicPlaying) b.play().catch(()=>{}); } }
+    switchBGM(labId) { if (this.currentTrackId === labId) return; this.currentTrackId = labId; const b = document.getElementById("bgm-stardew"); if (b) { b.src = `music_${labId}.mp3`; b.load(); b.volume = this.volume; if (this.musicPlaying) b.play().catch(()=>{}); else b.pause(); } }
     playPop() { try { if(!this.ctx||this.volume<=0)return; const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.frequency.setValueAtTime(520,this.ctx.currentTime); o.frequency.exponentialRampToValueAtTime(820,this.ctx.currentTime+0.07); g.gain.setValueAtTime(this.volume*0.25,this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+0.07); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime+0.07); } catch(e){} }
     playCoin() { try { if(!this.ctx||this.volume<=0)return; const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.type="triangle"; o.frequency.setValueAtTime(880,this.ctx.currentTime); o.frequency.setValueAtTime(1320,this.ctx.currentTime+0.08); g.gain.setValueAtTime(this.volume*0.3,this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+0.16); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime+0.16); } catch(e){} }
     playMutate() { try { if(!this.ctx||this.volume<=0)return; [440,554,659,880].forEach((f,i)=>{ const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.frequency.setValueAtTime(f,this.ctx.currentTime+i*0.06); g.gain.setValueAtTime(this.volume*0.25,this.ctx.currentTime+i*0.06); g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+i*0.06+0.1); o.connect(g); g.connect(this.ctx.destination); o.start(this.ctx.currentTime+i*0.06); o.stop(this.ctx.currentTime+i*0.06+0.1); }); } catch(e){} }
     setVolume(d) { this.volume=Math.max(0,Math.min(1,this.volume+d)); const b=document.getElementById("bgm-stardew"); if(b)b.volume=this.volume; }
-    toggleMusic() { this.musicPlaying=!this.musicPlaying; const b=document.getElementById("bgm-stardew"); if(b){if(this.musicPlaying)b.play().catch(()=>{}); else b.pause();} }
+    toggleMusic() { 
+        this.musicPlaying=!this.musicPlaying; 
+        const b=document.getElementById("bgm-stardew"); 
+        if(b) {
+            if(this.musicPlaying) b.play().catch(()=>{}); 
+            else b.pause();
+        } 
+    }
 }
 
 class Particle {
@@ -448,6 +462,7 @@ class Game {
         this.shopTab = 'skins'; this.shopPage = 0; this.bookPage = 0;
         this.activePointers = new Map();
         this.lastTime = performance.now(); this.lastSaveTime = performance.now();
+        
         this.initFirebase(); this.setupEvents(); this.checkLoginStatus();
     }
     
@@ -590,11 +605,9 @@ class Game {
         } catch(e) {}
     }
 
-    // SỬA LỖI 1: Tách riêng phần lắng nghe giao dịch để gọi SAU KHI đã tải file save từ đám mây (tránh bị đè dữ liệu rác)
     listenForTransactions() {
         if (!this.db || !this.playerId) return;
         
-        // Hủy lắng nghe cũ nếu có
         this.db.ref('gifts/' + this.playerId).off();
         this.db.ref('transactions/' + this.playerId).off();
 
@@ -700,7 +713,7 @@ class Game {
                 this.sound.init(this.currentLabId); 
                 this.loadGame(); 
                 this.syncFirebase(); 
-                this.listenForTransactions(); // Bắt đầu lắng nghe giao dịch SAU KHI đã tải file save từ Cloud
+                this.listenForTransactions(); 
                 this.start();
             } 
         };
@@ -737,7 +750,7 @@ class Game {
             this.sound.init(this.currentLabId); 
             this.loadGame(); 
             this.syncFirebase(); 
-            this.listenForTransactions(); // Bắt đầu lắng nghe giao dịch
+            this.listenForTransactions(); 
             this.start(); 
         };
         const sN=localStorage.getItem("slimeLab_playerName"); if(sN)n.value=sN;
@@ -749,6 +762,12 @@ class Game {
     loadGame() {
         try { 
             const sd=localStorage.getItem(this.getSaveKey()); if(!sd)return; const d=JSON.parse(sd); 
+            
+            // TẢI TRẠNG THÁI NHẠC TỪ LẦN CHƠI TRƯỚC
+            if (d.musicPlaying !== undefined) {
+                this.sound.musicPlaying = d.musicPlaying;
+            }
+            
             this.currentLabId=Number(d.currentLabId)||0; this.sound.switchBGM(this.currentLabId); 
             this.activeTheme=d.activeTheme||'default'; this.ownedThemes=d.ownedThemes||['default']; 
             this.ownedSkins=d.ownedSkins||['skin_0']; this.ownedAuras=d.ownedAuras||['aura_0']; 
@@ -764,7 +783,6 @@ class Game {
                         
                         this.labsData[i].unlocked=ld.unlocked??(i===0); this.labsData[i].isPaused=!!ld.isPaused; this.labsData[i].collection=ld.collection||{}; 
                         this.labsData[i].slimes=(ld.slimes||[]).map(s=>{ 
-                            // SỬA LỖI 2: Đảm bảo khôi phục đúng thuộc tính locked của từng con pet từ dữ liệu lưu
                             const sl=new Slime(s.x, s.y, i, s.strainId, s.level, s.replicateTimer, s.locked); 
                             sl.isPaused=!!s.isPaused; sl.customSkin=s.customSkin||'skin_0'; sl.customAura=s.customAura||'none'; return sl; 
                         }); 
@@ -799,7 +817,9 @@ class Game {
             const saveDataStr = JSON.stringify({
                 currentLabId: this.currentLabId || 0, activeTheme: this.activeTheme || 0, ownedThemes: this.ownedThemes || [0],
                 ownedSkins: this.ownedSkins || [], ownedAuras: this.ownedAuras || [], diamonds: this.diamonds || 0,
-                lockedStrains: this.lockedStrains || {}, labsData: el, lastUpdated: Date.now()
+                lockedStrains: this.lockedStrains || {}, labsData: el, 
+                musicPlaying: this.sound.musicPlaying, // LƯU TRẠNG THÁI BẬT/TẮT NHẠC
+                lastUpdated: Date.now()
             });
             
             localStorage.setItem(this.getSaveKey(), saveDataStr);
@@ -917,7 +937,8 @@ class Game {
             const px=CANVAS_W-400, py=65;
             if(this.isInside(x,y,{x:px+270,y:py+15,w:40,h:30})){this.sound.setVolume(-0.1);return true;}
             if(this.isInside(x,y,{x:px+320,y:py+15,w:40,h:30})){this.sound.setVolume(0.1);return true;}
-            if(this.isInside(x,y,{x:px+20,y:py+55,w:340,h:40})){this.sound.toggleMusic();return true;}
+            // CẬP NHẬT: Thêm saveGame sau khi đổi trạng thái nhạc
+            if(this.isInside(x,y,{x:px+20,y:py+55,w:340,h:40})){this.sound.toggleMusic(); this.saveGame(); return true;}
             if(this.isInside(x,y,{x:px+20,y:py+105,w:340,h:44})){ 
                 this.showSettings=false; 
                 if(this.auth && this.auth.currentUser) {
