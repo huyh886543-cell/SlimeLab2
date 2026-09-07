@@ -586,38 +586,48 @@ class Game {
                         l.appendChild(div); 
                     });
                 });
-                
-                this.db.ref('gifts/' + this.playerId).on('child_added', snap => {
-                    const g = snap.val();
-                    if (g && g.strainId !== undefined && g.level) {
-                        const targetLab = this.labsData[g.labId] || this.labsData[0];
-                        const sts = LAB_STRAIN_SETS[g.labId] || LAB_STRAIN_SETS[0];
-                        const petInfo = sts.find(s => s.id === g.strainId);
-                        const petName = petInfo ? petInfo.name : "Slime Bí Ẩn";
-                        if (targetLab.slimes.length < targetLab.maxCapacity) {
-                            targetLab.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, g.labId, g.strainId, g.level));
-                            targetLab.collection[g.strainId] = true; 
-                            showCustomAlert(`🎁 [${g.fromName}] vừa tặng bạn: [${petName}] Lv.${g.level}! Đã vào Lab ${g.labId+1}`, "success");
-                        } else {
-                            this.money += 1000000000;
-                            showCustomAlert(`🎁 [${g.fromName}] tặng bạn [${petName}] nhưng Lab đầy! Đã quy đổi thành 1 Tỷ VNĐ.`, "info");
-                        }
-                    }
-                    snap.ref.remove(); 
-                });
-
-                this.db.ref('transactions/' + this.playerId).on('child_added', snap => {
-                    const tx = snap.val();
-                    if (tx && tx.amount) {
-                        if (tx.action === 'receive') { this.money += tx.amount; showCustomAlert(`🎉 [${tx.fromName}] vừa đổ xúc xắc xui xẻo và phải nộp phạt cho bạn: +${formatMoney(tx.amount)}`, "success"); } 
-                        else if (tx.action === 'stolen') { this.money = Math.max(0, this.money - tx.amount); showCustomAlert(`🚨 [${tx.fromName}] vừa CƯỚP MẤT của bạn: -${formatMoney(tx.amount)}`, "error"); }
-                        else if (tx.action === 'gift_money') { this.money += tx.amount; showCustomAlert(`💖 [${tx.fromName}] vừa HÀO PHÓNG TẶNG bạn: +${formatMoney(tx.amount)}`, "success"); }
-                        this.saveGame();
-                    }
-                    snap.ref.remove();
-                });
             }
         } catch(e) {}
+    }
+
+    // SỬA LỖI 1: Tách riêng phần lắng nghe giao dịch để gọi SAU KHI đã tải file save từ đám mây (tránh bị đè dữ liệu rác)
+    listenForTransactions() {
+        if (!this.db || !this.playerId) return;
+        
+        // Hủy lắng nghe cũ nếu có
+        this.db.ref('gifts/' + this.playerId).off();
+        this.db.ref('transactions/' + this.playerId).off();
+
+        this.db.ref('gifts/' + this.playerId).on('child_added', snap => {
+            const g = snap.val();
+            if (g && g.strainId !== undefined && g.level) {
+                const targetLab = this.labsData[g.labId] || this.labsData[0];
+                const sts = LAB_STRAIN_SETS[g.labId] || LAB_STRAIN_SETS[0];
+                const petInfo = sts.find(s => s.id === g.strainId);
+                const petName = petInfo ? petInfo.name : "Slime Bí Ẩn";
+                if (targetLab.slimes.length < targetLab.maxCapacity) {
+                    targetLab.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, g.labId, g.strainId, g.level));
+                    targetLab.collection[g.strainId] = true; 
+                    showCustomAlert(`🎁 [${g.fromName}] vừa tặng bạn: [${petName}] Lv.${g.level}! Đã vào Lab ${g.labId+1}`, "success");
+                } else {
+                    this.money += 1000000000;
+                    showCustomAlert(`🎁 [${g.fromName}] tặng bạn [${petName}] nhưng Lab đầy! Đã quy đổi thành 1 Tỷ VNĐ.`, "info");
+                }
+                this.saveGame();
+            }
+            snap.ref.remove(); 
+        });
+
+        this.db.ref('transactions/' + this.playerId).on('child_added', snap => {
+            const tx = snap.val();
+            if (tx && tx.amount) {
+                if (tx.action === 'receive') { this.money += tx.amount; showCustomAlert(`🎉 [${tx.fromName}] vừa đổ xúc xắc xui xẻo và phải nộp phạt cho bạn: +${formatMoney(tx.amount)}`, "success"); } 
+                else if (tx.action === 'stolen') { this.money = Math.max(0, this.money - tx.amount); showCustomAlert(`🚨 [${tx.fromName}] vừa CƯỚP MẤT của bạn: -${formatMoney(tx.amount)}`, "error"); }
+                else if (tx.action === 'gift_money') { this.money += tx.amount; showCustomAlert(`💖 [${tx.fromName}] vừa HÀO PHÓNG TẶNG bạn: +${formatMoney(tx.amount)}`, "success"); }
+                this.saveGame();
+            }
+            snap.ref.remove();
+        });
     }
 
     openDiceModal(target) {
@@ -684,7 +694,16 @@ class Game {
     
     checkLoginStatus() {
         const modal = document.getElementById("welcome-modal"); 
-        const sG = () => { if(!this.hasStarted){this.hasStarted=true; this.sound.init(this.currentLabId); this.loadGame(); this.syncFirebase(); this.start();} };
+        const sG = () => { 
+            if(!this.hasStarted) {
+                this.hasStarted=true; 
+                this.sound.init(this.currentLabId); 
+                this.loadGame(); 
+                this.syncFirebase(); 
+                this.listenForTransactions(); // Bắt đầu lắng nghe giao dịch SAU KHI đã tải file save từ Cloud
+                this.start();
+            } 
+        };
         if (this.auth) { 
             this.auth.onAuthStateChanged(u => { 
                 if (u) { 
@@ -709,7 +728,18 @@ class Game {
     }
     setupLogin() {
         const m=document.getElementById("welcome-modal"), n=document.getElementById("player-name"), sb=document.getElementById("start-btn"), gb=document.getElementById("google-btn");
-        const eG=(nm,pid)=>{ if(this.hasStarted)return; this.hasStarted=true; if(nm){this.playerName=nm;localStorage.setItem("slimeLab_playerName",nm);} if(pid){this.playerId=pid;localStorage.setItem("slime_player_id",pid);} m.style.display="none"; this.sound.init(this.currentLabId); this.loadGame(); this.syncFirebase(); this.start(); };
+        const eG=(nm,pid)=>{ 
+            if(this.hasStarted)return; 
+            this.hasStarted=true; 
+            if(nm){this.playerName=nm;localStorage.setItem("slimeLab_playerName",nm);} 
+            if(pid){this.playerId=pid;localStorage.setItem("slime_player_id",pid);} 
+            m.style.display="none"; 
+            this.sound.init(this.currentLabId); 
+            this.loadGame(); 
+            this.syncFirebase(); 
+            this.listenForTransactions(); // Bắt đầu lắng nghe giao dịch
+            this.start(); 
+        };
         const sN=localStorage.getItem("slimeLab_playerName"); if(sN)n.value=sN;
         sb.onclick=(e)=>{e.preventDefault();const nm=n.value.trim();if(nm.length<2){showCustomAlert("Vui lòng nhập tên từ 2 ký tự!");return;}eG(nm,null);};
         gb.onclick=(e)=>{e.preventDefault();if(this.auth&&typeof firebase!=='undefined'){showCustomAlert("Đang mở cửa sổ đăng nhập...", "info"); this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(()=>{document.getElementById("html-alert-overlay").style.display="none";}).catch(er=>showCustomAlert("Lỗi đăng nhập: "+er.message));}else showCustomAlert("Máy chủ chưa sẵn sàng. Hãy nhập tên để chơi Offline!","info");};
@@ -734,6 +764,7 @@ class Game {
                         
                         this.labsData[i].unlocked=ld.unlocked??(i===0); this.labsData[i].isPaused=!!ld.isPaused; this.labsData[i].collection=ld.collection||{}; 
                         this.labsData[i].slimes=(ld.slimes||[]).map(s=>{ 
+                            // SỬA LỖI 2: Đảm bảo khôi phục đúng thuộc tính locked của từng con pet từ dữ liệu lưu
                             const sl=new Slime(s.x, s.y, i, s.strainId, s.level, s.replicateTimer, s.locked); 
                             sl.isPaused=!!s.isPaused; sl.customSkin=s.customSkin||'skin_0'; sl.customAura=s.customAura||'none'; return sl; 
                         }); 
