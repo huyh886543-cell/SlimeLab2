@@ -1211,8 +1211,7 @@ class Game {
             lab.slimes = sS;
             for (let item of nB) { 
                 const nb = item.child; const parent = item.parent;
-                
-                if (Math.random() < 0.5) {
+                if (!parent.locked && Math.random() < 0.5) {
                     if (isCurrent) this.effects.push(new Shockwave(parent.x, parent.y, '#ff4646'));
                     const pIdx = lab.slimes.indexOf(parent);
                     if (pIdx > -1) lab.slimes.splice(pIdx, 1);
