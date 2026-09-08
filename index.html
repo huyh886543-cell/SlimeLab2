@@ -404,7 +404,7 @@ class Slime {
         let nLvl=1; if(!isMut){ this.sameCloneCount++; nLvl=Math.random()<(Math.max(0.05,0.45-(this.level-1)*0.05))?Math.min(this.level+1, 250 + this.labId * 10):this.level; } else this.sameCloneCount=0;
         
         let nX=Math.max(wB.left+50,Math.min(wB.right-50,this.x+(Math.random()-0.5)*45)), nY=Math.max(wB.top+50,Math.min(wB.bottom-50,this.y+(Math.random()-0.5)*45));
-        return new Slime(nX,nY,this.labId,nId,nLvl,null,this.locked);
+        return new Slime(nX,nY,this.labId,nId,nLvl,null,false);
     }
     draw(ctx) {
         ctx.save(); const r=this.radius; const time=Date.now()*0.003;
