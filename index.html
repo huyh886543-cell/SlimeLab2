@@ -904,17 +904,17 @@ class Game {
         };
     }
 
-    formTextWithSlimes(text, font) {
+   formTextWithSlimes(text, font) {
         this.isFormingTextActive = true;
         
         const tc = document.createElement('canvas');
-        tc.width = Math.max(1200, text.length * 150); 
-        tc.height = 600;
+        tc.width = Math.max(1000, text.length * 130); 
+        tc.height = 500;
         const tctx = tc.getContext('2d', { willReadFrequently: true });
         tctx.fillStyle = "black";
         tctx.fillRect(0, 0, tc.width, tc.height);
         tctx.fillStyle = "white";
-        tctx.font = `bold 150px "${font}", sans-serif`;
+        tctx.font = `bold 130px "${font}", sans-serif`;
         tctx.textAlign = 'center';
         tctx.textBaseline = 'middle';
         tctx.fillText(text, tc.width / 2, tc.height / 2);
@@ -922,9 +922,10 @@ class Game {
         const imgData = tctx.getImageData(0, 0, tc.width, tc.height).data;
         let points = [];
         
-        const pointSpacing = 6; 
-        for (let y = 0; y < tc.height; y += pointSpacing) {
-            for (let x = 0; x < tc.width; x += pointSpacing) {
+        // 1. Lấy mẫu với bước nhảy nhỏ (3) để mảng tọa độ dày đặc và độ phân giải chữ cao nhất
+        const sampleStep = 3; 
+        for (let y = 0; y < tc.height; y += sampleStep) {
+            for (let x = 0; x < tc.width; x += sampleStep) {
                 const idx = (y * tc.width + x) * 4;
                 if (imgData[idx] > 128) {
                     points.push({x: x, y: y});
@@ -937,6 +938,10 @@ class Game {
             return;
         }
 
+        // 2. KHUẤY ĐỀU (SHUFFLE) MẢNG ĐIỂM
+        // Đây là mấu chốt để Pet rải đều khắp mọi nơi trên mặt chữ thay vì xếp thành đường kẻ sọc ngang
+        points.sort(() => Math.random() - 0.5);
+
         let minX = tc.width, maxX = 0, minY = tc.height, maxY = 0;
         points.forEach(p => {
             if (p.x < minX) minX = p.x;
@@ -947,39 +952,30 @@ class Game {
         
         const textW = maxX - minX;
         const textH = maxY - minY;
-
         const cx = this.worldWidth / 2;
         const cy = this.worldHeight / 2;
 
-        const textArea = textW * textH;
-        const labArea = this.worldWidth * this.worldHeight;
-        const targetArea = labArea / 10; 
-        
-        let scale = Math.sqrt(targetArea / textArea);
-
+        // 3. Tối ưu Scale: Tính tỷ lệ nội suy để chữ luôn hiển thị vừa khít giữa màn hình, không bị tràn viền
         const maxW = this.worldWidth * 0.85;
-        if (textW * scale > maxW) {
-            scale = maxW / textW;
-        }
-
-        const idealRadius = Math.max(4, (pointSpacing * scale) * 0.55);
-
-        // 1. XÓA dòng trộn ngẫu nhiên: points.sort(() => Math.random() - 0.5);
+        const maxH = this.worldHeight * 0.7;
+        const scale = Math.min(maxW / textW, maxH / textH);
 
         const lab = this.labsData[this.currentLabId];
         const slimes = lab.slimes;
 
-        // 2. Tính khoảng cách bước nhảy để rải đều số lượng pet dọc theo nét chữ
-        const step = Math.max(1, points.length / slimes.length);
+        // 4. Kích thước thông minh: Tính toán mật độ Pet. Nếu bạn có ít Pet, Pet sẽ tự động to ra để lấp đầy nét chữ. Nếu có nhiều Pet, chúng sẽ thu nhỏ lại cho nét chữ sắc cạnh.
+        const textVisualArea = textW * textH * scale * scale; 
+        const estimatedInkArea = textVisualArea * 0.35; 
+        const areaPerSlime = estimatedInkArea / slimes.length;
+        const idealRadius = Math.max(6, Math.min(32, Math.sqrt(areaPerSlime) * 0.7));
 
         for (let i = 0; i < slimes.length; i++) {
             const s = slimes[i];
             
-            // 3. Chọn điểm xếp chữ theo chỉ số dàn đều
-            const pointIndex = Math.floor(i * step) % points.length;
-            const pt = points[pointIndex];
+            // Bốc các tọa độ một cách đồng đều từ mảng đã khuấy
+            const pt = points[i % points.length];
             
-            // 4. Xóa phần random offset ở đuôi để pet đứng chính xác vào mốc
+            // 5. Gắn chặt tọa độ cố định, không cộng thêm bất kỳ sai số ngẫu nhiên nào
             s.targetX = cx + (pt.x - minX - textW/2) * scale;
             s.targetY = cy + (pt.y - minY - textH/2) * scale;
             s.targetRadius = idealRadius; 
