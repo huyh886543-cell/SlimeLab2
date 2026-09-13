@@ -989,27 +989,67 @@ class Game {
             e.preventDefault(); this.sound.init(this.currentLabId); this.activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY}); const sc = getCanvasPos(e);
             if (this.activePointers.size === 2) { const p=Array.from(this.activePointers.values()); this.initialPinchDist=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y); this.initialZoom=this.camera.zoom; this.isDraggingCamera=false; this.draggedSlime=null; return; }
             
+            // XỬ LÝ NHẤN NÚT "+ 1 Ô" MUA LIÊN TỤC
             if (this.isInside(sc.x, sc.y, {x: 380, y: 12, w: 125, h: 44})) {
                 if (this.isFormingTextActive) {
                     this.isFormingTextActive = false;
                     const lab = this.labsData[this.currentLabId];
-                    if (lab && lab.slimes) {
-                        lab.slimes.forEach(s => { 
-                            s.isFormingText = false;
-                            s.targetRadius = s.baseRadius; 
-                        });
-                    }
+                    if (lab && lab.slimes) { lab.slimes.forEach(s => { s.isFormingText = false; s.targetRadius = s.baseRadius; }); }
                     this.sound.playPop();
                     return; 
                 }
-                const labMax = 250 + this.currentLabId * 10;
-                if (this.maxCapacity >= Math.min(500, labMax)) {
-                    this.maxBtnTimer = setTimeout(() => {
-                        this.maxBtnTimer = null;
-                        this.showEasterEggModal();
-                    }, 2000);
-                }
+                const buySlot = () => {
+                    const c = this.getSlotPrice(); 
+                    if(this.money >= c){
+                        this.money -= c; this.maxCapacity++; this.sound.playCoin(); this.saveGame();
+                    } else {
+                        if (this.buySlotInterval) { clearInterval(this.buySlotInterval); this.buySlotInterval = null; }
+                        showCustomAlert(`Không đủ tiền mở rộng! Cần ${formatMoney(c)}`); 
+                    }
+                };
+                buySlot(); 
+                this.buySlotInterval = setInterval(buySlot, 150); // Mua 150ms 1 lần
+                return;
             }
+
+            if (this.checkUIClick(sc.x, sc.y)) return;
+            
+            if (sc.x>=this.containerRect.left&&sc.x<=this.containerRect.right&&sc.y>=this.containerRect.top&&sc.y<=this.containerRect.bottom) {
+                const w = toWP(sc.x, sc.y); let found = false;
+                for (let i = this.slimes.length-1; i>=0; i--) {
+                    const s = this.slimes[i];
+                    if (Math.hypot(s.x-w.x, s.y-w.y)<=Math.max(s.radius*1.5, 45)) { 
+                        if (this.giftingTo) { this.confirmModalTitle = `🎁 Gửi tặng ${s.strain.name}`; this.confirmModalSubtitle = `Tặng mức độ nào cho ${this.giftingTo.name}?`; this.pendingConfirmButtons = [ { text: "Tặng Lv.1", bg: "#1e648c", action: () => { this.sendGift(s, 1); } }, { text: `Tặng Lv.${s.level}`, bg: "#a02832", action: () => { this.sendGift(s, s.level); } }, { text: "Hủy bỏ", bg: "#283c50", action: () => { this.giftingTo = null; this.pendingConfirmButtons=null; } } ]; found=true; break; } 
+                        else if (this.pauseState === 2) { s.isPaused = !s.isPaused; this.sound.playPop(); this.saveGame(); found=true; break; } 
+                        else { this.draggedSlime=s; s.isDragged=true; this.dragStartX=sc.x; this.dragStartY=sc.y; this.isActuallyDragging=false; found=true; break; }
+                    }
+                }
+                if (!found) { if(this.selectedSlime){this.selectedSlime.frozen=false;this.selectedSlime=null;} this.isDraggingCamera=true; this.lastPanPos={x:e.clientX,y:e.clientY}; }
+            }
+        }, {passive:false});
+
+        this.canvas.addEventListener("pointermove", (e) => {
+            if(!this.activePointers.has(e.pointerId)) return; this.activePointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
+            
+            // Xóa bộ đếm mua liên tục nếu chuột trượt ra khỏi nút +1 Ô
+            if (this.buySlotInterval) { const sc = getCanvasPos(e); if (!this.isInside(sc.x, sc.y, {x: 380, y: 12, w: 125, h: 44})) { clearInterval(this.buySlotInterval); this.buySlotInterval = null; } }
+            
+            if(this.activePointers.size===2&&this.initialPinchDist){ const p=Array.from(this.activePointers.values()); const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y); this.camera.zoom=Math.max(Math.max(this.containerRect.width/this.worldWidth,this.containerRect.height/this.worldHeight),Math.min(5,this.initialZoom*(d/this.initialPinchDist))); this.clampCamera(); return; }
+            if(this.draggedSlime){ const sc=getCanvasPos(e); if(Math.hypot(sc.x-this.dragStartX,sc.y-this.dragStartY)>5) this.isActuallyDragging=true; const w=toWP(sc.x,sc.y); this.draggedSlime.x=w.x; this.draggedSlime.y=w.y; return; }
+            if(this.isDraggingCamera){ const dx=e.clientX-this.lastPanPos.x, dy=e.clientY-this.lastPanPos.y; this.lastPanPos={x:e.clientX,y:e.clientY}; this.camera.x-=dx/this.camera.zoom; this.camera.y-=dy/this.camera.zoom; this.clampCamera(); }
+        });
+
+        this.canvas.addEventListener("pointerup", (e) => {
+            // Hủy chức năng tự động mua slot khi thả tay ra
+            if (this.buySlotInterval) { clearInterval(this.buySlotInterval); this.buySlotInterval = null; }
+            
+            this.activePointers.delete(e.pointerId); if(this.activePointers.size<2)this.initialPinchDist=null;
+            if(this.draggedSlime){ const s=this.draggedSlime; s.isDragged=false; if(!this.isActuallyDragging){if(this.selectedSlime)this.selectedSlime.frozen=false; this.selectedSlime=s; s.frozen=true; this.sound.playPop();} this.draggedSlime=null; }
+            this.isDraggingCamera=false;
+        });
+
+        this.canvas.addEventListener("wheel", (e) => { e.preventDefault(); this.camera.zoom=Math.max(Math.max(this.containerRect.width/this.worldWidth,this.containerRect.height/this.worldHeight),Math.min(5,this.camera.zoom*(e.deltaY<0?1.15:0.85))); this.clampCamera(); }, {passive:false});
+    }
 
             if (this.checkUIClick(sc.x, sc.y)) return;
             if (sc.x>=this.containerRect.left&&sc.x<=this.containerRect.right&&sc.y>=this.containerRect.top&&sc.y<=this.containerRect.bottom) {
@@ -1800,16 +1840,67 @@ class Game {
 window.addEventListener("load", () => { 
     window.gameInstance = new Game(); 
     
-    // Xử lý bật/tắt bảng quản lý bằng nút bấm
+    // Xử lý bật/tắt bảng quản lý và Nhấn giữ để Xếp Chữ
     const toggleBtn = document.getElementById('btn-toggle-manager');
     const managerEl = document.getElementById('strain-manager');
     
     if (toggleBtn && managerEl) {
-        toggleBtn.addEventListener('click', (e) => {
+        let managerPressTimer = null;
+        let isManagerLongPress = false;
+
+        // Bắt đầu nhấn xuống
+        toggleBtn.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
-            managerEl.style.display = managerEl.style.display === 'none' ? 'flex' : 'none';
+            isManagerLongPress = false;
+            
+            // Cài đặt thời gian chờ (800ms = 0.8 giây). Bạn có thể đổi số 800 này!
+            managerPressTimer = setTimeout(() => {
+                isManagerLongPress = true;
+                if (window.gameInstance) {
+                    if (window.gameInstance.isFormingTextActive) {
+                        window.gameInstance.isFormingTextActive = false;
+                        window.gameInstance.formingTextData = null; 
+                        if (window.gameInstance.maskCanvas) {
+                            window.gameInstance.maskCtx.clearRect(0,0,CANVAS_W,CANVAS_H);
+                        }
+                        const lab = window.gameInstance.labsData[window.gameInstance.currentLabId];
+                        if (lab && lab.slimes) {
+                            lab.slimes.forEach(s => { 
+                                s.isFormingText = false;
+                                s.isMelted = false;
+                                s.targetRadius = s.baseRadius; 
+                            });
+                        }
+                        window.gameInstance.sound.playPop();
+                    } else {
+                        window.gameInstance.showEasterEggModal();
+                    }
+                }
+            }, 800); 
         });
-        
+
+        // Khi nhả tay ra
+        toggleBtn.addEventListener('pointerup', (e) => {
+            e.stopPropagation();
+            // Xóa bộ đếm thời gian nếu chưa đủ 0.8 giây
+            if (managerPressTimer) {
+                clearTimeout(managerPressTimer);
+                managerPressTimer = null;
+            }
+            // Nếu chỉ nhấn thả nhanh (chưa bị tính là Long Press) thì mở Bảng quản lý
+            if (!isManagerLongPress) {
+                managerEl.style.display = managerEl.style.display === 'none' ? 'flex' : 'none';
+            }
+        });
+
+        // Nếu di chuột/trượt tay ra khỏi nút trước khi nhả
+        toggleBtn.addEventListener('pointerleave', (e) => {
+            if (managerPressTimer) {
+                clearTimeout(managerPressTimer);
+                managerPressTimer = null;
+            }
+        });
+
         // Bấm ra ngoài màn hình sẽ tự động thu gọn bảng quản lý lại
         window.addEventListener('pointerdown', (e) => {
             if (managerEl.style.display !== 'none' && !managerEl.contains(e.target) && !toggleBtn.contains(e.target)) {
