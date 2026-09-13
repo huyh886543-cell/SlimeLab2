@@ -1,3 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🧪 Microbe & Slime Lab Simulator</title>
+    <meta name="theme-color" content="#06090f">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: none; font-family: Arial, sans-serif; }
+        html, body { width: 100vw; height: 100vh; background-color: #06090f; color: #e6f5ff; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        #rotate-warning { display: none; position: fixed; inset: 0; background: #080c14; color: #00ffc8; z-index: 99999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+        @media (orientation: portrait) { #rotate-warning { display: flex !important; } }
+        #app-layout { display: flex; flex-direction: row; width: 100vw; height: 100dvh; padding: 4px; gap: 6px; align-items: center; justify-content: center; }
+        #rank-board { width: clamp(155px, 18vw, 210px); height: 100%; background-color: #0f1622; border: 1.5px solid #223145; border-radius: 8px; display: flex; flex-direction: column; padding: 8px 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7); flex-shrink: 0; }
+        #rank-header { text-align: center; color: #ffd700; font-size: 13px; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #1a2636; padding-bottom: 3px; }
+        #rank-list { flex: 1; overflow-y: auto; scrollbar-width: none; }
+        .rank-item { display: flex; justify-content: space-between; padding: 6px 4px; border-bottom: 1px solid #131c29; font-size: 11.5px; cursor: pointer; transition: 0.2s; }
+        .rank-item.current-user { background-color: rgba(0, 255, 200, 0.15); border-left: 3px solid #00ffc8; }
+        .rank-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px; }
+        .rank-val { font-weight: bold; font-size: 11px; text-align: right;}
+        .val-diamond { color: #e056fd; } .val-money { color: #00ffc8; }
+        #game-wrapper { flex: 1; height: 100%; display: flex; position: relative; overflow: hidden; }
+        canvas { width: 100%; height: 100%; display: block; background-color: #0c1018; border-radius: 8px; border: 1.5px solid #1c2838; }
+        .overlay { position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); display: none; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(4px); }
+        .modal-box { background-color: #111a28; border: 1.5px solid #00ffc8; border-radius: 10px; width: min(360px, 85vw); padding: 22px 18px; text-align: center; box-shadow: 0 0 25px rgba(0, 255, 200, 0.2); }
+        .input-field { width: 100%; padding: 10px 12px; background-color: #080c14; border: 1px solid #28374b; color: #fff; border-radius: 6px; margin-bottom: 12px; font-size: 13px; outline: none; text-align: center; font-weight: bold; }
+        .btn { width: 100%; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; margin-bottom: 10px; border: none; transition: 0.2s; }
+    </style>
+</head>
+<body>
+    <audio id="bgm-stardew" loop></audio>
+    <div id="rotate-warning"><div style="font-size: 48px;">📱 ↷</div><h3>Vui lòng xoay ngang điện thoại</h3></div>
+
+    <div id="html-alert-overlay" class="overlay" style="z-index: 999999;">
+        <div class="modal-box" id="html-alert-box" style="border-color: #ff4646;">
+            <div id="html-alert-icon" style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
+            <h3 id="html-alert-title" style="color: #ff4646; font-size: 20px; font-weight: bold; margin-bottom: 15px;">CẢNH BÁO</h3>
+            <p id="html-alert-msg" style="color: #e6f5ff; font-size: 15px; margin-bottom: 25px; line-height: 1.5;"></p>
+            <button class="btn" id="html-alert-btn" style="background: #a02832; color: #fff;">XÁC NHẬN</button>
+        </div>
+    </div>
+
+    <!-- KHU VỰC NHẬP TÍNH NĂNG ẨN -->
+    <div id="easter-egg-overlay" class="overlay" style="z-index: 25000;">
+        <div class="modal-box" style="border-color: #e056fd; box-shadow: 0 0 40px rgba(224, 86, 253, 0.5);">
+            <h3 style="color: #e056fd; font-size: 20px; font-weight: bold; margin-bottom: 15px; text-shadow: 0 0 10px #e056fd;">✨ ĐỔ KHUÔN THỦY TINH ✨</h3>
+            <p style="color: #00ffc8; font-size: 13px; margin-bottom: 15px;">Chất lỏng sẽ lấp đầy khuôn cắt gọt tuyệt đối không tràn!</p>
+            <textarea id="easter-egg-input" class="input-field" placeholder="Nhập chữ/thơ... (Bấm Enter xuống dòng)" rows="4" style="resize: none; border-color: #be6eff;"></textarea>
+            <select id="easter-egg-font" class="input-field" style="border-color: #be6eff;">
+                <option value="Arial">Phông cơ bản (Arial)</option>
+                <option value="Courier New">Phông máy chữ (Courier New)</option>
+                <option value="Impact">Phông dày (Impact)</option>
+                <option value="Times New Roman">Phông cổ điển (Times New Roman)</option>
+                <option value="Comic Sans MS">Phông vui nhộn (Comic Sans)</option>
+            </select>
+            <div style="display: flex; gap: 10px;">
+                <button id="ee-btn-ok" class="btn" style="background-color: #5a2d82; color: #fff;">Triển Khai!</button>
+                <button id="ee-btn-cancel" class="btn" style="background-color: #283c50; color: #fff;">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-input-overlay" class="overlay">
+        <div class="modal-box">
+            <h3 id="custom-input-title" style="color:#ffd700; margin-bottom:15px;">Nhập tên mới:</h3>
+            <input type="text" id="custom-input-field" class="input-field" maxlength="15" autocomplete="off">
+            <div style="display: flex; gap: 10px;">
+                <button id="custom-input-ok" class="btn" style="background: #14503c; color: #fff;">Xác Nhận</button>
+                <button id="custom-input-cancel" class="btn" style="background: #283c50; color: #fff;">Hủy Bỏ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="welcome-modal" class="overlay" style="display: flex; z-index: 10000;">
+        <div class="modal-box">
+            <h3 style="color: #ffd700; font-size: 18px; font-weight: bold; margin-bottom: 4px;">🧪 MICROBE & SLIME LAB</h3>
+            <div style="color: #7890a8; font-size: 11px; margin-bottom: 14px;">MÁY CHỦ SỐ 1 (VN-REALTIME)</div>
+            <input type="text" id="player-name" class="input-field" placeholder="Nhập tên người chơi..." maxlength="15">
+            <button id="start-btn" class="btn" style="background-color: #14503c; color: #fff; border: 1px solid #00ffc8;">▶️ VÀO PHÒNG THÍ NGHIỆM</button>
+            <div style="display: flex; align-items: center; text-align: center; color: #6a829a; font-size: 11px; margin: 6px 0 10px 0;">HOẶC</div>
+            <button id="google-btn" class="btn" style="background-color: #ffffff; color: #2b2b2b;">Đăng nhập bằng Google</button>
+        </div>
+    </div>
+
+    <div id="app-layout">
+        <div id="rank-board">
+            <div id="rank-header">🏆 BẢNG XẾP HẠNG</div>
+            <div id="rank-server" style="text-align: center; color: #6a829a; font-size: 10px; margin-bottom: 6px; border-bottom: 1px solid #1a2636; padding-bottom: 3px;">ONLINE SERVER 1</div>
+            <div id="rank-list"><div style="text-align:center; padding:10px; font-size:10.5px; color:#6a829a;">Đang kết nối...</div></div>
+        </div>
+        
+        <div id="game-wrapper">
+            <canvas id="gameCanvas" width="1400" height="720"></canvas>
+            <button id="btn-toggle-manager" style="position: absolute; top: 35px; left: 7px; z-index: 101; background: #1e3246; color: #00ffc8; border: 1.5px solid #3498db; padding: 6px 12px; border-radius: 6px; font-size: 9px; font-weight: bold; cursor: pointer;">📊 Bảng Quản Lý</button>
+            <div id="strain-manager" style="display: none; position: absolute; top: 70px; left: 22px; width: 230px; max-height: 45%; background: rgba(17, 26, 40, 0.92); border: 1px solid #3498db; border-radius: 8px; padding: 8px; flex-direction: column; z-index: 100; backdrop-filter: blur(4px);">
+                <h4 style="color: #00ffc8; margin: 0 0 8px 0; font-size: 12px; text-align: center;">DANH SÁCH CHỦNG LOẠI</h4>
+                <div id="strain-list" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; touch-action: pan-y !important;"></div>
+                <button onclick="if(window.gameInstance) window.gameInstance.sellAllNonGods()" class="btn" style="background: #e74c3c; color: white; margin-bottom: 0;">🗑️ Bán Tất Cả (Trừ Thần/Khóa)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dice-overlay" class="overlay" style="z-index: 100000;">
+        <div class="modal-box" style="border-color: #e056fd;">
+            <h3 style="color: #e056fd; font-size: 20px; font-weight: bold; margin-bottom: 10px;">🎲 XÚC XẮC NHÂN PHẨM</h3>
+            <p id="dice-target-name" style="color: #7890a8; font-size: 13px; margin-bottom: 20px;"></p>
+            <div id="dice-face" style="font-size: 80px; line-height: 1; margin-bottom: 20px; text-shadow: 0 0 20px rgba(224,86,253,0.8); transition: transform 0.1s;">❓</div>
+            <p style="color: #00ffc8; font-size: 12px; margin-bottom: 15px; line-height: 1.4;">1-3: Bạn đền 10%-30%<br>4-6: Cướp 15%-35%</p>
+            <button id="dice-roll-btn" class="btn" style="background-color: #5a2d82; color: #fff;">Gieo Xúc Xắc!</button>
+            <button id="dice-close-btn" class="btn" style="background-color: #283c50; color: #fff;" onclick="document.getElementById('dice-overlay').style.display='none'">Thoát</button>
+        </div>
+    </div>
+
+    <div id="sell-modal" class="overlay" style="z-index: 1000;">
+        <div class="modal-box" style="border-color: #f1c40f;">
+            <h3 id="sell-modal-title" style="color: #f1c40f; font-size: 18px; margin-bottom: 15px;">Tùy chọn Bán</h3>
+            <button id="btn-sell-all" class="btn" style="background: #c0392b; color: white;">Bán Tất Cả</button>
+            <button id="btn-sell-keep-highest" class="btn" style="background: #2980b9; color: white;">Bán Tất Cả (Giữ 1 Pet Lv Cao Nhất)</button>
+            <button onclick="document.getElementById('sell-modal').style.display='none'" class="btn" style="background: #7f8c8d; color: white;">Hủy</button>
+        </div>
+    </div>
+
 <script>
 const CANVAS_W = 1400; const CANVAS_H = 720;
 const COLOR_TEXT = "#e6f5ff"; const COLOR_ACCENT = "#00ffc8"; const COLOR_GOLD = "#ffd700"; const COLOR_WARNING = "#ff4646";
@@ -5,32 +130,18 @@ const COLOR_TEXT = "#e6f5ff"; const COLOR_ACCENT = "#00ffc8"; const COLOR_GOLD =
 function formatMoney(val) {
     const num = Number(val || 0);
     if (num < 1e6) return num.toLocaleString("vi-VN") + " VNĐ";
-    const units = [
-        { v: 1e303, s: "Centillion" }, { v: 1e120, s: "Novemdec" }, { v: 1e117, s: "Octodec" }, { v: 1e114, s: "Septendec" }, { v: 1e111, s: "Sexdec" }, 
-        { v: 1e108, s: "Quindec" }, { v: 1e105, s: "Quattuordec" }, { v: 1e102, s: "Tredec" }, { v: 1e99,  s: "Duodec" }, { v: 1e96,  s: "Undec" }, 
-        { v: 1e93,  s: "Dec" }, { v: 1e90,  s: "Non" }, { v: 1e87,  s: "Oct" }, { v: 1e84,  s: "Sept" }, { v: 1e81,  s: "Sex" }, 
-        { v: 1e78,  s: "Quin" }, { v: 1e75,  s: "Quat" }, { v: 1e72,  s: "Tre" }, { v: 1e69,  s: "Duo" }, { v: 1e66,  s: "Un" }, 
-        { v: 1e63,  s: "Vigint" }, { v: 1e60,  s: "Novemd" }, { v: 1e57,  s: "Octod" }, { v: 1e54,  s: "Septend" }, { v: 1e51,  s: "Sexd" }, 
-        { v: 1e48,  s: "Quind" }, { v: 1e45,  s: "Quatd" }, { v: 1e42,  s: "Tredec" }, { v: 1e39,  s: "Duodec" }, { v: 1e36,  s: "Undec" }, 
-        { v: 1e33,  s: "Dec" }, { v: 1e30,  s: "Q" }, { v: 1e27,  s: "R" }, { v: 1e24,  s: "Y" }, { v: 1e21,  s: "Z" }, 
-        { v: 1e18,  s: "E" }, { v: 1e15,  s: "P" }, { v: 1e12,  s: "T" }, { v: 1e9,   s: "G" }, { v: 1e6,   s: "M" }
-    ];
+    const units = [{v:1e303,s:"Centillion"},{v:1e120,s:"Novemdec"},{v:1e117,s:"Octodec"},{v:1e114,s:"Septendec"},{v:1e111,s:"Sexdec"},{v:1e108,s:"Quindec"},{v:1e105,s:"Quattuordec"},{v:1e102,s:"Tredec"},{v:1e99,s:"Duodec"},{v:1e96,s:"Undec"},{v:1e93,s:"Dec"},{v:1e90,s:"Non"},{v:1e87,s:"Oct"},{v:1e84,s:"Sept"},{v:1e81,s:"Sex"},{v:1e78,s:"Quin"},{v:1e75,s:"Quat"},{v:1e72,s:"Tre"},{v:1e69,s:"Duo"},{v:1e66,s:"Un"},{v:1e63,s:"Vigint"},{v:1e60,s:"Novemd"},{v:1e57,s:"Octod"},{v:1e54,s:"Septend"},{v:1e51,s:"Sexd"},{v:1e48,s:"Quind"},{v:1e45,s:"Quatd"},{v:1e42,s:"Tredec"},{v:1e39,s:"Duodec"},{v:1e36,s:"Undec"},{v:1e33,s:"Dec"},{v:1e30,s:"Q"},{v:1e27,s:"R"},{v:1e24,s:"Y"},{v:1e21,s:"Z"},{v:1e18,s:"E"},{v:1e15,s:"P"},{v:1e12,s:"T"},{v:1e9,s:"G"},{v:1e6,s:"M"}];
     if (num >= 1e306) return "INFINITY VNĐ";
-    for (let i = 0; i < units.length; i++) {
-        if (num >= units[i].v) {
-            const scaled = num / units[i].v; 
-            return scaled.toFixed(scaled >= 100 ? 0 : (scaled >= 10 ? 1 : 2)) + " " + units[i].s; 
-        }
-    }
+    for (let i = 0; i < units.length; i++) { if (num >= units[i].v) { const scaled = num / units[i].v; return scaled.toFixed(scaled >= 100 ? 0 : (scaled >= 10 ? 1 : 2)) + " " + units[i].s; } }
     return num.toLocaleString("vi-VN") + " VNĐ";
 }
 
 function showCustomAlert(msg, type = "error") {
     const o = document.getElementById("html-alert-overlay"), b = document.getElementById("html-alert-box"), i = document.getElementById("html-alert-icon"), t = document.getElementById("html-alert-title"), m = document.getElementById("html-alert-msg"), btn = document.getElementById("html-alert-btn");
     m.innerHTML = msg;
-    if (type === "success") { b.style.borderColor = "#00ffc8"; b.style.boxShadow = "0 0 40px rgba(0, 255, 200, 0.3)"; i.innerText = "✨"; t.innerText = "THÀNH CÔNG"; t.style.color = "#00ffc8"; btn.style.background = "#14503c"; btn.style.borderColor = "#00ffc8"; } 
-    else if (type === "info") { b.style.borderColor = "#00a8ff"; b.style.boxShadow = "0 0 40px rgba(0, 168, 255, 0.3)"; i.innerText = "ℹ️"; t.innerText = "THÔNG TIN"; t.style.color = "#00a8ff"; btn.style.background = "#0984e3"; btn.style.borderColor = "#00a8ff"; } 
-    else { b.style.borderColor = "#ff4646"; b.style.boxShadow = "0 0 40px rgba(255, 70, 70, 0.4)"; i.innerText = "⚠️"; t.innerText = "CẢNH BÁO"; t.style.color = "#ff4646"; btn.style.background = "#a02832"; btn.style.borderColor = "#ff4646"; }
+    if (type === "success") { b.style.borderColor = "#00ffc8"; i.innerText = "✨"; t.innerText = "THÀNH CÔNG"; t.style.color = "#00ffc8"; btn.style.background = "#14503c"; } 
+    else if (type === "info") { b.style.borderColor = "#00a8ff"; i.innerText = "ℹ️"; t.innerText = "THÔNG TIN"; t.style.color = "#00a8ff"; btn.style.background = "#0984e3"; } 
+    else { b.style.borderColor = "#ff4646"; i.innerText = "⚠️"; t.innerText = "CẢNH BÁO"; t.style.color = "#ff4646"; btn.style.background = "#a02832"; }
     o.style.display = "flex"; btn.onclick = () => { o.style.display = "none"; };
 }
 
@@ -48,46 +159,10 @@ const TANK_THEMES = [
 ];
 
 const LAB_STRAIN_SETS = {};
-LAB_STRAIN_SETS[0] = [
-    { id: 0, name: "Alpha Lục Bảo", tier: 1, color: "#3cdc64", valMult: 1.0, mutRate: 0.08, mood: "cute" },
-    { id: 1, name: "Bong Bóng Nước", tier: 1, color: "#00a8ff", valMult: 1.5, mutRate: 0.075, mood: "happy" },
-    { id: 2, name: "Độc Axit Tím", tier: 2, color: "#9c88ff", valMult: 2.5, mutRate: 0.07, mood: "silly" },
-    { id: 3, name: "Hỏa Tinh Diệm", tier: 2, color: "#eb2d41", valMult: 4.0, mutRate: 0.065, mood: "angry" },
-    { id: 4, name: "Lôi Quang Sét", tier: 3, color: "#ffe632", valMult: 7.0, mutRate: 0.06, mood: "excited" },
-    { id: 5, name: "Băng Cực Tuyết", tier: 3, color: "#dcdde1", valMult: 12.0, mutRate: 0.055, mood: "sleepy" },
-    { id: 6, name: "Thạch Anh Hồng", tier: 4, color: "#fd79a8", valMult: 20.0, mutRate: 0.05, mood: "sparkle" },
-    { id: 7, name: "Hổ Phách Cổ", tier: 4, color: "#e67e22", valMult: 35.0, mutRate: 0.045, mood: "mysterious" },
-    { id: 8, name: "Kim Cương Quang", tier: 5, color: "#74b9ff", valMult: 60.0, mutRate: 0.04, mood: "sparkle" },
-    { id: 9, name: "Hắc Diệu Thạch", tier: 5, color: "#2d3436", valMult: 100.0, mutRate: 0.035, mood: "void" },
-    { id: 10, name: "Ruby Huyết Tinh", tier: 6, color: "#d63031", valMult: 180.0, mutRate: 0.03, mood: "fierce" },
-    { id: 11, name: "Cầu Vồng Prism", tier: 6, color: "#e056fd", valMult: 300.0, mutRate: 0.025, mood: "happy" },
-    { id: 12, name: "Phóng Xạ Nuclear", tier: 7, color: "#badc58", valMult: 500.0, mutRate: 0.02, mood: "excited" },
-    { id: 13, name: "Plasma Nguyên Thủy", tier: 7, color: "#f39c12", valMult: 900.0, mutRate: 0.015, mood: "fierce" },
-    { id: 14, name: "Vực Thẳm Void", tier: 8, color: "#1e272e", valMult: 1600.0, mutRate: 0.012, mood: "void" },
-    { id: 15, name: "Tinh Vân Galaxy", tier: 8, color: "#5f27cd", valMult: 3000.0, mutRate: 0.01, mood: "starry" },
-    { id: 16, name: "Long Tộc Dragon", tier: 9, color: "#ff5252", valMult: 5500.0, mutRate: 0.008, mood: "fierce" },
-    { id: 17, name: "Virus Chúa Tể", tier: 9, color: "#800000", valMult: 10000.0, mutRate: 0.006, mood: "angry" },
-    { id: 18, name: "Cổ Ma Pháp Runes", tier: 10, color: "#341f97", valMult: 20000.0, mutRate: 0.004, mood: "mysterious" },
-    { id: 19, name: "Thủy Ngân Bạc", tier: 10, color: "#c8d6e5", valMult: 40000.0, mutRate: 0.003, mood: "sparkle" },
-    { id: 100, name: "🌟 Thần Quang Thái Dương", tier: 11, color: "#ffffff", valMult: 100000.0, mutRate: 0.000008, mood: "divine", isGod: true },
-    { id: 101, name: "🌌 Ma Thần Hư Không", tier: 11, color: "#130f40", valMult: 250000.0, mutRate: 0.000005, mood: "divine", isGod: true },
-    { id: 102, name: "⏳ Thần Thời Gian Chronos", tier: 12, color: "#00ffff", valMult: 600000.0, mutRate: 0.000003, mood: "divine", isGod: true },
-    { id: 103, name: "🔥 Phượng Hoàng Lửa", tier: 12, color: "#ff3838", valMult: 1500000.0, mutRate: 0.000002, mood: "divine", isGod: true },
-    { id: 104, name: "⚡ Vạn Lôi Zeus", tier: 13, color: "#17c0eb", valMult: 4000000.0, mutRate: 0.000001, mood: "divine", isGod: true },
-    { id: 105, name: "👑 Slime Vũ Trụ Tối Cao", tier: 14, color: "#ffd700", valMult: 10000000.0, mutRate: 0.0000005, mood: "divine", isGod: true }
-];
+const THEME_NAMES = [null, { p: ["Bụi Vũ Trụ", "Sao Chổi", "Thiên Thạch", "Tinh Vân", "Lỗ Đen", "Ngân Hà"], g: "Chúa Tể Tinh Tú", h: 280 }, { p: ["Tro Nóng", "Dung Nham", "Hỏa Diệm", "Lõi Trái Đất", "Hỏa Ngục", "Dạ Minh Hỏa"], g: "Ma Thần Núi Lửa", h: 10 }, { p: ["Hoa Tuyết", "Sương Lạnh", "Băng Nứt", "Tuyết Lở", "Kỷ Băng Hà", "Tuyệt Vọng Băng"], g: "Chúa Tể Băng Giá", h: 200 }, { p: ["Hạt Cát", "Gió Cát", "Bão Cát", "Ảo Ảnh", "Xương Khô", "Tử Thần Sa Mạc"], g: "Pharaoh Hoàng Kim", h: 45 }, { p: ["Mã Hóa", "Băng Thông", "Điện Từ", "Hạt Nano", "Lượng Tử", "Trí Tuệ Nhân Tạo"], g: "Thần Cyberpunk", h: 320 }, { p: ["Bóng Mờ", "Hắc Khí", "Ác Mộng", "Oán Linh", "Vực Thẳm", "Hư Không Thôn Phệ"], g: "Ma Tôn Hỗn Mang", h: 260 }, { p: ["Mây Mù", "Hơi Nước", "Gió Lốc", "Sấm Chớp", "Cuồng Phong", "Bão Tố Hủy Diệt"], g: "Bầu Trời Thần Tướng", h: 210 }, { p: ["Bùn Nhão", "Rêu Phong", "Khí Độc", "Rừng Sâu", "Đầm Lầy", "Thủy Quái Cổ Đại"], g: "Mộc Thần Vạn Năm", h: 120 }, { p: ["Mảnh Mài", "Ngọc Thô", "Hổ Phách", "Pha Lê", "Bảo Thạch", "Tinh Thể Khởi Nguyên"], g: "Vương Tôn Kim Cương", h: 300 } ];
 
-const THEME_NAMES = [
-    null,
-    { p: ["Bụi Vũ Trụ", "Sao Chổi", "Thiạch", "Tinh Vân", "Lỗ Đen", "Ngân Hà"], g: "Chúa Tể Tinh Tú", h: 280 }, 
-    { p: ["Tro Nóng", "Dung Nham", "Hỏa Diệm", "Lõi Trái Đất", "Hỏa Ngục", "Dạ Minh Hỏa"], g: "Ma Thần Núi Lửa", h: 10 }, 
-    { p: ["Hoa Tuyết", "Sương Lạnh", "Băng Nứt", "Tuyết Lở", "Kỷ Băng Hà", "Tuyệt Vọng Băng"], g: "Chúa Tể Băng Giá", h: 200 }, 
-    { p: ["Hạt Cát", "Gió Cát", "Bão Cát", "Ảo Ảnh", "Xương Khô", "Tử Thần Sa Mạc"], g: "Pharaoh Hoàng Kim", h: 45 }, 
-    { p: ["Mã Hóa", "Băng Thông", "Điện Từ", "Hạt Nano", "Lượng Tử", "Trí Tuệ Nhân Tạo"], g: "Thần Cyberpunk", h: 320 }, 
-    { p: ["Bóng Mờ", "Hắc Khí", "Ác Mộng", "Oán Linh", "Vực Thẳm", "Hư Không Thôn Phệ"], g: "Ma Tôn Hỗn Mang", h: 260 }, 
-    { p: ["Mây Mù", "Hơi Nước", "Gió Lốc", "Sấm Chớp", "Cuồng Phong", "Bão Tố Hủy Diệt"], g: "Bầu Trời Thần Tướng", h: 210 }, 
-    { p: ["Bùn Nhão", "Rêu Phong", "Khí Độc", "Rừng Sâu", "Đầm Lầy", "Thủy Quái Cổ Đại"], g: "Mộc Thần Vạn Năm", h: 120 }, 
-    { p: ["Mảnh Mài", "Ngọc Thô", "Hổ Phách", "Pha Lê", "Bảo Thạch", "Tinh Thể Khởi Nguyên"], g: "Vương Tôn Kim Cương", h: 300 }  
+LAB_STRAIN_SETS[0] = [
+    { id: 0, name: "Alpha Lục Bảo", tier: 1, color: "#3cdc64", valMult: 1.0, mutRate: 0.08, mood: "cute" }, { id: 1, name: "Bong Bóng Nước", tier: 1, color: "#00a8ff", valMult: 1.5, mutRate: 0.075, mood: "happy" }, { id: 2, name: "Độc Axit Tím", tier: 2, color: "#9c88ff", valMult: 2.5, mutRate: 0.07, mood: "silly" }, { id: 3, name: "Hỏa Tinh Diệm", tier: 2, color: "#eb2d41", valMult: 4.0, mutRate: 0.065, mood: "angry" }, { id: 4, name: "Lôi Quang Sét", tier: 3, color: "#ffe632", valMult: 7.0, mutRate: 0.06, mood: "excited" }, { id: 5, name: "Băng Cực Tuyết", tier: 3, color: "#dcdde1", valMult: 12.0, mutRate: 0.055, mood: "sleepy" }, { id: 6, name: "Thạch Anh Hồng", tier: 4, color: "#fd79a8", valMult: 20.0, mutRate: 0.05, mood: "sparkle" }, { id: 7, name: "Hổ Phách Cổ", tier: 4, color: "#e67e22", valMult: 35.0, mutRate: 0.045, mood: "mysterious" }, { id: 8, name: "Kim Cương Quang", tier: 5, color: "#74b9ff", valMult: 60.0, mutRate: 0.04, mood: "sparkle" }, { id: 9, name: "Hắc Diệu Thạch", tier: 5, color: "#2d3436", valMult: 100.0, mutRate: 0.035, mood: "void" }, { id: 10, name: "Ruby Huyết Tinh", tier: 6, color: "#d63031", valMult: 180.0, mutRate: 0.03, mood: "fierce" }, { id: 11, name: "Cầu Vồng Prism", tier: 6, color: "#e056fd", valMult: 300.0, mutRate: 0.025, mood: "happy" }, { id: 12, name: "Phóng Xạ Nuclear", tier: 7, color: "#badc58", valMult: 500.0, mutRate: 0.02, mood: "excited" }, { id: 13, name: "Plasma Nguyên Thủy", tier: 7, color: "#f39c12", valMult: 900.0, mutRate: 0.015, mood: "fierce" }, { id: 14, name: "Vực Thẳm Void", tier: 8, color: "#1e272e", valMult: 1600.0, mutRate: 0.012, mood: "void" }, { id: 15, name: "Tinh Vân Galaxy", tier: 8, color: "#5f27cd", valMult: 3000.0, mutRate: 0.01, mood: "starry" }, { id: 16, name: "Long Tộc Dragon", tier: 9, color: "#ff5252", valMult: 5500.0, mutRate: 0.008, mood: "fierce" }, { id: 17, name: "Virus Chúa Tể", tier: 9, color: "#800000", valMult: 10000.0, mutRate: 0.006, mood: "angry" }, { id: 18, name: "Cổ Ma Pháp Runes", tier: 10, color: "#341f97", valMult: 20000.0, mutRate: 0.004, mood: "mysterious" }, { id: 19, name: "Thủy Ngân Bạc", tier: 10, color: "#c8d6e5", valMult: 40000.0, mutRate: 0.003, mood: "sparkle" }, { id: 100, name: "🌟 Thần Quang Thái Dương", tier: 11, color: "#ffffff", valMult: 100000.0, mutRate: 0.000008, mood: "divine", isGod: true }, { id: 101, name: "🌌 Ma Thần Hư Không", tier: 11, color: "#130f40", valMult: 250000.0, mutRate: 0.000005, mood: "divine", isGod: true }, { id: 102, name: "⏳ Thần Thời Gian Chronos", tier: 12, color: "#00ffff", valMult: 600000.0, mutRate: 0.000003, mood: "divine", isGod: true }, { id: 103, name: "🔥 Phượng Hoàng Lửa", tier: 12, color: "#ff3838", valMult: 1500000.0, mutRate: 0.000002, mood: "divine", isGod: true }, { id: 104, name: "⚡ Vạn Lôi Zeus", tier: 13, color: "#17c0eb", valMult: 4000000.0, mutRate: 0.000001, mood: "divine", isGod: true }, { id: 105, name: "👑 Slime Vũ Trụ Tối Cao", tier: 14, color: "#ffd700", valMult: 10000000.0, mutRate: 0.0000005, mood: "divine", isGod: true }
 ];
 
 for (let lab = 1; lab < 10; lab++) {
@@ -95,14 +170,8 @@ for (let lab = 1; lab < 10; lab++) {
     LAB_STRAIN_SETS[lab] = [
         { id: lab * 10, name: `Khuẩn Mầm ${t.p[0]}`, tier: 1, color: `hsl(${t.h}, 90%, 75%)`, valMult: 5.0 * lab, mutRate: 0.08, mood: "excited" },
         { id: lab * 10 + 1, name: `Tế Bào ${t.p[0]}`, tier: 2, color: `hsl(${t.h + 10}, 85%, 70%)`, valMult: 10.0 * lab, mutRate: 0.07, mood: "silly" },
-        ...Array.from({ length: 18 }, (_, i) => ({ 
-            id: lab * 100 + 12 + i, name: `${t.p[Math.floor(i / 3)]} MK-${(i % 3) + 1}`, tier: 3 + Math.floor(i / 3), 
-            color: `hsl(${(t.h + i * 15) % 360}, ${75 + (i % 20)}%, ${50 + (i % 20)}%)`, valMult: 50.0 * Math.pow(1.6, i) * lab, mutRate: 0.03 / (i + 1), mood: "excited" 
-        })),
-        ...Array.from({ length: 6 }, (_, i) => ({ 
-            id: lab * 1000 + i, name: `⚡ ${t.g} Cấp ${i + 1}`, tier: 11 + i, 
-            color: `hsl(${(t.h + i * 30) % 360}, 100%, 65%)`, valMult: 100000.0 * Math.pow(2.5, i) * lab, mutRate: 0.000005 / (i + 1), mood: "divine", isGod: true 
-        }))
+        ...Array.from({ length: 18 }, (_, i) => ({ id: lab * 100 + 12 + i, name: `${t.p[Math.floor(i / 3)]} MK-${(i % 3) + 1}`, tier: 3 + Math.floor(i / 3), color: `hsl(${(t.h + i * 15) % 360}, ${75 + (i % 20)}%, ${50 + (i % 20)}%)`, valMult: 50.0 * Math.pow(1.6, i) * lab, mutRate: 0.03 / (i + 1), mood: "excited" })),
+        ...Array.from({ length: 6 }, (_, i) => ({ id: lab * 1000 + i, name: `⚡ ${t.g} Cấp ${i + 1}`, tier: 11 + i, color: `hsl(${(t.h + i * 30) % 360}, 100%, 65%)`, valMult: 100000.0 * Math.pow(2.5, i) * lab, mutRate: 0.000005 / (i + 1), mood: "divine", isGod: true }))
     ];
 }
 
@@ -183,32 +252,38 @@ class AmbientBubble {
 
 class Slime {
     constructor(x, y, labId=0, strainId=null, level=1, repTimer=null, locked=false) {
-        this.x=x||600; this.y=y||380; this.labId=labId;
-        const strains=LAB_STRAIN_SETS[this.labId]||LAB_STRAIN_SETS[0];
-        this.strain=strainId!==null?(strains.find(s=>s.id===strainId)||strains[0]):strains[0];
-        this.level=Math.max(1,parseInt(level)||1); 
-        this.baseRadius=38+this.level*4.0; // Làm Pet to hơn bình thường 1 chút
-        this.radius=this.baseRadius; this.targetRadius=this.baseRadius;
-        this.vx=(Math.random()-0.5)*0.5; this.vy=(Math.random()-0.5)*0.4;
-        this.buoyancy=Math.random()*100; this.angle=Math.random()*360; this.rotSpeed=(Math.random()-0.5)*0.3;
-        this.blobWobble=Math.random()*100; this.numPoints=12;
-        this.locked=Boolean(locked); this.frozen=false; this.isDragged=false; this.isPaused=false;
-        this.stretchX=1; this.stretchY=1; this.rotationAngle=Math.random()*Math.PI*2; this.sameCloneCount=0;
-        this.customSkin='skin_0'; this.customAura='none';
+        this.x = x || 600; 
+        this.y = y || 380; 
+        this.labId = labId;
+        const strains = LAB_STRAIN_SETS[this.labId] || LAB_STRAIN_SETS[0];
+        this.strain = strainId !== null ? (strains.find(s=>s.id===strainId) || strains[0]) : strains[0];
+        this.level = Math.max(1, parseInt(level) || 1); 
+        
+        // Tăng size Pet to hơn một chút
+        this.baseRadius = 40 + this.level * 4.5;
+        this.radius = this.baseRadius; 
+        this.targetRadius = this.baseRadius;
+        
+        this.vx = (Math.random()-0.5)*0.5; this.vy = (Math.random()-0.5)*0.4;
+        this.buoyancy = Math.random()*100; this.angle = Math.random()*360; 
+        this.rotSpeed = (Math.random()-0.5)*0.3; this.blobWobble = Math.random()*100; 
+        this.numPoints = 12; this.locked = Boolean(locked); 
+        this.frozen = false; this.isDragged = false; this.isPaused = false;
+        this.stretchX = 1; this.stretchY = 1; this.rotationAngle = Math.random()*Math.PI*2; 
+        this.sameCloneCount = 0; this.customSkin = 'skin_0'; this.customAura = 'none';
         
         this.isFormingText = false;
         this.isMelted = false; 
-        this.targetX = 0;
-        this.targetY = 0;
+        this.targetX = 0; this.targetY = 0;
 
-        const baseVal=Math.floor(Math.random()*8)+3; const lm=1+(this.labId*0.1);
-        this.value=Math.floor(baseVal*Math.pow(1.02,this.level-1)*(this.strain.valMult||1)*lm);
-        this.timerMax=(6+(this.level-1)*4)*(1+this.labId*0.5);
-        this.replicateTimer=repTimer!==null?Number(repTimer):this.timerMax;
+        const baseVal = Math.floor(Math.random()*8)+3; const lm = 1+(this.labId*0.1);
+        this.value = Math.floor(baseVal*Math.pow(1.02,this.level-1)*(this.strain.valMult||1)*lm);
+        this.timerMax = (6+(this.level-1)*4)*(1+this.labId*0.5);
+        this.replicateTimer = repTimer !== null ? Number(repTimer) : this.timerMax;
     }
 
     update(dt, wB, eL, sW, spd=1, isLabPaused=false, isCurrentLab=true) {
-        this.baseRadius = 38 + this.level * 4.0; 
+        this.baseRadius = 40 + this.level * 4.5; 
         if (!this.isFormingText) {
             this.targetRadius = this.baseRadius;
             this.isMelted = false;
@@ -218,31 +293,36 @@ class Slime {
 
         if (this.isDragged || this.frozen) return null; 
 
+        // TÍNH NĂNG TẠO CHỮ: Pet bay nhanh vào khuôn chữ
         if (this.isFormingText) {
             const dx = this.targetX - this.x; 
             const dy = this.targetY - this.y;
             const dist = Math.hypot(dx, dy);
 
-            if (dist < 10) {
+            // Tăng bán kính bắt điểm để ghép chữ nhanh hơn
+            if (dist < 15) {
                 this.isMelted = true;
                 this.x = this.targetX;
                 this.y = this.targetY;
             } else {
                 this.isMelted = false;
-                // Pet bơi vào khuôn cực nhanh (giảm thời gian tạo chữ)
-                this.x += dx * 0.06 * dt * 60 * spd;
-                this.y += dy * 0.06 * dt * 60 * spd;
+                // Bay cực nhanh vào khuôn
+                this.x += dx * 0.08 * dt * 60 * spd;
+                this.y += dy * 0.08 * dt * 60 * spd;
                 
                 this.blobWobble += dt * 4 * spd;
                 this.stretchX += (1 - this.stretchX) * 0.12;
                 this.stretchY += (1 - this.stretchY) * 0.12;
+                if(isCurrentLab && Math.random()<0.02) eL.push(new Particle(this.x, this.y, this.strain.color));
             }
             return null; 
         }
 
+        // Tự do bơi lội bình thường
         this.buoyancy+=dt*2*spd; this.x+=this.vx*(dt*60)*spd; this.y+=(this.vy+Math.sin(this.buoyancy)*0.2)*(dt*60)*spd;
         this.angle+=this.rotSpeed*(dt*60)*spd; this.blobWobble+=dt*4*spd;
         this.stretchX+=(1-this.stretchX)*0.12; this.stretchY+=(1-this.stretchY)*0.12;
+        
         const p=this.radius+10;
         if(this.x-p<wB.left){this.x=wB.left+p;this.vx=Math.abs(this.vx);} else if(this.x+p>wB.right){this.x=wB.right-p;this.vx=-Math.abs(this.vx);}
         if(this.y-p<wB.top){this.y=wB.top+p;this.vy=Math.abs(this.vy);} else if(this.y+p>wB.bottom){this.y=wB.bottom-p;this.vy=-Math.abs(this.vy);}
@@ -263,34 +343,10 @@ class Slime {
     replicate(sW, wB, isCurrentLab) {
         let isMut=false, nId=this.strain.id; 
         const sts=LAB_STRAIN_SETS[this.labId]||LAB_STRAIN_SETS[0];
-        
-        for(let g of sts.filter(s=>s.isGod)){ 
-            if(Math.random()<(g.mutRate||0.000005)){ 
-                nId=g.id; isMut=true; 
-                if(isCurrentLab&&sW)sW.push(new Shockwave(this.x,this.y,'#ffd700')); break; 
-            } 
-        }
-        
-        if(!isMut&&Math.random()<(this.strain.mutRate||0.05)){ 
-            const ops=sts.filter(s=>s.id!==this.strain.id&&!s.isGod); 
-            if(ops.length>0){ 
-                nId=ops[Math.floor(Math.random()*ops.length)].id; 
-                isMut=true; 
-                if(isCurrentLab&&sW)sW.push(new Shockwave(this.x,this.y,'#00ffc8')); 
-            } 
-        }
-        
-        let nLvl=1; 
-        if(!isMut){ 
-            this.sameCloneCount++; 
-            nLvl=Math.random()<(Math.max(0.05,0.45-(this.level-1)*0.05))?Math.min(this.level+1, 250 + this.labId * 10):this.level; 
-        } else {
-            this.sameCloneCount=0;
-        }
-        
-        let nX=Math.max(wB.left+50,Math.min(wB.right-50,this.x+(Math.random()-0.5)*45));
-        let nY=Math.max(wB.top+50,Math.min(wB.bottom-50,this.y+(Math.random()-0.5)*45));
-        
+        for(let g of sts.filter(s=>s.isGod)){ if(Math.random()<(g.mutRate||0.000005)){ nId=g.id; isMut=true; if(isCurrentLab&&sW)sW.push(new Shockwave(this.x,this.y,'#ffd700')); break; } }
+        if(!isMut&&Math.random()<(this.strain.mutRate||0.05)){ const ops=sts.filter(s=>s.id!==this.strain.id&&!s.isGod); if(ops.length>0){ nId=ops[Math.floor(Math.random()*ops.length)].id; isMut=true; if(isCurrentLab&&sW)sW.push(new Shockwave(this.x,this.y,'#00ffc8')); } }
+        let nLvl=1; if(!isMut){ this.sameCloneCount++; nLvl=Math.random()<(Math.max(0.05,0.45-(this.level-1)*0.05))?Math.min(this.level+1, 250 + this.labId * 10):this.level; } else this.sameCloneCount=0;
+        let nX=Math.max(wB.left+50,Math.min(wB.right-50,this.x+(Math.random()-0.5)*45)), nY=Math.max(wB.top+50,Math.min(wB.bottom-50,this.y+(Math.random()-0.5)*45));
         return new Slime(nX,nY,this.labId,nId,nLvl,null,false);
     }
     
@@ -333,20 +389,17 @@ class Slime {
             ctx.strokeStyle="rgba(0,0,0,0.28)"; 
             ctx.lineWidth=3; 
             ctx.stroke();
-            
             ctx.fillStyle="rgba(255,255,255,0.4)"; 
             ctx.beginPath(); 
             ctx.ellipse(-r*0.35,-r*0.35,r*0.28,r*0.14,-Math.PI/4,0,Math.PI*2); 
             ctx.fill();
         }
-        
         ctx.restore();
     }
 
     drawEyes(ctx, isMasking = false) {
         ctx.save(); 
         const r = this.baseRadius; 
-        
         ctx.translate(this.x, this.y); 
         ctx.scale(this.stretchX, this.stretchY);
         
@@ -379,7 +432,7 @@ class Slime {
         
         ctx.restore();
         
-        if(!this.isFormingText){
+        if(!this.isFormingText && !isMasking){
             const time = Date.now() * 0.003;
             if(this.customSkin&&this.customSkin!=='skin_0'){ const sId=parseInt(this.customSkin.replace('skin_',''))||1; new MasterpieceArtRenderer(sId,'weapons').draw(ctx,this.x,this.y,time,this.baseRadius,false); }
             if(!this.isPaused) { const p=1-(this.replicateTimer/(this.timerMax+(this.sameCloneCount*5))); ctx.strokeStyle=COLOR_ACCENT; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(this.x,this.y,this.baseRadius+8,-Math.PI/2,-Math.PI/2+p*2*Math.PI); ctx.stroke(); }
@@ -395,11 +448,15 @@ class Game {
         this.canvas = document.getElementById("gameCanvas"); this.ctx = this.canvas.getContext("2d");
         this.sound = new SoundEngine(); this.serverName = "SỐ 1"; this.currentLabId = 0;
         this.activeTheme = 'default'; this.ownedThemes = ['default']; this.gameSpeed = 1.0; 
-        this.pauseState = 0; 
-        this.diamonds = 0; this.pendingDiscoveryQueue = []; this.giftingTo = null;
+        this.pauseState = 0; this.diamonds = 0; this.pendingDiscoveryQueue = []; this.giftingTo = null;
         
         this.isFormingTextActive = false;
         this.formingTextData = null; 
+        
+        this.maskCanvas = document.createElement('canvas'); 
+        this.maskCanvas.width = CANVAS_W; 
+        this.maskCanvas.height = CANVAS_H;
+        this.maskCtx = this.maskCanvas.getContext('2d');
         
         this.playerId = localStorage.getItem("slime_player_id") || ('usr_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36)); localStorage.setItem("slime_player_id", this.playerId);
         this.containerRect = { left: 12, top: 66, width: CANVAS_W - 24, height: CANVAS_H - 78, right: CANVAS_W - 12, bottom: CANVAS_H - 12 };
@@ -573,7 +630,7 @@ class Game {
                 const sts = LAB_STRAIN_SETS[g.labId] || LAB_STRAIN_SETS[0];
                 const petInfo = sts.find(s => s.id === g.strainId);
                 const petName = petInfo ? petInfo.name : "Slime Bí Ẩn";
-                // Pet có thể vào không giới hạn
+                // Đã bỏ chặn maxCapacity để cho phép gửi/nhận thoải mái
                 targetLab.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, g.labId, g.strainId, g.level));
                 targetLab.collection[g.strainId] = true; 
                 showCustomAlert(`🎁 [${g.fromName}] vừa tặng bạn: [${petName}] Lv.${g.level}! Đã vào Lab ${g.labId+1}`, "success");
@@ -654,7 +711,7 @@ class Game {
 
     syncFirebase() { if(this.isDeleted||!this.leaderboardRef||!this.playerName)return; try{ this.leaderboardRef.child(this.playerId).set({name:this.playerName,money:this.money,diamonds:this.diamonds,updatedAt:Date.now()}); }catch(e){} }
     
-    getSlotPrice() { return Math.floor(5e6*(1+this.currentLabId*1.5)*Math.pow(1.3,Math.max(0,this.maxCapacity-20))); }
+    getSlotPrice() { return Math.floor(5e6*(1+this.currentLabId*1.5)*Math.pow(1.15,Math.max(0,this.maxCapacity-20))); }
     
     checkLoginStatus() {
         const modal = document.getElementById("welcome-modal"); 
@@ -808,6 +865,7 @@ class Game {
     formTextWithSlimes(text, font) {
         const lines = text.split('\n');
         
+        // MẶT NẠ ĐỂ ĐO LƯỜNG VÀ LẤY TỌA ĐỘ
         const testFontSize = 100;
         const tc = document.createElement('canvas');
         tc.width = 2000; 
@@ -875,8 +933,8 @@ class Game {
         this.isFormingTextActive = true;
 
         const pointWorldArea = points.length * (pointSpacing * scaleToWorld) * (pointSpacing * scaleToWorld);
-        let idealRadius = Math.sqrt(pointWorldArea / (slimes.length * Math.PI)) * 4.5; // Tăng size to hơn
-        idealRadius = Math.max(25, Math.min(idealRadius, 85)); 
+        let idealRadius = Math.sqrt(pointWorldArea / (slimes.length * Math.PI)) * 2.2;
+        idealRadius = Math.max(10, Math.min(idealRadius, 60)); 
 
         for (let i = points.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -931,6 +989,7 @@ class Game {
                 return; 
             }
             
+            // XỬ LÝ NHẤN NÚT "+ 1 Ô" MUA LIÊN TỤC
             if (this.isInside(sc.x, sc.y, {x: 380, y: 12, w: 125, h: 44})) {
                 const buySlot = () => {
                     const c = this.getSlotPrice(); 
@@ -944,7 +1003,7 @@ class Game {
                         showCustomAlert(`Không đủ tiền mở rộng! Cần ${formatMoney(c)}`); 
                     }
                 };
-                buySlot();
+                buySlot(); 
                 this.buySlotInterval = setInterval(buySlot, 150);
                 return;
             }
@@ -1398,6 +1457,12 @@ class Game {
         }
         
        if (performance.now() - this.lastSaveTime > 4000) { this.saveGame(); this.lastSaveTime = performance.now(); }
+        
+        this.uiTimer = (this.uiTimer || 0) + dt;
+        if (this.uiTimer > 1.5) {
+            if (!this.isPressingStrain) this.updateStrainManagerUI();
+            this.uiTimer = 0;
+        }
     } 
 
     drawCustomConfirm(title, subtitle) {
@@ -1550,7 +1615,7 @@ class Game {
         this.ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
         const cT = TANK_THEMES.find(t => t.id === this.activeTheme) || TANK_THEMES[0];
         
-        // --- 1. VẼ UI TOP ---
+        // --- 1. VẼ TOÀN BỘ GIAO DIỆN UI BÊN NGOÀI ---
         this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 18px Arial"; 
         this.ctx.fillText(this.diamonds > 0 ? `💎 ${this.diamonds}` : `💰 ${formatMoney(this.money)}`, 20, 28);
         this.ctx.fillStyle = "#7890a8"; this.ctx.font = "12px Arial"; 
@@ -1560,12 +1625,12 @@ class Game {
         this.drawButton({ x: 380, y: 12, w: 125, h: 44 }, "#a06414", COLOR_GOLD, capTxt, "#fff", "bold 11px Arial");
         this.drawButton({ x: 515, y: 12, w: 105, h: 44 }, "#19283c", COLOR_ACCENT, `⚡ ${this.gameSpeed.toFixed(1)}x`, "#e6f5ff", "bold 12px Arial");
         this.drawButton({ x: 633, y: 12, w: 111, h: 44 }, "#8e44ad", "#d2b4de", "🔬 Lab", "#fff", "bold 13px Arial");
-        this.drawButton({ x: CANVAS_W - 645, y: 12, w: 190, h: 44 }, "#14503c", COLOR_ACCENT, "➕ Mua Thể Thực (1M)", "#e6f5ff", "bold 13px Arial");
+        this.drawButton({ x: CANVAS_W - 645, y: 12, w: 190, h: 44 }, "#14503c", COLOR_ACCENT, "➕ Thể Thực (1M)", "#e6f5ff", "bold 13px Arial");
         this.drawButton({ x: CANVAS_W - 445, y: 12, w: 140, h: 44 }, "#5a2d82", "#be6eff", "🛒 Cửa Hàng", "#f0dcff", "bold 13px Arial");
-        this.drawButton({ x: CANVAS_W - 295, y: 12, w: 160, h: 44 }, "#372350", "#be6eff", "📖 Sách Bách Khoa", "#f0dcff", "bold 13px Arial");
+        this.drawButton({ x: CANVAS_W - 295, y: 12, w: 160, h: 44 }, "#372350", "#be6eff", "📖 Bách Khoa", "#f0dcff", "bold 13px Arial");
         this.drawButton({ x: CANVAS_W - 125, y: 12, w: 110, h: 44 }, "#19283c", COLOR_ACCENT, "⚙ Cài Đặt", "#e6f5ff", "bold 13px Arial");
 
-        // --- 2. CẮT BỂ KÍNH ---
+        // --- 2. CẮT BỂ KÍNH ĐỂ KHÔNG TRÀN RA LỀ ---
         const cr = this.containerRect;
         this.drawDynamicBackground(this.ctx, cT, cr.width, cr.height, cr.left, cr.top);
         
@@ -1574,8 +1639,9 @@ class Game {
         this.ctx.rect(cr.left, cr.top, cr.width, cr.height); 
         this.ctx.clip(); 
         
-        // --- 3. ĐỔ KHUÔN THỦY TINH VÀO MẶT NẠ (NẾU BẬT TÍNH NĂNG ẨN) ---
+        // --- 3. ĐỔ KHUÔN THỦY TINH TẠI ĐÂY ---
         if (this.isFormingTextActive && this.formingTextData) {
+            
             if (!this.maskCanvas) {
                 this.maskCanvas = document.createElement('canvas');
                 this.maskCtx = this.maskCanvas.getContext('2d');
@@ -1594,6 +1660,7 @@ class Game {
             const startY = screenCY - ((lines.length - 1) * lh) / 2;
 
             // BƯỚC A: Vẽ nét chữ làm KHUÔN trắng tinh sắc nét 100%
+            this.maskCtx.globalCompositeOperation = 'source-over';
             this.maskCtx.font = `900 ${fontSz}px "${this.formingTextData.font}", sans-serif`;
             this.maskCtx.textAlign = 'center';
             this.maskCtx.textBaseline = 'middle';
@@ -1602,10 +1669,9 @@ class Game {
                 this.maskCtx.fillText(line, screenCX, startY + index * lh);
             });
 
-            // BƯỚC B: Chọn source-in (chỉ những thứ vẽ TRONG KHUÔN CHỮ mới được hiện ra)
+            // BƯỚC B: Chọn source-in (CHỈ ĐƯỢC PHÉP HIỂN THỊ PET NẰM BÊN TRONG CHỮ)
             this.maskCtx.globalCompositeOperation = 'source-in';
             
-            // Vẽ Pet (cả thân và mắt nhấp nháy) đổ vào khuôn
             this.maskCtx.save();
             this.maskCtx.translate(cr.left + cr.width / 2, cr.top + cr.height / 2);
             this.maskCtx.scale(this.camera.zoom, this.camera.zoom);
@@ -1613,32 +1679,34 @@ class Game {
             
             const time = Date.now() * 0.003;
             
+            // Vẽ Pet (cả thân màu và mắt nhấp nháy lấp lánh) lọt thỏm vào trong chữ
             this.slimes.forEach(s => {
-                if (s.isFormingText) {
+                if (s.isMelted) {
                     this.maskCtx.save();
                     this.maskCtx.translate(s.x, s.y);
                     this.maskCtx.scale(s.stretchX, s.stretchY);
+                    
+                    // Phình rất to để đảm bảo khối màu liền lạc
                     this.maskCtx.beginPath();
                     this.maskCtx.arc(0, 0, s.targetRadius * 4, 0, Math.PI * 2);
                     
-                    // Hiệu ứng nhấp nháy liên tục màu của pet
                     const blink = Math.abs(Math.sin(time * 5 + s.value * 0.1));
                     this.maskCtx.fillStyle = s.strain.color;
                     this.maskCtx.globalAlpha = 0.5 + blink * 0.5;
                     this.maskCtx.shadowBlur = 15 + blink * 20;
                     this.maskCtx.shadowColor = s.strain.color;
-                    
                     this.maskCtx.fill();
+                    
                     this.maskCtx.restore();
                     
-                    // Vẽ luôn mắt (cũng bị cắt nếu tràn)
+                    // Vẽ luôn mắt lên lớp mặt nạ này. Mắt nào tràn ra rìa chữ sẽ bị dao cắt bay luôn.
                     this.maskCtx.globalAlpha = 1.0;
                     s.drawEyes(this.maskCtx, true);
                 }
             });
             this.maskCtx.restore();
 
-            // BƯỚC C: Phủ bóng kính thủy tinh 3D lên mặt chữ
+            // BƯỚC C: Phủ bóng kính thủy tinh 3D
             this.maskCtx.globalCompositeOperation = 'source-atop';
             
             this.maskCtx.lineWidth = fontSz * 0.02;
@@ -1653,12 +1721,21 @@ class Game {
                 this.maskCtx.strokeText(line, screenCX + 3, startY + index * lh + 3);
             });
 
+            const glowGrad = this.maskCtx.createLinearGradient(0, screenCY - fontSz, 0, screenCY);
+            glowGrad.addColorStop(0, 'rgba(255,255,255,0.4)');
+            glowGrad.addColorStop(1, 'transparent');
+            this.maskCtx.fillStyle = glowGrad;
+            this.maskCtx.shadowBlur = 0;
+            lines.forEach((line, index) => {
+                this.maskCtx.fillText(line, screenCX, startY + index * lh);
+            });
+            
             this.maskCtx.globalCompositeOperation = 'source-over'; 
 
             // IN RA MÀN HÌNH
             this.ctx.drawImage(this.maskCanvas, 0, 0);
             
-            // Vẽ các con chưa vào khuôn
+            // Vẽ các con chưa vào khuôn (đang bay)
             this.ctx.save();
             this.ctx.translate(cr.left + cr.width / 2, cr.top + cr.height / 2);
             this.ctx.scale(this.camera.zoom, this.camera.zoom);
@@ -1666,7 +1743,7 @@ class Game {
             this.bubbles.forEach(b => b.draw(this.ctx)); 
             this.shockwaves.forEach(sw => sw.draw(this.ctx)); 
             this.slimes.forEach(s => {
-                if (!s.isFormingText) {
+                if (!s.isMelted) {
                     s.drawBody(this.ctx);
                     s.drawEyes(this.ctx);
                 }
@@ -1689,9 +1766,9 @@ class Game {
             this.ctx.restore();
         }
 
-        this.ctx.restore(); // END CLIP
+        this.ctx.restore(); // END CLIP KHUNG BỂ
 
-        // Thông báo chế độ xếp chữ đang bật
+        // Thông báo
         if (this.isFormingTextActive) {
             this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
             this.ctx.fillRect(0, 0, CANVAS_W, 55);
@@ -1702,7 +1779,6 @@ class Game {
             this.ctx.textAlign = "start";
         }
 
-        // --- 4. VẼ UI BOTTOM ---
         const mO = this.showShop || this.showBook || this.showSettings || this.showLabModal;
         this.gatherBtnRect = { x: cr.left + 20, y: cr.bottom - 55, w: 110, h: 38 };
         this.drawButton(this.gatherBtnRect, mO ? "#1a2430" : "#123b32", mO ? "#334155" : COLOR_ACCENT, "🌀 Tập Hợp", mO ? "#64748b" : "#fff", "bold 13px Arial");
@@ -1738,69 +1814,3 @@ class Game {
         requestAnimationFrame(loop);
     }
 }
-
-window.addEventListener("load", () => { 
-    window.gameInstance = new Game(); 
-    
-    const toggleBtn = document.getElementById('btn-toggle-manager');
-    const managerEl = document.getElementById('strain-manager');
-    
-    if (toggleBtn && managerEl) {
-        let managerPressTimer = null;
-        let isManagerLongPress = false;
-
-        toggleBtn.addEventListener('pointerdown', (e) => {
-            e.stopPropagation();
-            isManagerLongPress = false;
-            managerPressTimer = setTimeout(() => {
-                isManagerLongPress = true;
-                if (window.gameInstance) {
-                    if (window.gameInstance.isFormingTextActive) {
-                        window.gameInstance.isFormingTextActive = false;
-                        window.gameInstance.formingTextData = null; 
-                        if (window.gameInstance.maskCanvas) window.gameInstance.maskCtx.clearRect(0,0,CANVAS_W,CANVAS_H);
-                        const lab = window.gameInstance.labsData[window.gameInstance.currentLabId];
-                        if (lab && lab.slimes) {
-                            lab.slimes.forEach(s => { s.isFormingText = false; s.isMelted = false; s.targetRadius = s.baseRadius; });
-                        }
-                        window.gameInstance.sound.playPop();
-                    } else {
-                        window.gameInstance.showEasterEggModal();
-                    }
-                }
-            }, 800); 
-        });
-
-        toggleBtn.addEventListener('pointerup', (e) => {
-            e.stopPropagation();
-            if (managerPressTimer) { clearTimeout(managerPressTimer); managerPressTimer = null; }
-            if (!isManagerLongPress) { managerEl.style.display = managerEl.style.display === 'none' ? 'flex' : 'none'; }
-        });
-
-        toggleBtn.addEventListener('pointerleave', (e) => {
-            if (managerPressTimer) { clearTimeout(managerPressTimer); managerPressTimer = null; }
-        });
-
-        window.addEventListener('pointerdown', (e) => {
-            if (managerEl.style.display !== 'none' && !managerEl.contains(e.target) && !toggleBtn.contains(e.target)) managerEl.style.display = 'none';
-        });
-
-        ['pointerdown', 'pointermove', 'touchstart', 'touchmove', 'wheel'].forEach(eventType => {
-            managerEl.addEventListener(eventType, (e) => { e.stopPropagation(); }, { passive: true });
-        });
-    }
-});
-
-const forceCloudSave = () => {
-    if (window.gameInstance && window.gameInstance.auth && window.gameInstance.auth.currentUser) {
-        const localData = localStorage.getItem(window.gameInstance.getSaveKey());
-        if (localData) { window.gameInstance.db.ref('gameSaves/' + window.gameInstance.auth.currentUser.uid).set({ saveData: localData, lastUpdated: Date.now() }).catch(()=>{}); }
-    }
-};
-
-window.addEventListener("visibilitychange", () => { if (document.visibilityState === 'hidden') forceCloudSave(); });
-window.addEventListener("pagehide", forceCloudSave);
-window.addEventListener("beforeunload", forceCloudSave);
-</script>
-</body>
-</html>
