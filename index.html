@@ -956,8 +956,8 @@ class Game {
         const cy = this.worldHeight / 2;
 
         // 3. Tối ưu Scale: Tính tỷ lệ nội suy để chữ luôn hiển thị vừa khít giữa màn hình, không bị tràn viền
-        const maxW = this.worldWidth * 0.85;
-        const maxH = this.worldHeight * 0.7;
+        const maxW = this.worldWidth * 0.95;
+        const maxH = this.worldHeight * 0.85;
         const scale = Math.min(maxW / textW, maxH / textH);
 
         const lab = this.labsData[this.currentLabId];
@@ -967,7 +967,7 @@ class Game {
         const textVisualArea = textW * textH * scale * scale; 
         const estimatedInkArea = textVisualArea * 0.35; 
         const areaPerSlime = estimatedInkArea / slimes.length;
-        const idealRadius = Math.max(6, Math.min(32, Math.sqrt(areaPerSlime) * 0.7));
+        const idealRadius = Math.max(6, Math.min(50, Math.sqrt(areaPerSlime) * 1.2));
 
         for (let i = 0; i < slimes.length; i++) {
             const s = slimes[i];
