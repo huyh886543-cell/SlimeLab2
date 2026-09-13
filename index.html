@@ -409,8 +409,8 @@ class Slime {
         if (this.isFormingText) {
             const dx = this.targetX - this.x;
             const dy = this.targetY - this.y;
-            this.x += dx * 0.05 * dt * spd; 
-            this.y += dy * 0.05 * dt * spd;
+            this.x += dx * 0.08 * dt * spd; 
+            this.y += dy * 0.08 * dt * spd;
             this.stretchX += (1 - this.stretchX) * 0.12;
             this.stretchY += (1 - this.stretchY) * 0.12;
             if(isCurrentLab && Math.random()<0.01) eL.push(new Particle(this.x, this.y, this.strain.color));
@@ -964,23 +964,30 @@ class Game {
 
         const idealRadius = Math.max(4, (pointSpacing * scale) * 0.55);
 
-        points.sort(() => Math.random() - 0.5);
+        // 1. XÓA dòng trộn ngẫu nhiên: points.sort(() => Math.random() - 0.5);
 
         const lab = this.labsData[this.currentLabId];
         const slimes = lab.slimes;
 
+        // 2. Tính khoảng cách bước nhảy để rải đều số lượng pet dọc theo nét chữ
+        const step = Math.max(1, points.length / slimes.length);
+
         for (let i = 0; i < slimes.length; i++) {
             const s = slimes[i];
-            const pt = points[i % points.length];
-            s.targetX = cx + (pt.x - minX - textW/2) * scale + (Math.random()-0.5) * (scale*2);
-            s.targetY = cy + (pt.y - minY - textH/2) * scale + (Math.random()-0.5) * (scale*2);
+            
+            // 3. Chọn điểm xếp chữ theo chỉ số dàn đều
+            const pointIndex = Math.floor(i * step) % points.length;
+            const pt = points[pointIndex];
+            
+            // 4. Xóa phần random offset ở đuôi để pet đứng chính xác vào mốc
+            s.targetX = cx + (pt.x - minX - textW/2) * scale;
+            s.targetY = cy + (pt.y - minY - textH/2) * scale;
             s.targetRadius = idealRadius; 
             s.isFormingText = true;
         }
         
         this.sound.playMutate();
     }
-
     setupEvents() {
         const getCanvasPos = (e) => { const rect = this.canvas.getBoundingClientRect(); if(rect.width === 0 || rect.height === 0) return { x: 0, y: 0 }; let cx = e.clientX; let cy = e.clientY; if (cx === undefined && e.touches && e.touches.length > 0) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; } return { x: (cx - rect.left) * (CANVAS_W / rect.width), y: (cy - rect.top) * (CANVAS_H / rect.height) }; };
         const toWP = (sx,sy) => ({ x:this.camera.x+(sx-(this.containerRect.left+this.containerRect.width/2))/this.camera.zoom, y:this.camera.y+(sy-(this.containerRect.top+this.containerRect.height/2))/this.camera.zoom });
