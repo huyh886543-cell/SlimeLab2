@@ -1,138 +1,6 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🧪 Microbe & Slime Lab Simulator</title>
-    <meta name="theme-color" content="#06090f">
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: none; font-family: Arial, sans-serif; }
-        html, body { width: 100vw; height: 100vh; background-color: #06090f; color: #e6f5ff; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        #rotate-warning { display: none; position: fixed; inset: 0; background: #080c14; color: #00ffc8; z-index: 99999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
-        @media (orientation: portrait) { #rotate-warning { display: flex !important; } }
-        #app-layout { display: flex; flex-direction: row; width: 100vw; height: 100dvh; padding: 4px; gap: 6px; align-items: center; justify-content: center; }
-        #rank-board { width: clamp(155px, 18vw, 210px); height: 100%; background-color: #0f1622; border: 1.5px solid #223145; border-radius: 8px; display: flex; flex-direction: column; padding: 8px 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7); flex-shrink: 0; }
-        #rank-header { text-align: center; color: #ffd700; font-size: 13px; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #1a2636; padding-bottom: 3px; }
-        #rank-list { flex: 1; overflow-y: auto; scrollbar-width: none; }
-        .rank-item { display: flex; justify-content: space-between; padding: 6px 4px; border-bottom: 1px solid #131c29; font-size: 11.5px; cursor: pointer; transition: 0.2s; }
-        .rank-item.current-user { background-color: rgba(0, 255, 200, 0.15); border-left: 3px solid #00ffc8; }
-        .rank-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px; }
-        .rank-val { font-weight: bold; font-size: 11px; text-align: right;}
-        .val-diamond { color: #e056fd; } .val-money { color: #00ffc8; }
-        #game-wrapper { flex: 1; height: 100%; display: flex; position: relative; overflow: hidden; }
-        canvas { width: 100%; height: 100%; display: block; background-color: #0c1018; border-radius: 8px; border: 1.5px solid #1c2838; }
-        .overlay { position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); display: none; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(4px); }
-        .modal-box { background-color: #111a28; border: 1.5px solid #00ffc8; border-radius: 10px; width: min(360px, 85vw); padding: 22px 18px; text-align: center; box-shadow: 0 0 25px rgba(0, 255, 200, 0.2); }
-        .input-field { width: 100%; padding: 10px 12px; background-color: #080c14; border: 1px solid #28374b; color: #fff; border-radius: 6px; margin-bottom: 12px; font-size: 13px; outline: none; text-align: center; font-weight: bold; }
-        .btn { width: 100%; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; margin-bottom: 10px; border: none; transition: 0.2s; }
-    </style>
-</head>
-<body>
-    <audio id="bgm-stardew" loop></audio>
-    <div id="rotate-warning"><div style="font-size: 48px;">📱 ↷</div><h3>Vui lòng xoay ngang điện thoại</h3></div>
-
-    <div id="html-alert-overlay" class="overlay" style="z-index: 999999;">
-        <div class="modal-box" id="html-alert-box" style="border-color: #ff4646;">
-            <div id="html-alert-icon" style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
-            <h3 id="html-alert-title" style="color: #ff4646; font-size: 20px; font-weight: bold; margin-bottom: 15px;">CẢNH BÁO</h3>
-            <p id="html-alert-msg" style="color: #e6f5ff; font-size: 15px; margin-bottom: 25px; line-height: 1.5;"></p>
-            <button class="btn" id="html-alert-btn" style="background: #a02832; color: #fff;">XÁC NHẬN</button>
-        </div>
-    </div>
-
-    <!-- KHU VỰC NHẬP TÍNH NĂNG ẨN -->
-    <div id="easter-egg-overlay" class="overlay" style="z-index: 25000;">
-        <div class="modal-box" style="border-color: #e056fd; box-shadow: 0 0 40px rgba(224, 86, 253, 0.5);">
-            <h3 style="color: #e056fd; font-size: 20px; font-weight: bold; margin-bottom: 15px; text-shadow: 0 0 10px #e056fd;">✨ ĐỔ KHUÔN THỦY TINH ✨</h3>
-            <p style="color: #00ffc8; font-size: 13px; margin-bottom: 15px;">Pet hóa lỏng, cắt gọt tuyệt đối không lem ra ngoài!</p>
-            <textarea id="easter-egg-input" class="input-field" placeholder="Nhập chữ/thơ... (Bấm Enter xuống dòng)" rows="4" style="resize: none; border-color: #be6eff;"></textarea>
-            <select id="easter-egg-font" class="input-field" style="border-color: #be6eff;">
-                <option value="Arial">Phông cơ bản (Arial)</option>
-                <option value="Courier New">Phông máy chữ (Courier New)</option>
-                <option value="Impact">Phông dày (Impact)</option>
-                <option value="Times New Roman">Phông cổ điển (Times New Roman)</option>
-                <option value="Comic Sans MS">Phông vui nhộn (Comic Sans)</option>
-            </select>
-            <div style="display: flex; gap: 10px;">
-                <button id="ee-btn-ok" class="btn" style="background-color: #5a2d82; color: #fff;">Triển Khai!</button>
-                <button id="ee-btn-cancel" class="btn" style="background-color: #283c50; color: #fff;">Đóng</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="custom-input-overlay" class="overlay">
-        <div class="modal-box">
-            <h3 id="custom-input-title" style="color:#ffd700; margin-bottom:15px;">Nhập tên mới:</h3>
-            <input type="text" id="custom-input-field" class="input-field" maxlength="15" autocomplete="off">
-            <div style="display: flex; gap: 10px;">
-                <button id="custom-input-ok" class="btn" style="background: #14503c; color: #fff;">Xác Nhận</button>
-                <button id="custom-input-cancel" class="btn" style="background: #283c50; color: #fff;">Hủy Bỏ</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="welcome-modal" class="overlay" style="display: flex; z-index: 10000;">
-        <div class="modal-box">
-            <h3 style="color: #ffd700; font-size: 18px; font-weight: bold; margin-bottom: 4px;">🧪 MICROBE & SLIME LAB</h3>
-            <div style="color: #7890a8; font-size: 11px; margin-bottom: 14px;">MÁY CHỦ SỐ 1 (VN-REALTIME)</div>
-            <input type="text" id="player-name" class="input-field" placeholder="Nhập tên người chơi..." maxlength="15">
-            <button id="start-btn" class="btn" style="background-color: #14503c; color: #fff; border: 1px solid #00ffc8;">▶️ VÀO PHÒNG THÍ NGHIỆM</button>
-            <div style="display: flex; align-items: center; text-align: center; color: #6a829a; font-size: 11px; margin: 6px 0 10px 0;">HOẶC</div>
-            <button id="google-btn" class="btn" style="background-color: #ffffff; color: #2b2b2b;">Đăng nhập bằng Google</button>
-        </div>
-    </div>
-
-    <div id="app-layout">
-        <div id="rank-board">
-            <div id="rank-header">🏆 BẢNG XẾP HẠNG</div>
-            <div id="rank-server" style="text-align: center; color: #6a829a; font-size: 10px; margin-bottom: 6px; border-bottom: 1px solid #1a2636; padding-bottom: 3px;">ONLINE SERVER 1</div>
-            <div id="rank-list"><div style="text-align:center; padding:10px; font-size:10.5px; color:#6a829a;">Đang kết nối...</div></div>
-        </div>
-        
-        <div id="game-wrapper">
-            <canvas id="gameCanvas" width="1400" height="720"></canvas>
-            <button id="btn-toggle-manager" style="position: absolute; top: 35px; left: 7px; z-index: 101; background: #1e3246; color: #00ffc8; border: 1.5px solid #3498db; padding: 6px 12px; border-radius: 6px; font-size: 9px; font-weight: bold; cursor: pointer;">📊 Bảng Quản Lý</button>
-            <div id="strain-manager" style="display: none; position: absolute; top: 70px; left: 22px; width: 230px; max-height: 45%; background: rgba(17, 26, 40, 0.92); border: 1px solid #3498db; border-radius: 8px; padding: 8px; flex-direction: column; z-index: 100; backdrop-filter: blur(4px);">
-                <h4 style="color: #00ffc8; margin: 0 0 8px 0; font-size: 12px; text-align: center;">DANH SÁCH CHỦNG LOẠI</h4>
-                <div id="strain-list" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; touch-action: pan-y !important;"></div>
-                <button onclick="if(window.gameInstance) window.gameInstance.sellAllNonGods()" class="btn" style="background: #e74c3c; color: white; margin-bottom: 0;">🗑️ Bán Tất Cả (Trừ Thần/Khóa)</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="dice-overlay" class="overlay" style="z-index: 100000;">
-        <div class="modal-box" style="border-color: #e056fd;">
-            <h3 style="color: #e056fd; font-size: 20px; font-weight: bold; margin-bottom: 10px;">🎲 XÚC XẮC NHÂN PHẨM</h3>
-            <p id="dice-target-name" style="color: #7890a8; font-size: 13px; margin-bottom: 20px;"></p>
-            <div id="dice-face" style="font-size: 80px; line-height: 1; margin-bottom: 20px; text-shadow: 0 0 20px rgba(224,86,253,0.8); transition: transform 0.1s;">❓</div>
-            <p style="color: #00ffc8; font-size: 12px; margin-bottom: 15px; line-height: 1.4;">1-3: Bạn đền 10%-30%<br>4-6: Cướp 15%-35%</p>
-            <button id="dice-roll-btn" class="btn" style="background-color: #5a2d82; color: #fff;">Gieo Xúc Xắc!</button>
-            <button id="dice-close-btn" class="btn" style="background-color: #283c50; color: #fff;" onclick="document.getElementById('dice-overlay').style.display='none'">Thoát</button>
-        </div>
-    </div>
-
-    <div id="sell-modal" class="overlay" style="z-index: 1000;">
-        <div class="modal-box" style="border-color: #f1c40f;">
-            <h3 id="sell-modal-title" style="color: #f1c40f; font-size: 18px; margin-bottom: 15px;">Tùy chọn Bán</h3>
-            <button id="btn-sell-all" class="btn" style="background: #c0392b; color: white;">Bán Tất Cả</button>
-            <button id="btn-sell-keep-highest" class="btn" style="background: #2980b9; color: white;">Bán Tất Cả (Giữ 1 Pet Lv Cao Nhất)</button>
-            <button onclick="document.getElementById('sell-modal').style.display='none'" class="btn" style="background: #7f8c8d; color: white;">Hủy</button>
-        </div>
-    </div>
-
 <script>
-// ==========================================
-// CẤU HÌNH VÀ DỮ LIỆU CƠ BẢN
-// ==========================================
-const CANVAS_W = 1400; 
-const CANVAS_H = 720;
-const COLOR_TEXT = "#e6f5ff"; 
-const COLOR_ACCENT = "#00ffc8"; 
-const COLOR_GOLD = "#ffd700"; 
-const COLOR_WARNING = "#ff4646";
+const CANVAS_W = 1400; const CANVAS_H = 720;
+const COLOR_TEXT = "#e6f5ff"; const COLOR_ACCENT = "#00ffc8"; const COLOR_GOLD = "#ffd700"; const COLOR_WARNING = "#ff4646";
 
 function formatMoney(val) {
     const num = Number(val || 0);
@@ -158,29 +26,12 @@ function formatMoney(val) {
 }
 
 function showCustomAlert(msg, type = "error") {
-    const o = document.getElementById("html-alert-overlay");
-    const b = document.getElementById("html-alert-box");
-    const i = document.getElementById("html-alert-icon");
-    const t = document.getElementById("html-alert-title");
-    const m = document.getElementById("html-alert-msg");
-    const btn = document.getElementById("html-alert-btn");
-    
+    const o = document.getElementById("html-alert-overlay"), b = document.getElementById("html-alert-box"), i = document.getElementById("html-alert-icon"), t = document.getElementById("html-alert-title"), m = document.getElementById("html-alert-msg"), btn = document.getElementById("html-alert-btn");
     m.innerHTML = msg;
-    if (type === "success") { 
-        b.style.borderColor = "#00ffc8"; b.style.boxShadow = "0 0 40px rgba(0, 255, 200, 0.3)"; 
-        i.innerText = "✨"; t.innerText = "THÀNH CÔNG"; t.style.color = "#00ffc8"; 
-        btn.style.background = "#14503c"; btn.style.borderColor = "#00ffc8"; 
-    } else if (type === "info") { 
-        b.style.borderColor = "#00a8ff"; b.style.boxShadow = "0 0 40px rgba(0, 168, 255, 0.3)"; 
-        i.innerText = "ℹ️"; t.innerText = "THÔNG TIN"; t.style.color = "#00a8ff"; 
-        btn.style.background = "#0984e3"; btn.style.borderColor = "#00a8ff"; 
-    } else { 
-        b.style.borderColor = "#ff4646"; b.style.boxShadow = "0 0 40px rgba(255, 70, 70, 0.4)"; 
-        i.innerText = "⚠️"; t.innerText = "CẢNH BÁO"; t.style.color = "#ff4646"; 
-        btn.style.background = "#a02832"; btn.style.borderColor = "#ff4646"; 
-    }
-    o.style.display = "flex"; 
-    btn.onclick = () => { o.style.display = "none"; };
+    if (type === "success") { b.style.borderColor = "#00ffc8"; b.style.boxShadow = "0 0 40px rgba(0, 255, 200, 0.3)"; i.innerText = "✨"; t.innerText = "THÀNH CÔNG"; t.style.color = "#00ffc8"; btn.style.background = "#14503c"; btn.style.borderColor = "#00ffc8"; } 
+    else if (type === "info") { b.style.borderColor = "#00a8ff"; b.style.boxShadow = "0 0 40px rgba(0, 168, 255, 0.3)"; i.innerText = "ℹ️"; t.innerText = "THÔNG TIN"; t.style.color = "#00a8ff"; btn.style.background = "#0984e3"; btn.style.borderColor = "#00a8ff"; } 
+    else { b.style.borderColor = "#ff4646"; b.style.boxShadow = "0 0 40px rgba(255, 70, 70, 0.4)"; i.innerText = "⚠️"; t.innerText = "CẢNH BÁO"; t.style.color = "#ff4646"; btn.style.background = "#a02832"; btn.style.borderColor = "#ff4646"; }
+    o.style.display = "flex"; btn.onclick = () => { o.style.display = "none"; };
 }
 
 const TANK_THEMES = [
@@ -197,8 +48,6 @@ const TANK_THEMES = [
 ];
 
 const LAB_STRAIN_SETS = {};
-
-// Khởi tạo Dữ liệu Pet thủ công cho Bể 1
 LAB_STRAIN_SETS[0] = [
     { id: 0, name: "Alpha Lục Bảo", tier: 1, color: "#3cdc64", valMult: 1.0, mutRate: 0.08, mood: "cute" },
     { id: 1, name: "Bong Bóng Nước", tier: 1, color: "#00a8ff", valMult: 1.5, mutRate: 0.075, mood: "happy" },
@@ -228,10 +77,9 @@ LAB_STRAIN_SETS[0] = [
     { id: 105, name: "👑 Slime Vũ Trụ Tối Cao", tier: 14, color: "#ffd700", valMult: 10000000.0, mutRate: 0.0000005, mood: "divine", isGod: true }
 ];
 
-// Khởi tạo tự động dữ liệu Pet cho các Bể từ 2 đến 10
 const THEME_NAMES = [
     null,
-    { p: ["Bụi Vũ Trụ", "Sao Chổi", "Thiên Thạch", "Tinh Vân", "Lỗ Đen", "Ngân Hà"], g: "Chúa Tể Tinh Tú", h: 280 }, 
+    { p: ["Bụi Vũ Trụ", "Sao Chổi", "Thiạch", "Tinh Vân", "Lỗ Đen", "Ngân Hà"], g: "Chúa Tể Tinh Tú", h: 280 }, 
     { p: ["Tro Nóng", "Dung Nham", "Hỏa Diệm", "Lõi Trái Đất", "Hỏa Ngục", "Dạ Minh Hỏa"], g: "Ma Thần Núi Lửa", h: 10 }, 
     { p: ["Hoa Tuyết", "Sương Lạnh", "Băng Nứt", "Tuyết Lở", "Kỷ Băng Hà", "Tuyệt Vọng Băng"], g: "Chúa Tể Băng Giá", h: 200 }, 
     { p: ["Hạt Cát", "Gió Cát", "Bão Cát", "Ảo Ảnh", "Xương Khô", "Tử Thần Sa Mạc"], g: "Pharaoh Hoàng Kim", h: 45 }, 
@@ -246,461 +94,121 @@ for (let lab = 1; lab < 10; lab++) {
     const t = THEME_NAMES[lab];
     LAB_STRAIN_SETS[lab] = [
         { id: lab * 10, name: `Khuẩn Mầm ${t.p[0]}`, tier: 1, color: `hsl(${t.h}, 90%, 75%)`, valMult: 5.0 * lab, mutRate: 0.08, mood: "excited" },
-        { id: lab * 10 + 1, name: `Tế Bào ${t.p[0]}`, tier: 2, color: `hsl(${t.h + 10}, 85%, 70%)`, valMult: 10.0 * lab, mutRate: 0.07, mood: "silly" }
+        { id: lab * 10 + 1, name: `Tế Bào ${t.p[0]}`, tier: 2, color: `hsl(${t.h + 10}, 85%, 70%)`, valMult: 10.0 * lab, mutRate: 0.07, mood: "silly" },
+        ...Array.from({ length: 18 }, (_, i) => ({ 
+            id: lab * 100 + 12 + i, name: `${t.p[Math.floor(i / 3)]} MK-${(i % 3) + 1}`, tier: 3 + Math.floor(i / 3), 
+            color: `hsl(${(t.h + i * 15) % 360}, ${75 + (i % 20)}%, ${50 + (i % 20)}%)`, valMult: 50.0 * Math.pow(1.6, i) * lab, mutRate: 0.03 / (i + 1), mood: "excited" 
+        })),
+        ...Array.from({ length: 6 }, (_, i) => ({ 
+            id: lab * 1000 + i, name: `⚡ ${t.g} Cấp ${i + 1}`, tier: 11 + i, 
+            color: `hsl(${(t.h + i * 30) % 360}, 100%, 65%)`, valMult: 100000.0 * Math.pow(2.5, i) * lab, mutRate: 0.000005 / (i + 1), mood: "divine", isGod: true 
+        }))
     ];
-    
-    for (let i = 0; i < 18; i++) {
-        LAB_STRAIN_SETS[lab].push({
-            id: lab * 100 + 12 + i, 
-            name: `${t.p[Math.floor(i / 3)]} MK-${(i % 3) + 1}`, 
-            tier: 3 + Math.floor(i / 3), 
-            color: `hsl(${(t.h + i * 15) % 360}, ${75 + (i % 20)}%, ${50 + (i % 20)}%)`, 
-            valMult: 50.0 * Math.pow(1.6, i) * lab, 
-            mutRate: 0.03 / (i + 1), 
-            mood: "excited" 
-        });
-    }
-
-    for (let i = 0; i < 6; i++) {
-        LAB_STRAIN_SETS[lab].push({
-            id: lab * 1000 + i, 
-            name: `⚡ ${t.g} Cấp ${i + 1}`, 
-            tier: 11 + i, 
-            color: `hsl(${(t.h + i * 30) % 360}, 100%, 65%)`, 
-            valMult: 100000.0 * Math.pow(2.5, i) * lab, 
-            mutRate: 0.000005 / (i + 1), 
-            mood: "divine", 
-            isGod: true 
-        });
-    }
 }
 
-// Khởi tạo Dữ liệu Cửa hàng
 const weaponNames = ["Kiếm Cánh Thiên Thần", "Huyết Điệp Bỉ Ngạn", "Hàn Băng Long Kiếm", "Đoản Kiếm Bạch Cốt", "Xích Vân Mộc Lan", "Cung Nguyệt Thạch", "Tiên Cung Anh Đào", "Đại Kiếm Hắc Hỏa", "Thánh Kiếm Thái Dương", "Ma Kiếm Dạ Quỷ", "Song Lưỡi Hái Tinh Vân", "Đại Thần Phủ Bạch Kim", "Trượng Hỏa Long Thần", "Nhật Nguyệt Song Đao", "Hắc Ma Thương", "Kích Sét Phán Xét", "Cung Hỏa Phượng Hoàng", "Trượng Pha Lê Sinh Mệnh", "Đao Bán Nguyệt Thần", "Rìu Hỗn Độn Địa Ngục", "Kiếm Xương Gai Độc", "Lưỡi Hái Hấp Huyết", "Thương Băng Tuyệt Đối", "Phi Tiêu Đa Chiều", "Gậy Phép Hắc Tinh"];
 const auraNames = ["Vòng Tinh Tú Xanh", "Vòng Băng Tuyết", "Trận Đồ Tím Đa Tầng", "Hố Đen Gargantua", "Quả Cầu Thủy Tinh", "Quỹ Đạo Nguyên Tử", "Hỏa Luân Chân Hỏa", "Vòng Neon Ảo Ảnh", "Cổng Ma Thuật Hỗn Mang", "Hố Đen Vũ Trụ", "Vành Đai Hoàng Kim", "Hỏa Luân Thái Dương", "Vòng Xoáy Lượng Tử", "Vòng Rune Tím Cổ Đại", "Hào Quang Kim Cương", "Bát Quái Tiên Nhân", "Lốc Xoáy Hủy Diệt", "Trận Đồ Lôi Điện", "Hoa Sen Nở Rộ", "Mắt Thần Đa Chiều", "Lưới Lục Giác Sinh Học", "Trận Đồ Siêu Phân Tử", "Đĩa Hỏa Ngục", "Vành Đai Băng Lăng", "Quả Cầu Gai Bóng Tối"];
-
-const SKINS = [];
-const AURA_EFFECTS = [];
-
-for (let i = 0; i < 100; i++) {
-    SKINS.push({
-        id: 'skin_' + i, 
-        name: i === 0 ? "Mặc Định" : `${weaponNames[i % 25]} MK-${Math.floor(i/25)+1}`, 
-        price: i === 0 ? 0 : 50000 * Math.pow(2.0, i), 
-        tier: (i % 25) + 1
-    });
-    
-    AURA_EFFECTS.push({
-        id: 'aura_' + i, 
-        name: i === 0 ? "Không Dùng Aura" : `${auraNames[i % 25]} MK-${Math.floor(i/25)+1}`, 
-        price: i === 0 ? 0 : 100000 * Math.pow(2.2, i), 
-        tier: (i % 25) + 1
-    });
-}
-
-// ==========================================
-// CÁC CLASS ĐỒ HỌA & ÂM THANH
-// ==========================================
+const SKINS = Array.from({ length: 100 }, (_, i) => ({ id: 'skin_' + i, name: i === 0 ? "Mặc Định" : `${weaponNames[i % 25]} MK-${Math.floor(i/25)+1}`, price: i === 0 ? 0 : 50000 * Math.pow(2.0, i), tier: (i % 25) + 1 }));
+const AURA_EFFECTS = Array.from({ length: 100 }, (_, i) => ({ id: 'aura_' + i, name: i === 0 ? "Không Dùng Aura" : `${auraNames[i % 25]} MK-${Math.floor(i/25)+1}`, price: i === 0 ? 0 : 100000 * Math.pow(2.2, i), tier: (i % 25) + 1 }));
 
 class MasterpieceArtRenderer {
-    constructor(tier, type) { 
-        this.tier = Math.max(1, tier); 
-        this.type = type; 
-    }
-    
-    circle(ctx, r, fill, stroke, lw) { 
-        ctx.beginPath(); 
-        ctx.arc(0, 0, r, 0, Math.PI * 2); 
-        if (fill) { ctx.fillStyle = fill; ctx.fill(); } 
-        if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); } 
-    }
-    
-    poly(ctx, sides, r, fill, stroke, lw, offset=0) { 
-        ctx.beginPath(); 
-        for (let i = 0; i < sides; i++) { 
-            const a = i * Math.PI * 2 / sides + offset; 
-            if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r); 
-            else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); 
-        } 
-        ctx.closePath(); 
-        if (fill) { ctx.fillStyle = fill; ctx.fill(); } 
-        if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); } 
-    }
-    
-    spin(ctx, count, fn) { 
-        for (let i = 0; i < count; i++) { 
-            ctx.save(); 
-            ctx.rotate((i * Math.PI * 2) / count); 
-            fn(i); 
-            ctx.restore(); 
-        } 
-    }
-    
+    constructor(tier, type) { this.tier = Math.max(1, tier); this.type = type; }
+    circle(ctx, r, fill, stroke, lw) { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); } }
+    poly(ctx, sides, r, fill, stroke, lw, offset=0) { ctx.beginPath(); for (let i = 0; i < sides; i++) { const a = i * Math.PI * 2 / sides + offset; if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r); else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); } }
+    spin(ctx, count, fn) { for (let i = 0; i < count; i++) { ctx.save(); ctx.rotate((i * Math.PI * 2) / count); fn(i); ctx.restore(); } }
     draw(ctx, x, y, time, radius = 35, isShopPreview = false) {
         try {
-            ctx.save(); 
-            ctx.translate(x, y);
+            ctx.save(); ctx.translate(x, y);
             const hueShift = (this.tier * 35) % 360; 
             ctx.filter = `hue-rotate(${hueShift}deg) brightness(${1 + (this.tier % 5) * 0.05})`;
-            
-            const tMult = 0.95 + (this.tier * 0.3); 
-            const rA = (85 + (this.tier * 15)) * tMult; 
-            const rW = (55 + (this.tier * 7)) * tMult;
-            
-            if (isShopPreview) {
-                const safeScale = this.type === 'auras' ? (35 / rA) : (40 / rW); 
-                ctx.scale(safeScale, safeScale); 
-                if (this.type === 'weapons') ctx.rotate(Math.PI / 4);
-            } else {
-                const scaleRatio = Math.max(0.5, radius / 35); 
-                ctx.scale(scaleRatio, scaleRatio);
-            }
-            
-            if (this.type === 'auras') this.renderAuras(ctx, time, rA); 
-            else if (this.type === 'weapons') this.renderWeapons(ctx, time, rW, isShopPreview, radius);
-        } catch (err) { 
-        } finally { 
-            ctx.restore(); 
-        }
+            const tMult = 0.95 + (this.tier * 0.3); const rA = (85 + (this.tier * 15)) * tMult; const rW = (55 + (this.tier * 7)) * tMult;
+            if (isShopPreview) { const safeScale = this.type === 'auras' ? (35 / rA) : (40 / rW); ctx.scale(safeScale, safeScale); if (this.type === 'weapons') ctx.rotate(Math.PI / 4); } 
+            else { const scaleRatio = Math.max(0.5, radius / 35); ctx.scale(scaleRatio, scaleRatio); }
+            if (this.type === 'auras') this.renderAuras(ctx, time, rA); else if (this.type === 'weapons') this.renderWeapons(ctx, time, rW, isShopPreview, radius);
+        } catch (err) { } finally { ctx.restore(); }
     }
-    
     renderAuras(ctx, time, s) {
-        ctx.rotate(time * (0.3 + (this.tier % 5) * 0.05)); 
-        const t = (this.tier - 1) % 25; 
-        const baseType = t % 5;
-        const cols = ['#007fff', '#ff3838', '#ffd700', '#9b59b6', '#00f7ff']; 
-        const c1 = cols[t % 5]; 
-        const c2 = cols[(t + 2) % 5]; 
-        const rings = 1 + Math.floor(t / 5);
-        
+        ctx.rotate(time * (0.3 + (this.tier % 5) * 0.05)); const t = (this.tier - 1) % 25; const baseType = t % 5;
+        const cols = ['#007fff', '#ff3838', '#ffd700', '#9b59b6', '#00f7ff']; const c1 = cols[t % 5]; const c2 = cols[(t + 2) % 5]; const rings = 1 + Math.floor(t / 5);
         this.circle(ctx, s, null, c1, 3);
-        if (baseType === 0) { 
-            this.poly(ctx, 3 + rings, s*0.8, null, c2, 2); 
-            this.poly(ctx, 3 + rings, s*0.8, null, c2, 2, Math.PI / (3 + rings)); 
-            this.circle(ctx, s*0.5, null, c1, 2); 
-        } else if (baseType === 1) { 
-            const grad = ctx.createRadialGradient(0,0,s*0.2, 0,0,s); 
-            grad.addColorStop(0, c1); 
-            grad.addColorStop(1, 'transparent'); 
-            this.circle(ctx, s, grad, null, 0); 
-            this.circle(ctx, s*0.4, '#000', null, 0); 
-            ctx.save(); 
-            ctx.rotate(time); 
-            ctx.beginPath(); 
-            ctx.ellipse(0,0, s*1.2, s*0.2, 0, 0, Math.PI*2); 
-            ctx.strokeStyle = c2; 
-            ctx.lineWidth = 15; 
-            ctx.stroke(); 
-            ctx.restore(); 
-        } else if (baseType === 2) { 
-            this.circle(ctx, s*0.2, c1, null, 0); 
-            this.spin(ctx, 2 + rings, (i) => { 
-                ctx.beginPath(); 
-                ctx.ellipse(0,0, s, s*0.3, 0, 0, Math.PI*2); 
-                ctx.strokeStyle = c2; 
-                ctx.lineWidth = 2; 
-                ctx.stroke(); 
-                ctx.beginPath(); 
-                ctx.arc(s * Math.cos(time*3+i), s*0.3 * Math.sin(time*3+i), 5, 0, Math.PI*2); 
-                ctx.fillStyle = '#fff'; 
-                ctx.fill(); 
-            }); 
-        } else if (baseType === 3) { 
-            this.spin(ctx, 4 + rings*2, (i) => { 
-                ctx.beginPath(); 
-                ctx.moveTo(0,0); 
-                ctx.quadraticCurveTo(s*0.5, s*0.5, s, 0); 
-                ctx.quadraticCurveTo(s*0.5, -s*0.5, 0, 0); 
-                ctx.fillStyle = c1; 
-                ctx.globalAlpha = 0.4; 
-                ctx.fill(); 
-                ctx.globalAlpha = 1.0; 
-                ctx.strokeStyle=c2; 
-                ctx.lineWidth=2; 
-                ctx.stroke(); 
-            }); 
-        } else if (baseType === 4) { 
-            ctx.setLineDash([5, 10]); 
-            for(let i=1; i<=rings+1; i++) { 
-                this.circle(ctx, s * (i/(rings+1)), null, c2, 2); 
-            } 
-            ctx.setLineDash([]); 
-            this.spin(ctx, 6, (i) => { 
-                ctx.beginPath(); 
-                ctx.moveTo(s*0.2, 0); 
-                ctx.lineTo(s, 0); 
-                ctx.strokeStyle=c1; 
-                ctx.lineWidth=2; 
-                ctx.stroke(); 
-            }); 
-        }
+        if (baseType === 0) { this.poly(ctx, 3 + rings, s*0.8, null, c2, 2); this.poly(ctx, 3 + rings, s*0.8, null, c2, 2, Math.PI / (3 + rings)); this.circle(ctx, s*0.5, null, c1, 2); } 
+        else if (baseType === 1) { const grad = ctx.createRadialGradient(0,0,s*0.2, 0,0,s); grad.addColorStop(0, c1); grad.addColorStop(1, 'transparent'); this.circle(ctx, s, grad, null, 0); this.circle(ctx, s*0.4, '#000', null, 0); ctx.save(); ctx.rotate(time); ctx.beginPath(); ctx.ellipse(0,0, s*1.2, s*0.2, 0, 0, Math.PI*2); ctx.strokeStyle = c2; ctx.lineWidth = 15; ctx.stroke(); ctx.restore(); } 
+        else if (baseType === 2) { this.circle(ctx, s*0.2, c1, null, 0); this.spin(ctx, 2 + rings, (i) => { ctx.beginPath(); ctx.ellipse(0,0, s, s*0.3, 0, 0, Math.PI*2); ctx.strokeStyle = c2; ctx.lineWidth = 2; ctx.stroke(); ctx.beginPath(); ctx.arc(s * Math.cos(time*3+i), s*0.3 * Math.sin(time*3+i), 5, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill(); }); } 
+        else if (baseType === 3) { this.spin(ctx, 4 + rings*2, (i) => { ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(s*0.5, s*0.5, s, 0); ctx.quadraticCurveTo(s*0.5, -s*0.5, 0, 0); ctx.fillStyle = c1; ctx.globalAlpha = 0.4; ctx.fill(); ctx.globalAlpha = 1.0; ctx.strokeStyle=c2; ctx.lineWidth=2; ctx.stroke(); }); } 
+        else if (baseType === 4) { ctx.setLineDash([5, 10]); for(let i=1; i<=rings+1; i++) { this.circle(ctx, s * (i/(rings+1)), null, c2, 2); } ctx.setLineDash([]); this.spin(ctx, 6, (i) => { ctx.beginPath(); ctx.moveTo(s*0.2, 0); ctx.lineTo(s, 0); ctx.strokeStyle=c1; ctx.lineWidth=2; ctx.stroke(); }); }
     }
-    
     renderWeapons(ctx, time, w, isShopPreview, radius) {
-        if (!isShopPreview) { 
-            ctx.translate(radius + 10, -10); 
-            ctx.rotate(Math.sin(time * 6) * 0.18); 
-        }
-        
-        const t = (this.tier - 1) % 25; 
-        const baseType = t % 5; 
-        const cols = ['#ecf0f1', '#ff4757', '#00f7ff', '#f1c40f', '#9b59b6'];
-        const mainCol = cols[t % 5]; 
-        const glowCol = cols[(t + 2) % 5]; 
-        const hasExtraBlades = t > 9; 
-        const hasParticles = t > 4; 
-        const hasEnergyCore = t > 14;
-        
-        ctx.fillStyle = mainCol; 
-        ctx.strokeStyle = glowCol;
-        
-        if (baseType === 0) { 
-            ctx.fillRect(-w*0.1, -w, w*0.2, w*1.5); 
-            ctx.beginPath(); ctx.moveTo(-w*0.1, -w); ctx.lineTo(0, -w*1.2); ctx.lineTo(w*0.1, -w); ctx.fill(); 
-            ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.4, -w*0.2, w*0.8, w*0.1); 
-            ctx.fillStyle = mainCol; 
-            if (hasExtraBlades) { 
-                ctx.beginPath(); ctx.moveTo(-w*0.4, -w*0.2); ctx.lineTo(-w*0.5, -w*0.6); ctx.lineTo(-w*0.1, -w*0.4); ctx.fill(); 
-                ctx.beginPath(); ctx.moveTo(w*0.4, -w*0.2); ctx.lineTo(w*0.5, -w*0.6); ctx.lineTo(w*0.1, -w*0.4); ctx.fill(); 
-            } 
-        } else if (baseType === 1) { 
-            ctx.lineWidth = 6; ctx.lineCap = 'round'; 
-            ctx.beginPath(); ctx.moveTo(0, -w*0.1); ctx.quadraticCurveTo(-w, -w*0.5, w*0.2, -w); ctx.stroke(); 
-            ctx.beginPath(); ctx.moveTo(0, w*0.1); ctx.quadraticCurveTo(-w, w*0.5, w*0.2, w); ctx.stroke(); 
-            ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.7)'; 
-            ctx.beginPath(); ctx.moveTo(w*0.2, -w); ctx.lineTo(-w*0.4 + Math.sin(time*8)*w*0.1, 0); ctx.lineTo(w*0.2, w); ctx.stroke(); 
-            ctx.strokeStyle = glowCol; 
-        } else if (baseType === 2) { 
-            ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.05, -w*1.2, w*0.1, w*2); 
-            ctx.fillStyle = mainCol; 
-            ctx.beginPath(); ctx.moveTo(0, -w*1.1); ctx.quadraticCurveTo(-w*1.5, -w*1.2, -w*1.8, 0); ctx.quadraticCurveTo(-w, -w*0.8, 0, -w*0.9); ctx.fill(); 
-            if (hasExtraBlades) { 
-                ctx.beginPath(); ctx.moveTo(0, w*0.8); ctx.quadraticCurveTo(-w*0.8, w*0.9, -w, w*0.2); ctx.quadraticCurveTo(-w*0.5, w*0.6, 0, w*0.7); ctx.fill(); 
-            } 
-        } else if (baseType === 3) { 
-            ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.08, -w*0.8, w*0.16, w*1.6); 
-            ctx.fillStyle = mainCol; 
-            ctx.beginPath(); ctx.moveTo(0, -w*0.6); ctx.quadraticCurveTo(-w*1.2, -w*0.8, -w, -w*0.2); ctx.quadraticCurveTo(-w*0.5, 0, 0, -w*0.2); ctx.fill(); 
-            if (hasExtraBlades) { 
-                ctx.beginPath(); ctx.moveTo(0, -w*0.6); ctx.quadraticCurveTo(w*1.2, -w*0.8, w, -w*0.2); ctx.quadraticCurveTo(w*0.5, 0, 0, -w*0.2); ctx.fill(); 
-            } 
-        } else if (baseType === 4) { 
-            ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.06, -w*0.5, w*0.12, w*1.5); 
-            ctx.fillStyle = mainCol; 
-            ctx.beginPath(); ctx.arc(0, -w*0.6, w*0.3, 0, Math.PI*2); ctx.fill(); 
-            if (hasEnergyCore) { 
-                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -w*0.6, w*0.15, 0, Math.PI*2); ctx.fill(); 
-            } 
-        }
-        
-        if (hasParticles) { 
-            ctx.fillStyle = glowCol; 
-            for (let i=0; i<3; i++) { 
-                ctx.beginPath(); 
-                ctx.arc(Math.cos(time*5+i)*w*0.5, -w*0.5 + Math.sin(time*4+i)*w*0.5, w*0.05, 0, Math.PI*2); 
-                ctx.fill(); 
-            } 
-        }
+        if (!isShopPreview) { ctx.translate(radius + 10, -10); ctx.rotate(Math.sin(time * 6) * 0.18); }
+        const t = (this.tier - 1) % 25; const baseType = t % 5; const cols = ['#ecf0f1', '#ff4757', '#00f7ff', '#f1c40f', '#9b59b6'];
+        const mainCol = cols[t % 5]; const glowCol = cols[(t + 2) % 5]; const hasExtraBlades = t > 9; const hasParticles = t > 4; const hasEnergyCore = t > 14;
+        ctx.fillStyle = mainCol; ctx.strokeStyle = glowCol;
+        if (baseType === 0) { ctx.fillRect(-w*0.1, -w, w*0.2, w*1.5); ctx.beginPath(); ctx.moveTo(-w*0.1, -w); ctx.lineTo(0, -w*1.2); ctx.lineTo(w*0.1, -w); ctx.fill(); ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.4, -w*0.2, w*0.8, w*0.1); ctx.fillStyle = mainCol; if (hasExtraBlades) { ctx.beginPath(); ctx.moveTo(-w*0.4, -w*0.2); ctx.lineTo(-w*0.5, -w*0.6); ctx.lineTo(-w*0.1, -w*0.4); ctx.fill(); ctx.beginPath(); ctx.moveTo(w*0.4, -w*0.2); ctx.lineTo(w*0.5, -w*0.6); ctx.lineTo(w*0.1, -w*0.4); ctx.fill(); } } 
+        else if (baseType === 1) { ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, -w*0.1); ctx.quadraticCurveTo(-w, -w*0.5, w*0.2, -w); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, w*0.1); ctx.quadraticCurveTo(-w, w*0.5, w*0.2, w); ctx.stroke(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.moveTo(w*0.2, -w); ctx.lineTo(-w*0.4 + Math.sin(time*8)*w*0.1, 0); ctx.lineTo(w*0.2, w); ctx.stroke(); ctx.strokeStyle = glowCol; } 
+        else if (baseType === 2) { ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.05, -w*1.2, w*0.1, w*2); ctx.fillStyle = mainCol; ctx.beginPath(); ctx.moveTo(0, -w*1.1); ctx.quadraticCurveTo(-w*1.5, -w*1.2, -w*1.8, 0); ctx.quadraticCurveTo(-w, -w*0.8, 0, -w*0.9); ctx.fill(); if (hasExtraBlades) { ctx.beginPath(); ctx.moveTo(0, w*0.8); ctx.quadraticCurveTo(-w*0.8, w*0.9, -w, w*0.2); ctx.quadraticCurveTo(-w*0.5, w*0.6, 0, w*0.7); ctx.fill(); } } 
+        else if (baseType === 3) { ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.08, -w*0.8, w*0.16, w*1.6); ctx.fillStyle = mainCol; ctx.beginPath(); ctx.moveTo(0, -w*0.6); ctx.quadraticCurveTo(-w*1.2, -w*0.8, -w, -w*0.2); ctx.quadraticCurveTo(-w*0.5, 0, 0, -w*0.2); ctx.fill(); if (hasExtraBlades) { ctx.beginPath(); ctx.moveTo(0, -w*0.6); ctx.quadraticCurveTo(w*1.2, -w*0.8, w, -w*0.2); ctx.quadraticCurveTo(w*0.5, 0, 0, -w*0.2); ctx.fill(); } } 
+        else if (baseType === 4) { ctx.fillStyle = '#2d3436'; ctx.fillRect(-w*0.06, -w*0.5, w*0.12, w*1.5); ctx.fillStyle = mainCol; ctx.beginPath(); ctx.arc(0, -w*0.6, w*0.3, 0, Math.PI*2); ctx.fill(); if (hasEnergyCore) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -w*0.6, w*0.15, 0, Math.PI*2); ctx.fill(); } }
+        if (hasParticles) { ctx.fillStyle = glowCol; for (let i=0; i<3; i++) { ctx.beginPath(); ctx.arc(Math.cos(time*5+i)*w*0.5, -w*0.5 + Math.sin(time*4+i)*w*0.5, w*0.05, 0, Math.PI*2); ctx.fill(); } }
     }
 }
 
 class SoundEngine {
-    constructor() { 
-        this.ctx = null; 
-        this.volume = 0.5; 
-        this.musicPlaying = true; 
-        this.currentTrackId = -1; 
-    }
-    init(labId = 0) { 
-        try { 
-            if(!this.ctx) { this.ctx=new (window.AudioContext||window.webkitAudioContext)(); } 
-            if(this.ctx.state==="suspended") this.ctx.resume(); 
-            this.switchBGM(labId); 
-        } catch(e){} 
-    }
-    switchBGM(labId) { 
-        if (this.currentTrackId === labId) return; 
-        this.currentTrackId = labId; 
-        const b = document.getElementById("bgm-stardew"); 
-        if (b) { 
-            b.src = `music_${labId}.mp3`; 
-            b.load(); 
-            b.volume = this.volume; 
-            if (this.musicPlaying) b.play().catch(()=>{}); 
-            else b.pause(); 
-        } 
-    }
-    playPop() { 
-        try { 
-            if(!this.ctx||this.volume<=0)return; 
-            const o=this.ctx.createOscillator(), g=this.ctx.createGain(); 
-            o.frequency.setValueAtTime(520,this.ctx.currentTime); 
-            o.frequency.exponentialRampToValueAtTime(820,this.ctx.currentTime+0.07); 
-            g.gain.setValueAtTime(this.volume*0.25,this.ctx.currentTime); 
-            g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+0.07); 
-            o.connect(g); g.connect(this.ctx.destination); 
-            o.start(); o.stop(this.ctx.currentTime+0.07); 
-        } catch(e){} 
-    }
-    playCoin() { 
-        try { 
-            if(!this.ctx||this.volume<=0)return; 
-            const o=this.ctx.createOscillator(), g=this.ctx.createGain(); 
-            o.type="triangle"; 
-            o.frequency.setValueAtTime(880,this.ctx.currentTime); 
-            o.frequency.setValueAtTime(1320,this.ctx.currentTime+0.08); 
-            g.gain.setValueAtTime(this.volume*0.3,this.ctx.currentTime); 
-            g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+0.16); 
-            o.connect(g); g.connect(this.ctx.destination); 
-            o.start(); o.stop(this.ctx.currentTime+0.16); 
-        } catch(e){} 
-    }
-    playMutate() { 
-        try { 
-            if(!this.ctx||this.volume<=0)return; 
-            [440,554,659,880].forEach((f,i)=>{ 
-                const o=this.ctx.createOscillator(), g=this.ctx.createGain(); 
-                o.frequency.setValueAtTime(f,this.ctx.currentTime+i*0.06); 
-                g.gain.setValueAtTime(this.volume*0.25,this.ctx.currentTime+i*0.06); 
-                g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+i*0.06+0.1); 
-                o.connect(g); g.connect(this.ctx.destination); 
-                o.start(this.ctx.currentTime+i*0.06); o.stop(this.ctx.currentTime+i*0.06+0.1); 
-            }); 
-        } catch(e){} 
-    }
-    setVolume(d) { 
-        this.volume=Math.max(0,Math.min(1,this.volume+d)); 
-        const b=document.getElementById("bgm-stardew"); 
-        if(b) b.volume=this.volume; 
-    }
-    toggleMusic() { 
-        this.musicPlaying=!this.musicPlaying; 
-        const b=document.getElementById("bgm-stardew"); 
-        if(b) { 
-            if(this.musicPlaying) b.play().catch(()=>{}); 
-            else b.pause(); 
-        } 
-    }
+    constructor() { this.ctx = null; this.volume = 0.5; this.musicPlaying = true; this.currentTrackId = -1; }
+    init(labId = 0) { try { if(!this.ctx) { this.ctx=new (window.AudioContext||window.webkitAudioContext)(); } if(this.ctx.state==="suspended") this.ctx.resume(); this.switchBGM(labId); } catch(e){} }
+    switchBGM(labId) { if (this.currentTrackId === labId) return; this.currentTrackId = labId; const b = document.getElementById("bgm-stardew"); if (b) { b.src = `music_${labId}.mp3`; b.load(); b.volume = this.volume; if (this.musicPlaying) b.play().catch(()=>{}); else b.pause(); } }
+    playPop() { try { if(!this.ctx||this.volume<=0)return; const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.frequency.setValueAtTime(520,this.ctx.currentTime); o.frequency.exponentialRampToValueAtTime(820,this.ctx.currentTime+0.07); g.gain.setValueAtTime(this.volume*0.25,this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+0.07); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime+0.07); } catch(e){} }
+    playCoin() { try { if(!this.ctx||this.volume<=0)return; const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.type="triangle"; o.frequency.setValueAtTime(880,this.ctx.currentTime); o.frequency.setValueAtTime(1320,this.ctx.currentTime+0.08); g.gain.setValueAtTime(this.volume*0.3,this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+0.16); o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime+0.16); } catch(e){} }
+    playMutate() { try { if(!this.ctx||this.volume<=0)return; [440,554,659,880].forEach((f,i)=>{ const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.frequency.setValueAtTime(f,this.ctx.currentTime+i*0.06); g.gain.setValueAtTime(this.volume*0.25,this.ctx.currentTime+i*0.06); g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+i*0.06+0.1); o.connect(g); g.connect(this.ctx.destination); o.start(this.ctx.currentTime+i*0.06); o.stop(this.ctx.currentTime+i*0.06+0.1); }); } catch(e){} }
+    setVolume(d) { this.volume=Math.max(0,Math.min(1,this.volume+d)); const b=document.getElementById("bgm-stardew"); if(b)b.volume=this.volume; }
+    toggleMusic() { this.musicPlaying=!this.musicPlaying; const b=document.getElementById("bgm-stardew"); if(b) { if(this.musicPlaying) b.play().catch(()=>{}); else b.pause(); } }
 }
 
 class Particle {
-    constructor(x, y, color) { 
-        this.x=x; this.y=y; this.color=color; 
-        this.life=15+Math.random()*10; this.maxLife=this.life; 
-        this.size=1.5+Math.random()*2.5; 
-        let a=Math.random()*Math.PI*2, s=0.5+Math.random(); 
-        this.vx=Math.cos(a)*s; this.vy=Math.sin(a)*s-0.5; 
-    }
-    update(dt, spd=1) { 
-        this.x+=this.vx*(dt*60)*spd; 
-        this.y+=this.vy*(dt*60)*spd; 
-        this.life-=spd; 
-    }
-    draw(ctx) { 
-        ctx.save(); 
-        ctx.globalAlpha=Math.max(0,this.life/this.maxLife); 
-        ctx.fillStyle=this.color; 
-        ctx.beginPath(); 
-        ctx.arc(this.x,this.y,this.size,0,Math.PI*2); 
-        ctx.fill(); 
-        ctx.restore(); 
-    }
+    constructor(x, y, color) { this.x=x; this.y=y; this.color=color; this.life=15+Math.random()*10; this.maxLife=this.life; this.size=1.5+Math.random()*2.5; let a=Math.random()*Math.PI*2, s=0.5+Math.random(); this.vx=Math.cos(a)*s; this.vy=Math.sin(a)*s-0.5; }
+    update(dt, spd=1) { this.x+=this.vx*(dt*60)*spd; this.y+=this.vy*(dt*60)*spd; this.life-=spd; }
+    draw(ctx) { ctx.save(); ctx.globalAlpha=Math.max(0,this.life/this.maxLife); ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill(); ctx.restore(); }
 }
 
 class Shockwave {
-    constructor(x, y, color) { 
-        this.x=x; this.y=y; this.color=color; 
-        this.r=5; this.mr=70; this.life=1; 
-    }
-    update(dt, spd=1) { 
-        this.r+=120*dt*spd; 
-        this.life=Math.max(0,1-(this.r/this.mr)); 
-    }
-    draw(ctx) { 
-        if(this.life<=0)return; 
-        ctx.save(); 
-        ctx.beginPath(); 
-        ctx.arc(this.x,this.y,this.r,0,Math.PI*2); 
-        ctx.strokeStyle=this.color; 
-        ctx.lineWidth=3*this.life; 
-        ctx.globalAlpha=this.life; 
-        ctx.stroke(); 
-        ctx.restore(); 
-    }
+    constructor(x, y, color) { this.x=x; this.y=y; this.color=color; this.r=5; this.mr=70; this.life=1; }
+    update(dt, spd=1) { this.r+=120*dt*spd; this.life=Math.max(0,1-(this.r/this.mr)); }
+    draw(ctx) { if(this.life<=0)return; ctx.save(); ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.strokeStyle=this.color; ctx.lineWidth=3*this.life; ctx.globalAlpha=this.life; ctx.stroke(); ctx.restore(); }
 }
 
 class AmbientBubble {
     constructor(w, h) { this.w=w; this.h=h; this.reset(); }
-    reset() { 
-        this.x=Math.random()*this.w; this.y=this.h+20; 
-        this.r=2+Math.random()*3; this.s=0.4+Math.random()*0.6; 
-        this.wb=Math.random()*Math.PI*2; 
-    }
-    update(spd=1) { 
-        this.y-=this.s*spd; this.wb+=0.03*spd; 
-        this.x+=Math.sin(this.wb)*0.2; 
-        if(this.y<-20) this.reset(); 
-    }
-    draw(ctx) { 
-        ctx.save(); 
-        ctx.strokeStyle="rgba(140,220,255,0.25)"; 
-        ctx.lineWidth=1; 
-        ctx.beginPath(); 
-        ctx.arc(this.x,this.y,this.r,0,Math.PI*2); 
-        ctx.stroke(); 
-        ctx.restore(); 
-    }
+    reset() { this.x=Math.random()*this.w; this.y=this.h+20; this.r=2+Math.random()*3; this.s=0.4+Math.random()*0.6; this.wb=Math.random()*Math.PI*2; }
+    update(spd=1) { this.y-=this.s*spd; this.wb+=0.03*spd; this.x+=Math.sin(this.wb)*0.2; if(this.y<-20)this.reset(); }
+    draw(ctx) { ctx.save(); ctx.strokeStyle="rgba(140,220,255,0.25)"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.stroke(); ctx.restore(); }
 }
-
-// ==========================================
-// ĐỐI TƯỢNG PET (SLIME)
-// ==========================================
 
 class Slime {
     constructor(x, y, labId=0, strainId=null, level=1, repTimer=null, locked=false) {
-        this.x=x||600; 
-        this.y=y||380; 
-        this.labId=labId;
-        
+        this.x=x||600; this.y=y||380; this.labId=labId;
         const strains=LAB_STRAIN_SETS[this.labId]||LAB_STRAIN_SETS[0];
         this.strain=strainId!==null?(strains.find(s=>s.id===strainId)||strains[0]):strains[0];
         this.level=Math.max(1,parseInt(level)||1); 
-        this.baseRadius=32+this.level*3.5;
-        this.radius=this.baseRadius; 
-        this.targetRadius=this.baseRadius;
-        
-        this.vx=(Math.random()-0.5)*0.5; 
-        this.vy=(Math.random()-0.5)*0.4;
-        this.buoyancy=Math.random()*100; 
-        this.angle=Math.random()*360; 
-        this.rotSpeed=(Math.random()-0.5)*0.3;
-        this.blobWobble=Math.random()*100; 
-        this.numPoints=12;
-        this.locked=Boolean(locked); 
-        this.frozen=false; 
-        this.isDragged=false; 
-        this.isPaused=false;
-        this.stretchX=1; 
-        this.stretchY=1; 
-        this.rotationAngle=Math.random()*Math.PI*2; 
-        this.sameCloneCount=0;
-        this.customSkin='skin_0'; 
-        this.customAura='none';
+        this.baseRadius=38+this.level*4.0; // Làm Pet to hơn bình thường 1 chút
+        this.radius=this.baseRadius; this.targetRadius=this.baseRadius;
+        this.vx=(Math.random()-0.5)*0.5; this.vy=(Math.random()-0.5)*0.4;
+        this.buoyancy=Math.random()*100; this.angle=Math.random()*360; this.rotSpeed=(Math.random()-0.5)*0.3;
+        this.blobWobble=Math.random()*100; this.numPoints=12;
+        this.locked=Boolean(locked); this.frozen=false; this.isDragged=false; this.isPaused=false;
+        this.stretchX=1; this.stretchY=1; this.rotationAngle=Math.random()*Math.PI*2; this.sameCloneCount=0;
+        this.customSkin='skin_0'; this.customAura='none';
         
         this.isFormingText = false;
         this.isMelted = false; 
         this.targetX = 0;
         this.targetY = 0;
 
-        const baseVal=Math.floor(Math.random()*8)+3; 
-        const lm=1+(this.labId*0.1);
+        const baseVal=Math.floor(Math.random()*8)+3; const lm=1+(this.labId*0.1);
         this.value=Math.floor(baseVal*Math.pow(1.02,this.level-1)*(this.strain.valMult||1)*lm);
         this.timerMax=(6+(this.level-1)*4)*(1+this.labId*0.5);
         this.replicateTimer=repTimer!==null?Number(repTimer):this.timerMax;
     }
 
     update(dt, wB, eL, sW, spd=1, isLabPaused=false, isCurrentLab=true) {
-        this.baseRadius = 32 + this.level * 3.5; 
+        this.baseRadius = 38 + this.level * 4.0; 
         if (!this.isFormingText) {
             this.targetRadius = this.baseRadius;
             this.isMelted = false;
@@ -710,49 +218,37 @@ class Slime {
 
         if (this.isDragged || this.frozen) return null; 
 
-        // TÍNH NĂNG TẠO CHỮ: Di chuyển siêu chậm vào khuôn
         if (this.isFormingText) {
             const dx = this.targetX - this.x; 
             const dy = this.targetY - this.y;
             const dist = Math.hypot(dx, dy);
 
-            // Bán kính hội tụ để hóa lỏng
-            if (dist < 5) {
+            if (dist < 10) {
                 this.isMelted = true;
                 this.x = this.targetX;
                 this.y = this.targetY;
             } else {
                 this.isMelted = false;
-                // Bơi chầm chậm tạo cảm giác bồng bềnh
-                this.x += dx * 0.015 * dt * 60 * spd;
-                this.y += dy * 0.015 * dt * 60 * spd;
+                // Pet bơi vào khuôn cực nhanh (giảm thời gian tạo chữ)
+                this.x += dx * 0.06 * dt * 60 * spd;
+                this.y += dy * 0.06 * dt * 60 * spd;
                 
                 this.blobWobble += dt * 4 * spd;
                 this.stretchX += (1 - this.stretchX) * 0.12;
                 this.stretchY += (1 - this.stretchY) * 0.12;
-                
-                if(isCurrentLab && Math.random()<0.02) eL.push(new Particle(this.x, this.y, this.strain.color));
             }
             return null; 
         }
 
-        // Tự do bơi lội trong bể bình thường
-        this.buoyancy+=dt*2*spd; 
-        this.x+=this.vx*(dt*60)*spd; 
-        this.y+=(this.vy+Math.sin(this.buoyancy)*0.2)*(dt*60)*spd;
-        this.angle+=this.rotSpeed*(dt*60)*spd; 
-        this.blobWobble+=dt*4*spd;
-        this.stretchX+=(1-this.stretchX)*0.12; 
-        this.stretchY+=(1-this.stretchY)*0.12;
-        
-        // Đập tường dội lại
+        this.buoyancy+=dt*2*spd; this.x+=this.vx*(dt*60)*spd; this.y+=(this.vy+Math.sin(this.buoyancy)*0.2)*(dt*60)*spd;
+        this.angle+=this.rotSpeed*(dt*60)*spd; this.blobWobble+=dt*4*spd;
+        this.stretchX+=(1-this.stretchX)*0.12; this.stretchY+=(1-this.stretchY)*0.12;
         const p=this.radius+10;
         if(this.x-p<wB.left){this.x=wB.left+p;this.vx=Math.abs(this.vx);} else if(this.x+p>wB.right){this.x=wB.right-p;this.vx=-Math.abs(this.vx);}
         if(this.y-p<wB.top){this.y=wB.top+p;this.vy=Math.abs(this.vy);} else if(this.y+p>wB.bottom){this.y=wB.bottom-p;this.vy=-Math.abs(this.vy);}
         
         if(isCurrentLab && Math.random()<0.03*dt*60*spd) eL.push(new Particle(this.x+(Math.random()-0.5)*this.radius,this.y+(Math.random()-0.5)*this.radius,this.strain.color));
         
-        // Sinh sản
         if(!this.locked&&!isLabPaused&&!this.isPaused&&Math.random()<0.00008*dt*spd) return "DEAD";
         if(!isLabPaused && !this.isPaused){ 
             this.replicateTimer-=dt*spd; 
@@ -806,8 +302,6 @@ class Slime {
         if(this.strain.isGod && !this.isFormingText) { 
             ctx.save(); ctx.translate(this.x, this.y); const tier = this.strain.tier;
             if (tier === 11) { const pulse = Math.sin(time * 3) * 0.2 + 1; for(let i=0; i<3; i++) { ctx.save(); ctx.rotate(time * (i%2===0?1:-1) + i * Math.PI/1.5); ctx.scale(1, 0.3); ctx.shadowBlur = 10; ctx.shadowColor = this.strain.color; ctx.strokeStyle = this.strain.color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, r * 2.5 * pulse, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(Math.cos(time*4)*r*2.5*pulse, Math.sin(time*4)*r*2.5*pulse, 4.5, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore(); } } 
-            else if (tier === 12) { ctx.rotate(time * 0.5); for (let i = 0; i < 2; i++) { ctx.rotate(Math.PI / 6 * i + (i%2===0?time:-time)); ctx.shadowBlur = 15; ctx.shadowColor = this.strain.color; ctx.strokeStyle = i===0 ? this.strain.color : "#fff"; ctx.lineWidth = i===0 ? 3 : 1.5; ctx.beginPath(); for(let j=0; j<6; j++) { const a = j * Math.PI / 3; const dist = r * 2.2 + Math.sin(time * 4) * 8; if(j===0) ctx.moveTo(Math.cos(a)*dist, Math.sin(a)*dist); else ctx.lineTo(Math.cos(a)*dist, Math.sin(a)*dist); } ctx.closePath(); ctx.stroke(); } } 
-            else if (tier === 13) { ctx.shadowBlur = 20; ctx.shadowColor = this.strain.color; ctx.strokeStyle = this.strain.color; ctx.lineWidth = 2.5; ctx.beginPath(); const spikes = 14; for (let i = 0; i < spikes; i++) { const a = i * Math.PI * 2 / spikes + time * 2; const spikeR = r * 1.5 + Math.random() * r * 1.8; if(i===0) ctx.moveTo(Math.cos(a)*spikeR, Math.sin(a)*spikeR); else ctx.lineTo(Math.cos(a)*spikeR, Math.sin(a)*spikeR); } ctx.closePath(); ctx.stroke(); ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, r * 2.8 + Math.random()*5, 0, Math.PI*2); ctx.stroke(); } 
             else if (tier >= 14) { const grad = ctx.createRadialGradient(0,0,r*0.5, 0,0,r*3.5); grad.addColorStop(0, "rgba(0,0,0,0.9)"); grad.addColorStop(0.4, this.strain.color); grad.addColorStop(1, "transparent"); ctx.beginPath(); ctx.arc(0,0, r*3.5, 0, Math.PI*2); ctx.fillStyle = grad; ctx.fill(); ctx.rotate(-time * 0.4); ctx.strokeStyle = "#ffd700"; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = "#ffd700"; for(let i=0; i<8; i++) { ctx.rotate(Math.PI / 4); ctx.beginPath(); ctx.ellipse(0, r*1.2, r*0.8, r*2.2, 0, 0, Math.PI*2); ctx.stroke(); } }
             ctx.restore();
         }
@@ -817,18 +311,14 @@ class Slime {
         ctx.translate(this.x,this.y); ctx.scale(this.stretchX,this.stretchY);
         
         ctx.beginPath(); 
-        if (this.isFormingText) {
-            ctx.arc(0, 0, r, 0, Math.PI * 2);
-        } else {
-            for(let i=0;i<this.numPoints;i++){ 
-                const a=(this.angle+i*(360/this.numPoints))*(Math.PI/180); 
-                const w = Math.sin(this.blobWobble + i*1.5) * 2.5; 
-                const d = r + w; 
-                const px = Math.cos(a)*d; 
-                const py = Math.sin(a)*d; 
-                if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); 
-            } 
-        }
+        for(let i=0;i<this.numPoints;i++){ 
+            const a=(this.angle+i*(360/this.numPoints))*(Math.PI/180); 
+            const w = Math.sin(this.blobWobble + i*1.5) * 2.5; 
+            const d = r + w; 
+            const px = Math.cos(a)*d; 
+            const py = Math.sin(a)*d; 
+            if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); 
+        } 
         ctx.closePath();
         
         ctx.fillStyle = this.strain.color; 
@@ -853,10 +343,9 @@ class Slime {
         ctx.restore();
     }
 
-    drawEyes(ctx) {
+    drawEyes(ctx, isMasking = false) {
         ctx.save(); 
         const r = this.baseRadius; 
-        const time = Date.now() * 0.003;
         
         ctx.translate(this.x, this.y); 
         ctx.scale(this.stretchX, this.stretchY);
@@ -864,7 +353,7 @@ class Slime {
         const eyeScale = this.isFormingText ? 0.7 : 1.0; 
 
         if (this.strain.isGod && !this.isFormingText) { 
-            ctx.fillStyle="#fff"; ctx.shadowBlur = 12; ctx.shadowColor = "#fff"; 
+            ctx.fillStyle="#fff"; ctx.shadowBlur = isMasking ? 0 : 12; ctx.shadowColor = "#fff"; 
             ctx.beginPath(); 
             ctx.arc(-r*0.3*eyeScale, -r*0.1*eyeScale, r*0.25*eyeScale, 0, Math.PI*2); 
             ctx.arc(r*0.3*eyeScale, -r*0.1*eyeScale, r*0.25*eyeScale, 0, Math.PI*2); 
@@ -890,16 +379,15 @@ class Slime {
         
         ctx.restore();
         
-        if(this.customSkin&&this.customSkin!=='skin_0'&&!this.isFormingText){ const sId=parseInt(this.customSkin.replace('skin_',''))||1; new MasterpieceArtRenderer(sId,'weapons').draw(ctx,this.x,this.y,time,this.baseRadius,false); }
-        if(!this.isPaused && !this.isFormingText) { const p=1-(this.replicateTimer/(this.timerMax+(this.sameCloneCount*5))); ctx.strokeStyle=COLOR_ACCENT; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(this.x,this.y,this.baseRadius+8,-Math.PI/2,-Math.PI/2+p*2*Math.PI); ctx.stroke(); }
-        if(this.locked&&!this.isFormingText){ ctx.font="bold 14px Arial"; ctx.fillStyle=COLOR_GOLD; ctx.fillText("🔒",this.x+10,this.y-this.baseRadius-10); }
-        if(this.isPaused&&!this.isFormingText){ ctx.font="bold 14px Arial"; ctx.fillStyle="#ff4646"; ctx.fillText("⏸",this.x-10,this.y-this.baseRadius-10); }
+        if(!this.isFormingText){
+            const time = Date.now() * 0.003;
+            if(this.customSkin&&this.customSkin!=='skin_0'){ const sId=parseInt(this.customSkin.replace('skin_',''))||1; new MasterpieceArtRenderer(sId,'weapons').draw(ctx,this.x,this.y,time,this.baseRadius,false); }
+            if(!this.isPaused) { const p=1-(this.replicateTimer/(this.timerMax+(this.sameCloneCount*5))); ctx.strokeStyle=COLOR_ACCENT; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(this.x,this.y,this.baseRadius+8,-Math.PI/2,-Math.PI/2+p*2*Math.PI); ctx.stroke(); }
+            if(this.locked){ ctx.font="bold 14px Arial"; ctx.fillStyle=COLOR_GOLD; ctx.fillText("🔒",this.x+10,this.y-this.baseRadius-10); }
+            if(this.isPaused){ ctx.font="bold 14px Arial"; ctx.fillStyle="#ff4646"; ctx.fillText("⏸",this.x-10,this.y-this.baseRadius-10); }
+        }
     }
 }
-
-// ==========================================
-// HỆ THỐNG GAME CHÍNH
-// ==========================================
 
 class Game {
     constructor() {
@@ -912,12 +400,6 @@ class Game {
         
         this.isFormingTextActive = false;
         this.formingTextData = null; 
-        
-        // SETUP MẶT NẠ ẨN ĐỂ ĐỔ KHUÔN
-        this.maskCanvas = document.createElement('canvas'); 
-        this.maskCanvas.width = CANVAS_W; 
-        this.maskCanvas.height = CANVAS_H;
-        this.maskCtx = this.maskCanvas.getContext('2d');
         
         this.playerId = localStorage.getItem("slime_player_id") || ('usr_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36)); localStorage.setItem("slime_player_id", this.playerId);
         this.containerRect = { left: 12, top: 66, width: CANVAS_W - 24, height: CANVAS_H - 78, right: CANVAS_W - 12, bottom: CANVAS_H - 12 };
@@ -935,7 +417,6 @@ class Game {
         this.activePointers = new Map();
         
         this.buySlotInterval = null;
-
         this.lastTime = performance.now(); this.lastSaveTime = performance.now();
         
         this.initFirebase(); this.setupEvents(); this.checkLoginStatus();
@@ -1059,7 +540,6 @@ class Game {
                                                     🏆 <b>Xếp hạng:</b> Top ${i + 1}<br>
                                                     💰 <b>Tài sản:</b> ${formatMoney(e.money)}<br>
                                                     💎 <b>Kim cương:</b> ${e.diamonds}<br>
-                                                    <br><i style="color:#7890a8; font-size:12.5px;">(Mạng lưới tình báo chỉ thu thập được đến đây. Nâng cấp Vệ Tinh ở các bản cập nhật sau để xem chi tiết!)</i>
                                                 </div>`;
                                                 showCustomAlert(msg, "info");
                                                 document.getElementById("html-alert-title").innerText = "🕵️ THÔNG TIN TÌNH BÁO";
@@ -1093,7 +573,7 @@ class Game {
                 const sts = LAB_STRAIN_SETS[g.labId] || LAB_STRAIN_SETS[0];
                 const petInfo = sts.find(s => s.id === g.strainId);
                 const petName = petInfo ? petInfo.name : "Slime Bí Ẩn";
-                // Đã bỏ chặn maxCapacity để cho phép gửi/nhận thoải mái
+                // Pet có thể vào không giới hạn
                 targetLab.slimes.push(new Slime(this.worldWidth/2, this.worldHeight/2, g.labId, g.strainId, g.level));
                 targetLab.collection[g.strainId] = true; 
                 showCustomAlert(`🎁 [${g.fromName}] vừa tặng bạn: [${petName}] Lv.${g.level}! Đã vào Lab ${g.labId+1}`, "success");
@@ -1328,7 +808,6 @@ class Game {
     formTextWithSlimes(text, font) {
         const lines = text.split('\n');
         
-        // MẶT NẠ ẨN ĐỂ ĐO LƯỜNG VÀ LẤY TỌA ĐỘ
         const testFontSize = 100;
         const tc = document.createElement('canvas');
         tc.width = 2000; 
@@ -1345,7 +824,6 @@ class Game {
         
         let totalHeight = lines.length * (testFontSize * 1.2);
         
-        // Đo đạc tỷ lệ chuẩn cho World Space
         const maxWorldW = this.worldWidth * 0.8;
         const maxWorldH = this.worldHeight * 0.8;
         let scaleToWorld = Math.min(maxWorldW / maxLineWidth, maxWorldH / totalHeight);
@@ -1386,7 +864,6 @@ class Game {
         const cy = this.worldHeight / 2;
         const slimes = this.labsData[this.currentLabId].slimes;
 
-        // Lưu thông số Tàng Hình để hệ thống MASKING tự động cắt
         this.formingTextData = {
             lines: lines,
             font: font,
@@ -1397,10 +874,9 @@ class Game {
         };
         this.isFormingTextActive = true;
 
-        // BÁN KÍNH LÝ TƯỞNG CỦA TỪNG GIỌT SLIME (Cố tình vẽ to ra để hòa trộn hoàn toàn thành nước)
         const pointWorldArea = points.length * (pointSpacing * scaleToWorld) * (pointSpacing * scaleToWorld);
-        let idealRadius = Math.sqrt(pointWorldArea / (slimes.length * Math.PI)) * 2.2;
-        idealRadius = Math.max(10, Math.min(idealRadius, 60)); 
+        let idealRadius = Math.sqrt(pointWorldArea / (slimes.length * Math.PI)) * 4.5; // Tăng size to hơn
+        idealRadius = Math.max(25, Math.min(idealRadius, 85)); 
 
         for (let i = points.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -1455,7 +931,6 @@ class Game {
                 return; 
             }
             
-            // XỬ LÝ NHẤN NÚT "+ 1 Ô" - MUA LIÊN TỤC
             if (this.isInside(sc.x, sc.y, {x: 380, y: 12, w: 125, h: 44})) {
                 const buySlot = () => {
                     const c = this.getSlotPrice(); 
@@ -1469,8 +944,7 @@ class Game {
                         showCustomAlert(`Không đủ tiền mở rộng! Cần ${formatMoney(c)}`); 
                     }
                 };
-                buySlot(); // Mua nhấp lần đầu
-                // Cài đặt interval để mua liên tục khi giữ đè
+                buySlot();
                 this.buySlotInterval = setInterval(buySlot, 150);
                 return;
             }
@@ -1511,7 +985,6 @@ class Game {
             if(!this.activePointers.has(e.pointerId)) return; 
             this.activePointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
             
-            // Xóa bộ đếm mua liên tục nếu chuột trượt ra khỏi nút +1 Ô
             if (this.buySlotInterval) {
                 const sc = getCanvasPos(e);
                 if (!this.isInside(sc.x, sc.y, {x: 380, y: 12, w: 125, h: 44})) {
@@ -1544,7 +1017,6 @@ class Game {
         });
 
         window.addEventListener("pointerup", (e) => {
-            // Hủy chức năng tự động mua slot khi thả tay ra
             if (this.buySlotInterval) {
                 clearInterval(this.buySlotInterval);
                 this.buySlotInterval = null;
@@ -1926,12 +1398,6 @@ class Game {
         }
         
        if (performance.now() - this.lastSaveTime > 4000) { this.saveGame(); this.lastSaveTime = performance.now(); }
-        
-        this.uiTimer = (this.uiTimer || 0) + dt;
-        if (this.uiTimer > 1.5) {
-            if (!this.isPressingStrain) this.updateStrainManagerUI();
-            this.uiTimer = 0;
-        }
     } 
 
     drawCustomConfirm(title, subtitle) {
@@ -2080,144 +1546,11 @@ class Game {
         this.drawButton({ x: mx + mw - 50, y: my + 12, w: 38, h: 38 }, COLOR_WARNING, null, "✕", "#fff", "bold 16px Arial");
     }
 
-    updateStrainManagerUI() {
-        const lab = this.labsData[this.currentLabId]; const listDiv = document.getElementById('strain-list');
-        if (!lab || !listDiv) return;
-        const groups = {};
-        lab.slimes.forEach(s => {
-            if (!groups[s.strain.id]) groups[s.strain.id] = { strain: s.strain, slimes: [], highestLv: 0 };
-            groups[s.strain.id].slimes.push(s);
-            if (s.level > groups[s.strain.id].highestLv) groups[s.strain.id].highestLv = s.level;
-        });
-        const sortedGroups = Object.values(groups).sort((a, b) => b.strain.tier - a.strain.tier);
-        listDiv.innerHTML = '';
-        sortedGroups.forEach(g => {
-            const isLocked = this.lockedStrains[g.strain.id];
-            const div = document.createElement('div');
-            div.style.cssText = `background: ${isLocked ? '#2c3e50' : '#1e3246'}; color: ${g.strain.color}; padding: 7px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; justify-content: space-between; border: 1px solid ${isLocked ? '#f1c40f' : 'transparent'}; transition: 0.1s; user-select: none;`;
-            div.innerHTML = `<span>${isLocked ? '🔒 ' : ''}Bậc ${g.strain.tier}: ${g.strain.name}</span> <span>(x${g.slimes.length})</span>`;
-            
-            let pressTimer;
-            let isLongPress = false;
-            let startY = 0;
-
-            div.onpointerdown = (e) => {
-                this.isPressingStrain = true; 
-                isLongPress = false;
-                startY = e.clientY;
-                div.style.transform = "scale(0.95)"; 
-                
-                pressTimer = setTimeout(() => {
-                    isLongPress = true; 
-                    this.lockedStrains[g.strain.id] = !this.lockedStrains[g.strain.id];
-                    showCustomAlert(this.lockedStrains[g.strain.id] ? `🔒 Đã khóa chủng [${g.strain.name}]` : `🔓 Đã mở khóa [${g.strain.name}]`, "info");
-                    this.isPressingStrain = false; 
-                    this.updateStrainManagerUI(); 
-                    pressTimer = null;
-                }, 2000); 
-            };
-
-            div.onpointermove = (e) => {
-                if (Math.abs(e.clientY - startY) > 10) {
-                    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-                    this.isPressingStrain = false; 
-                    div.style.transform = "scale(1)";
-                }
-            };
-
-            div.onpointerup = (e) => {
-                div.style.transform = "scale(1)";
-                this.isPressingStrain = false; 
-                if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-                
-                if (!isLongPress) {
-                    if (!this.lockedStrains[g.strain.id]) {
-                        this.openSellModal(g.strain.id, g.strain.name);
-                    } else {
-                        this.executeSell(g.strain.id, true);
-                    }
-                }
-            };
-
-            div.onpointerleave = () => { 
-                div.style.transform = "scale(1)"; 
-                this.isPressingStrain = false; 
-                if(pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
-            };
-            listDiv.appendChild(div);
-        });
-    }
-
-    openSellModal(strainId, strainName) {
-        document.getElementById('sell-modal').style.display = 'flex';
-        document.getElementById('sell-modal-title').innerText = `Bán: ${strainName}`;
-        document.getElementById('btn-sell-all').onclick = () => { this.executeSell(strainId, false); document.getElementById('sell-modal').style.display = 'none'; };
-        document.getElementById('btn-sell-keep-highest').onclick = () => { this.executeSell(strainId, true); document.getElementById('sell-modal').style.display = 'none'; };
-    }
-
-    executeSell(strainId, keepHighest) {
-        const lab = this.labsData[this.currentLabId]; 
-        let totalValue = 0;
-        
-        let maxLevel = 0;
-        if (keepHighest) {
-            lab.slimes.forEach(s => {
-                if (s.strain.id === strainId && !s.locked && s.level > maxLevel) {
-                    maxLevel = s.level;
-                }
-            });
-        }
-        
-        lab.slimes = lab.slimes.filter(s => {
-            if (s.strain.id === strainId && !s.locked) {
-                if (keepHighest && s.level === maxLevel) { 
-                    return true; 
-                } 
-                
-                totalValue += s.value || 0;
-                if (this.currentLabId === this.currentLabId) this.effects.push(new Shockwave(s.x, s.y, '#f1c40f')); 
-                return false; 
-            }
-            return true;
-        });
-
-        if (totalValue > 0) { 
-            this.money += totalValue; 
-            this.sound.playCoin(); 
-            showCustomAlert(`💰 Đã bán thu về ${formatMoney(totalValue)}`, "success"); 
-            this.saveGame(); 
-        } else if (keepHighest) {
-            showCustomAlert(`Tất cả Pet chủng này đều đang ở cấp cao nhất (Lv.${maxLevel}) nên đã được giữ lại an toàn!`, "info");
-        }
-    }
-
-    sellAllNonGods() {
-        document.getElementById('strain-manager').style.display = 'none'; 
-        this.confirmModalTitle = `⚠️ XÁC NHẬN BÁN TẤT CẢ?`;
-        this.confirmModalSubtitle = `(Giữ lại Thần, Pet đang khóa và Chủng đã khóa)`;
-        this.pendingConfirmButtons = [
-            { text: "Bán Tất Cả", bg: "#c0392b", action: () => {
-                const lab = this.labsData[this.currentLabId]; 
-                let totalValue = 0;
-                lab.slimes = lab.slimes.filter(s => {
-                    if (s.strain.isGod || s.locked || this.lockedStrains[s.strain.id]) return true;
-                    totalValue += s.value || 0;
-                    if (this.currentLabId === this.currentLabId) this.effects.push(new Shockwave(s.x, s.y, '#e74c3c'));
-                    return false;
-                });
-                if (totalValue > 0) { this.money += totalValue; this.sound.playCoin(); showCustomAlert(`🧹 Dọn dẹp thành công! Nhận được ${formatMoney(totalValue)}`, "success"); this.saveGame(); } 
-                else { showCustomAlert(`Không có Pet nào hợp lệ để bán!`, "info"); }
-                this.pendingConfirmButtons = null; 
-            }},
-            { text: "Hủy", bg: "#283c50", action: () => { this.pendingConfirmButtons = null; } }
-        ];
-    }
-
     draw() {
         this.ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
         const cT = TANK_THEMES.find(t => t.id === this.activeTheme) || TANK_THEMES[0];
         
-        // --- 1. VẼ TOÀN BỘ GIAO DIỆN UI KHÔNG BAO GIỜ BỊ LỖI MÀN HÌNH ĐEN ---
+        // --- 1. VẼ UI TOP ---
         this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 18px Arial"; 
         this.ctx.fillText(this.diamonds > 0 ? `💎 ${this.diamonds}` : `💰 ${formatMoney(this.money)}`, 20, 28);
         this.ctx.fillStyle = "#7890a8"; this.ctx.font = "12px Arial"; 
@@ -2227,26 +1560,22 @@ class Game {
         this.drawButton({ x: 380, y: 12, w: 125, h: 44 }, "#a06414", COLOR_GOLD, capTxt, "#fff", "bold 11px Arial");
         this.drawButton({ x: 515, y: 12, w: 105, h: 44 }, "#19283c", COLOR_ACCENT, `⚡ ${this.gameSpeed.toFixed(1)}x`, "#e6f5ff", "bold 12px Arial");
         this.drawButton({ x: 633, y: 12, w: 111, h: 44 }, "#8e44ad", "#d2b4de", "🔬 Lab", "#fff", "bold 13px Arial");
-        this.drawButton({ x: CANVAS_W - 645, y: 12, w: 190, h: 44 }, "#14503c", COLOR_ACCENT, "➕ Thể Thực (1M)", "#e6f5ff", "bold 13px Arial");
+        this.drawButton({ x: CANVAS_W - 645, y: 12, w: 190, h: 44 }, "#14503c", COLOR_ACCENT, "➕ Mua Thể Thực (1M)", "#e6f5ff", "bold 13px Arial");
         this.drawButton({ x: CANVAS_W - 445, y: 12, w: 140, h: 44 }, "#5a2d82", "#be6eff", "🛒 Cửa Hàng", "#f0dcff", "bold 13px Arial");
         this.drawButton({ x: CANVAS_W - 295, y: 12, w: 160, h: 44 }, "#372350", "#be6eff", "📖 Sách Bách Khoa", "#f0dcff", "bold 13px Arial");
         this.drawButton({ x: CANVAS_W - 125, y: 12, w: 110, h: 44 }, "#19283c", COLOR_ACCENT, "⚙ Cài Đặt", "#e6f5ff", "bold 13px Arial");
 
-        // --- 2. VẼ BỂ KÍNH VÀ CẮT KHUNG (CLIP) ĐỂ KHÔNG TRÀN ---
+        // --- 2. CẮT BỂ KÍNH ---
         const cr = this.containerRect;
         this.drawDynamicBackground(this.ctx, cT, cr.width, cr.height, cr.left, cr.top);
         
         this.ctx.save(); 
         this.ctx.beginPath(); 
         this.ctx.rect(cr.left, cr.top, cr.width, cr.height); 
-        this.ctx.clip(); // Giới hạn chỉ vẽ trong bể kính
+        this.ctx.clip(); 
         
-        // -------------------------------------------------------------------------
-        // KỸ THUẬT MẶT NẠ (MASKING) TUYỆT ĐỐI CHÍNH XÁC: CẮT PHĂNG CẢ MẮT VÀ THÂN
-        // -------------------------------------------------------------------------
+        // --- 3. ĐỔ KHUÔN THỦY TINH VÀO MẶT NẠ (NẾU BẬT TÍNH NĂNG ẨN) ---
         if (this.isFormingTextActive && this.formingTextData) {
-            
-            // Đảm bảo maskCanvas cùng kích thước màn hình
             if (!this.maskCanvas) {
                 this.maskCanvas = document.createElement('canvas');
                 this.maskCtx = this.maskCanvas.getContext('2d');
@@ -2257,109 +1586,87 @@ class Game {
             }
             this.maskCtx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-            // GIAI ĐOẠN 1: Vẽ CẢ THÂN VÀ MẮT của các pet "đã vào đúng vị trí" lên Canvas Ẩn
+            const fontSz = this.formingTextData.fontSize * this.camera.zoom;
+            const lines = this.formingTextData.lines;
+            const lh = this.formingTextData.lineHeight * this.camera.zoom;
+            const screenCX = cr.left + cr.width / 2 + (this.formingTextData.centerX - this.camera.x) * this.camera.zoom;
+            const screenCY = cr.top + cr.height / 2 + (this.formingTextData.centerY - this.camera.y) * this.camera.zoom;
+            const startY = screenCY - ((lines.length - 1) * lh) / 2;
+
+            // BƯỚC A: Vẽ nét chữ làm KHUÔN trắng tinh sắc nét 100%
+            this.maskCtx.font = `900 ${fontSz}px "${this.formingTextData.font}", sans-serif`;
+            this.maskCtx.textAlign = 'center';
+            this.maskCtx.textBaseline = 'middle';
+            this.maskCtx.fillStyle = "white";
+            lines.forEach((line, index) => {
+                this.maskCtx.fillText(line, screenCX, startY + index * lh);
+            });
+
+            // BƯỚC B: Chọn source-in (chỉ những thứ vẽ TRONG KHUÔN CHỮ mới được hiện ra)
+            this.maskCtx.globalCompositeOperation = 'source-in';
+            
+            // Vẽ Pet (cả thân và mắt nhấp nháy) đổ vào khuôn
             this.maskCtx.save();
             this.maskCtx.translate(cr.left + cr.width / 2, cr.top + cr.height / 2);
             this.maskCtx.scale(this.camera.zoom, this.camera.zoom);
             this.maskCtx.translate(-this.camera.x, -this.camera.y);
             
-            let hasMelted = false;
+            const time = Date.now() * 0.003;
             
-            // Vẽ thân (cố tình vẽ phình to ra để hòa trộn thành 1 khối)
             this.slimes.forEach(s => {
-                if (s.isMelted) {
-                    hasMelted = true;
+                if (s.isFormingText) {
                     this.maskCtx.save();
                     this.maskCtx.translate(s.x, s.y);
                     this.maskCtx.scale(s.stretchX, s.stretchY);
                     this.maskCtx.beginPath();
-                    this.maskCtx.arc(0, 0, s.targetRadius * 3, 0, Math.PI * 2);
+                    this.maskCtx.arc(0, 0, s.targetRadius * 4, 0, Math.PI * 2);
+                    
+                    // Hiệu ứng nhấp nháy liên tục màu của pet
+                    const blink = Math.abs(Math.sin(time * 5 + s.value * 0.1));
                     this.maskCtx.fillStyle = s.strain.color;
-                    this.maskCtx.shadowBlur = 20;
+                    this.maskCtx.globalAlpha = 0.5 + blink * 0.5;
+                    this.maskCtx.shadowBlur = 15 + blink * 20;
                     this.maskCtx.shadowColor = s.strain.color;
+                    
                     this.maskCtx.fill();
                     this.maskCtx.restore();
-                }
-            });
-            
-            // VẼ LUÔN MẮT LÊN LỚP NÀY ĐỂ TÍ NỮA BỊ LƯỠI DAO CHỮ CẮT CHUNG
-            this.slimes.forEach(s => {
-                if (s.isMelted) {
-                    s.drawEyes(this.maskCtx);
+                    
+                    // Vẽ luôn mắt (cũng bị cắt nếu tràn)
+                    this.maskCtx.globalAlpha = 1.0;
+                    s.drawEyes(this.maskCtx, true);
                 }
             });
             this.maskCtx.restore();
 
-            if (hasMelted) {
-                // GIAI ĐOẠN 2: LƯỠI DAO CẮT KHUÔN - Mọi thứ bên ngoài viền chữ sẽ biến mất
-                this.maskCtx.globalCompositeOperation = 'destination-in';
-                
-                const fontSz = this.formingTextData.fontSize * this.camera.zoom;
-                this.maskCtx.font = `900 ${fontSz}px "${this.formingTextData.font}", sans-serif`;
-                this.maskCtx.textAlign = 'center';
-                this.maskCtx.textBaseline = 'middle';
-                
-                const lines = this.formingTextData.lines;
-                const lh = this.formingTextData.lineHeight * this.camera.zoom;
-                
-                // Quy đổi tâm điểm chữ
-                const screenCX = cr.left + cr.width / 2 + (this.formingTextData.centerX - this.camera.x) * this.camera.zoom;
-                const screenCY = cr.top + cr.height / 2 + (this.formingTextData.centerY - this.camera.y) * this.camera.zoom;
-                const startY = screenCY - ((lines.length - 1) * lh) / 2;
+            // BƯỚC C: Phủ bóng kính thủy tinh 3D lên mặt chữ
+            this.maskCtx.globalCompositeOperation = 'source-atop';
+            
+            this.maskCtx.lineWidth = fontSz * 0.02;
+            this.maskCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            lines.forEach((line, index) => {
+                this.maskCtx.strokeText(line, screenCX - 2, startY + index * lh - 2);
+            });
 
-                // Lưỡi dao cắt
-                lines.forEach((line, index) => {
-                    this.maskCtx.fillText(line, screenCX, startY + index * lh);
-                });
+            this.maskCtx.lineWidth = fontSz * 0.04;
+            this.maskCtx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+            lines.forEach((line, index) => {
+                this.maskCtx.strokeText(line, screenCX + 3, startY + index * lh + 3);
+            });
 
-                // GIAI ĐOẠN 3: PHỦ HIỆU ỨNG THỦY TINH ĐỂ TRÔNG NHƯ CHẤT LỎNG 3D
-                this.maskCtx.globalCompositeOperation = 'source-atop';
-                
-                // Viền bóng sáng (Highlight)
-                this.maskCtx.lineWidth = fontSz * 0.03;
-                this.maskCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-                this.maskCtx.shadowBlur = 8;
-                this.maskCtx.shadowColor = 'white';
-                lines.forEach((line, index) => {
-                    this.maskCtx.strokeText(line, screenCX - 2, startY + index * lh - 2);
-                });
+            this.maskCtx.globalCompositeOperation = 'source-over'; 
 
-                // Viền bóng tối (Shadow)
-                this.maskCtx.lineWidth = fontSz * 0.05;
-                this.maskCtx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-                this.maskCtx.shadowBlur = 10;
-                this.maskCtx.shadowColor = 'black';
-                lines.forEach((line, index) => {
-                    this.maskCtx.strokeText(line, screenCX + 3, startY + index * lh + 3);
-                });
-
-                // Vệt phản quang mặt kính
-                const glowGrad = this.maskCtx.createLinearGradient(0, screenCY - fontSz, 0, screenCY);
-                glowGrad.addColorStop(0, 'rgba(255,255,255,0.4)');
-                glowGrad.addColorStop(1, 'transparent');
-                this.maskCtx.fillStyle = glowGrad;
-                this.maskCtx.shadowBlur = 0;
-                lines.forEach((line, index) => {
-                    this.maskCtx.fillText(line, screenCX, startY + index * lh);
-                });
-                
-                this.maskCtx.globalCompositeOperation = 'source-over'; 
-
-                // IN KIỆT TÁC LÊN MÀN HÌNH CHÍNH
-                this.ctx.drawImage(this.maskCanvas, 0, 0);
-            }
-
-            // GIAI ĐOẠN 4: VẼ NHỮNG CON PET CHƯA TỚI ĐÍCH (ĐANG BAY TRÊN ĐƯỜNG)
+            // IN RA MÀN HÌNH
+            this.ctx.drawImage(this.maskCanvas, 0, 0);
+            
+            // Vẽ các con chưa vào khuôn
             this.ctx.save();
             this.ctx.translate(cr.left + cr.width / 2, cr.top + cr.height / 2);
             this.ctx.scale(this.camera.zoom, this.camera.zoom);
             this.ctx.translate(-this.camera.x, -this.camera.y);
-            
             this.bubbles.forEach(b => b.draw(this.ctx)); 
             this.shockwaves.forEach(sw => sw.draw(this.ctx)); 
-
             this.slimes.forEach(s => {
-                if (!s.isMelted) {
+                if (!s.isFormingText) {
                     s.drawBody(this.ctx);
                     s.drawEyes(this.ctx);
                 }
@@ -2368,9 +1675,7 @@ class Game {
             this.ctx.restore();
 
         } else {
-            // ----------------------------------------------------
-            // CHẾ ĐỘ BÌNH THƯỜNG: VẼ PET NHƯ MỌI KHI
-            // ----------------------------------------------------
+            // NẾU KHÔNG CÓ LỆNH XẾP CHỮ THÌ VẼ BÌNH THƯỜNG NHƯ CŨ
             this.ctx.save();
             this.ctx.translate(cr.left + cr.width / 2, cr.top + cr.height / 2);
             this.ctx.scale(this.camera.zoom, this.camera.zoom);
@@ -2378,29 +1683,26 @@ class Game {
             
             this.bubbles.forEach(b => b.draw(this.ctx)); 
             this.shockwaves.forEach(sw => sw.draw(this.ctx)); 
-
             this.slimes.forEach(s => s.drawBody(this.ctx));
             this.slimes.forEach(s => s.drawEyes(this.ctx)); 
-            
             this.effects.forEach(e => e.draw(this.ctx));
             this.ctx.restore();
         }
 
-        this.ctx.restore(); 
-        // --- KẾT THÚC CẮT KHUNG CAMERA BỂ KÍNH ---
+        this.ctx.restore(); // END CLIP
 
-        // Thanh thông báo khi đang trong chế độ xếp chữ
+        // Thông báo chế độ xếp chữ đang bật
         if (this.isFormingTextActive) {
             this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
             this.ctx.fillRect(0, 0, CANVAS_W, 55);
             this.ctx.fillStyle = "#00ffc8";
             this.ctx.font = "bold 20px Arial";
             this.ctx.textAlign = "center";
-            this.ctx.fillText("✨ ĐANG TRIỆU HỒI CHẤT LỎNG ✨ Nhấn giữ nút 'Bảng Quản Lý' để hủy", CANVAS_W / 2, 35);
+            this.ctx.fillText("✨ ĐANG TRIỆU HỒI CHẤT LỎNG ✨ Nhấn giữ 'Bảng Quản Lý' để hủy", CANVAS_W / 2, 35);
             this.ctx.textAlign = "start";
         }
 
-        // --- 3. VẼ UI THANH CÔNG CỤ DƯỚI ĐÁY ---
+        // --- 4. VẼ UI BOTTOM ---
         const mO = this.showShop || this.showBook || this.showSettings || this.showLabModal;
         this.gatherBtnRect = { x: cr.left + 20, y: cr.bottom - 55, w: 110, h: 38 };
         this.drawButton(this.gatherBtnRect, mO ? "#1a2430" : "#123b32", mO ? "#334155" : COLOR_ACCENT, "🌀 Tập Hợp", mO ? "#64748b" : "#fff", "bold 13px Arial");
@@ -2420,7 +1722,6 @@ class Game {
         if (this.showBook) this.drawBookModal();
         if (this.showShop) this.drawShopModal();
         if (this.showLabModal) this.drawLabListModal();
-        
         if (this.pendingConfirmButtons) this.drawCustomConfirm(this.confirmModalTitle, this.confirmModalSubtitle);
     }
 
@@ -2451,63 +1752,41 @@ window.addEventListener("load", () => {
         toggleBtn.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
             isManagerLongPress = false;
-            
-            // Nhấn giữ để bật/tắt chế độ ẩn (Xếp chữ)
             managerPressTimer = setTimeout(() => {
                 isManagerLongPress = true;
                 if (window.gameInstance) {
                     if (window.gameInstance.isFormingTextActive) {
                         window.gameInstance.isFormingTextActive = false;
                         window.gameInstance.formingTextData = null; 
-                        if (window.gameInstance.maskCanvas) {
-                            window.gameInstance.maskCtx.clearRect(0,0,CANVAS_W,CANVAS_H);
-                        }
+                        if (window.gameInstance.maskCanvas) window.gameInstance.maskCtx.clearRect(0,0,CANVAS_W,CANVAS_H);
                         const lab = window.gameInstance.labsData[window.gameInstance.currentLabId];
                         if (lab && lab.slimes) {
-                            lab.slimes.forEach(s => { 
-                                s.isFormingText = false;
-                                s.isMelted = false;
-                                s.targetRadius = s.baseRadius; 
-                            });
+                            lab.slimes.forEach(s => { s.isFormingText = false; s.isMelted = false; s.targetRadius = s.baseRadius; });
                         }
                         window.gameInstance.sound.playPop();
                     } else {
                         window.gameInstance.showEasterEggModal();
                     }
                 }
-            }, 800); // Giữ 0.8 giây để kích hoạt
+            }, 800); 
         });
 
         toggleBtn.addEventListener('pointerup', (e) => {
             e.stopPropagation();
-            if (managerPressTimer) {
-                clearTimeout(managerPressTimer);
-                managerPressTimer = null;
-            }
-            if (!isManagerLongPress) {
-                // Nhấn bình thường thì bật tắt bảng quản lý
-                managerEl.style.display = managerEl.style.display === 'none' ? 'flex' : 'none';
-            }
+            if (managerPressTimer) { clearTimeout(managerPressTimer); managerPressTimer = null; }
+            if (!isManagerLongPress) { managerEl.style.display = managerEl.style.display === 'none' ? 'flex' : 'none'; }
         });
 
         toggleBtn.addEventListener('pointerleave', (e) => {
-            if (managerPressTimer) {
-                clearTimeout(managerPressTimer);
-                managerPressTimer = null;
-            }
+            if (managerPressTimer) { clearTimeout(managerPressTimer); managerPressTimer = null; }
         });
 
-        // Bấm ra ngoài màn hình sẽ tự động thu gọn bảng quản lý
         window.addEventListener('pointerdown', (e) => {
-            if (managerEl.style.display !== 'none' && !managerEl.contains(e.target) && !toggleBtn.contains(e.target)) {
-                managerEl.style.display = 'none';
-            }
+            if (managerEl.style.display !== 'none' && !managerEl.contains(e.target) && !toggleBtn.contains(e.target)) managerEl.style.display = 'none';
         });
 
         ['pointerdown', 'pointermove', 'touchstart', 'touchmove', 'wheel'].forEach(eventType => {
-            managerEl.addEventListener(eventType, (e) => {
-                e.stopPropagation();
-            }, { passive: true });
+            managerEl.addEventListener(eventType, (e) => { e.stopPropagation(); }, { passive: true });
         });
     }
 });
@@ -2515,10 +1794,7 @@ window.addEventListener("load", () => {
 const forceCloudSave = () => {
     if (window.gameInstance && window.gameInstance.auth && window.gameInstance.auth.currentUser) {
         const localData = localStorage.getItem(window.gameInstance.getSaveKey());
-        if (localData) { 
-            window.gameInstance.db.ref('gameSaves/' + window.gameInstance.auth.currentUser.uid)
-                .set({ saveData: localData, lastUpdated: Date.now() }).catch(()=>{}); 
-        }
+        if (localData) { window.gameInstance.db.ref('gameSaves/' + window.gameInstance.auth.currentUser.uid).set({ saveData: localData, lastUpdated: Date.now() }).catch(()=>{}); }
     }
 };
 
@@ -2526,3 +1802,5 @@ window.addEventListener("visibilitychange", () => { if (document.visibilityState
 window.addEventListener("pagehide", forceCloudSave);
 window.addEventListener("beforeunload", forceCloudSave);
 </script>
+</body>
+</html>
