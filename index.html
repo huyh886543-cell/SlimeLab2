@@ -1049,7 +1049,7 @@ class Game {
         });
 
         this.canvas.addEventListener("wheel", (e) => { e.preventDefault(); this.camera.zoom=Math.max(Math.max(this.containerRect.width/this.worldWidth,this.containerRect.height/this.worldHeight),Math.min(5,this.camera.zoom*(e.deltaY<0?1.15:0.85))); this.clampCamera(); }, {passive:false});
-    }
+    
 
             if (this.checkUIClick(sc.x, sc.y)) return;
             if (sc.x>=this.containerRect.left&&sc.x<=this.containerRect.right&&sc.y>=this.containerRect.top&&sc.y<=this.containerRect.bottom) {
@@ -1087,7 +1087,7 @@ class Game {
                     this.maxBtnTimer = null;
                 }
             }
-
+    }
             if(this.activePointers.size===2&&this.initialPinchDist){ const p=Array.from(this.activePointers.values()); const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y); this.camera.zoom=Math.max(Math.max(this.containerRect.width/this.worldWidth,this.containerRect.height/this.worldHeight),Math.min(5,this.initialZoom*(d/this.initialPinchDist))); this.clampCamera(); return; }
             if(this.draggedSlime){ const sc=getCanvasPos(e); if(Math.hypot(sc.x-this.dragStartX,sc.y-this.dragStartY)>5)this.isActuallyDragging=true; const w=toWP(sc.x,sc.y); this.draggedSlime.x=w.x; this.draggedSlime.y=w.y; return; }
             if(this.isDraggingCamera){ const dx=e.clientX-this.lastPanPos.x, dy=e.clientY-this.lastPanPos.y; this.lastPanPos={x:e.clientX,y:e.clientY}; this.camera.x-=dx/this.camera.zoom; this.camera.y-=dy/this.camera.zoom; this.clampCamera(); }
