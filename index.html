@@ -409,8 +409,8 @@ class Slime {
         if (this.isFormingText) {
             const dx = this.targetX - this.x;
             const dy = this.targetY - this.y;
-            this.x += dx * 0.005 * dt * spd; 
-            this.y += dy * 0.005 * dt * spd;
+            this.x += dx * 0.05 * dt * spd; 
+            this.y += dy * 0.05 * dt * spd;
             this.stretchX += (1 - this.stretchX) * 0.12;
             this.stretchY += (1 - this.stretchY) * 0.12;
             if(isCurrentLab && Math.random()<0.01) eL.push(new Particle(this.x, this.y, this.strain.color));
