@@ -1057,7 +1057,7 @@ class Game {
             if (this.maxBtnTimer) {
                 clearTimeout(this.maxBtnTimer);
                 this.maxBtnTimer = null;
-                const labMax = 250 + this.currentLabId * 10;
+                const labMax = 250 + this.currentLabId * 50;
                 showCustomAlert(`Bể này đã đạt sức chứa tối đa (${Math.min(500, labMax)} Pet)!`, "info");
             }
 
