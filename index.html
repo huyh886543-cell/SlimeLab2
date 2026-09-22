@@ -66,7 +66,7 @@
         #arena-joystick { left:58px; bottom:52px; width:176px; height:176px; }
         #arena-joystick-knob { width:64px; height:64px; margin:-32px; }
         #arena-skill-wheel { position:absolute; right:18px; bottom:18px; width:520px; height:520px; pointer-events:none; z-index:12; }
-        .arena-skill-btn { position:absolute; width:58px; height:58px; border-radius:50%; border:3px solid rgba(255,255,255,.94); background:radial-gradient(circle at 32% 28%,#9b62ed 0%,#3b146c 46%,#0a1020 82%); color:#fff; font-weight:900; cursor:pointer; pointer-events:auto; box-shadow:0 0 20px rgba(145,75,255,.48),inset 0 0 12px rgba(255,255,255,.16); text-shadow:0 2px 4px #000; transition:transform .12s ease,filter .12s ease; }
+        .arena-skill-btn { position:absolute; touch-action:none; user-select:none; width:58px; height:58px; border-radius:50%; border:3px solid rgba(255,255,255,.94); background:radial-gradient(circle at 32% 28%,#9b62ed 0%,#3b146c 46%,#0a1020 82%); color:#fff; font-weight:900; cursor:pointer; pointer-events:auto; box-shadow:0 0 20px rgba(145,75,255,.48),inset 0 0 12px rgba(255,255,255,.16); text-shadow:0 2px 4px #000; transition:transform .12s ease,filter .12s ease; }
         .arena-skill-btn:hover { transform:scale(1.07); filter:brightness(1.18); }
         .arena-skill-btn:active { transform:scale(.94); }
         .arena-skill-btn span { display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:27px; line-height:1; }
@@ -80,7 +80,7 @@
         #arena-skill-wheel .arena-skill-btn:nth-child(5){left:216px;top:125px;}
         #arena-skill-wheel .arena-skill-btn{margin:0;}
         /* Nút đánh lớn nằm riêng ở góc phải dưới; không chiếm chỗ của cung kỹ năng. */
-        .arena-basic-attack { position:absolute; left:330px; top:340px; width:132px; height:132px; border-radius:50%; border:4px solid rgba(190,235,255,.9); background:radial-gradient(circle at 35% 30%,rgba(105,170,210,.45),rgba(24,55,76,.72) 55%,rgba(8,18,28,.9) 78%); color:#ffd15c; font-size:58px; line-height:1; cursor:pointer; pointer-events:auto; box-shadow:0 0 28px rgba(105,190,240,.24),inset 0 0 25px rgba(160,220,255,.12); text-shadow:0 3px 8px #000; transition:transform .12s ease,filter .12s ease; }
+        .arena-basic-attack { touch-action:none; user-select:none; position:absolute; left:330px; top:340px; width:132px; height:132px; border-radius:50%; border:4px solid rgba(190,235,255,.9); background:radial-gradient(circle at 35% 30%,rgba(105,170,210,.45),rgba(24,55,76,.72) 55%,rgba(8,18,28,.9) 78%); color:#ffd15c; font-size:58px; line-height:1; cursor:pointer; pointer-events:auto; box-shadow:0 0 28px rgba(105,190,240,.24),inset 0 0 25px rgba(160,220,255,.12); text-shadow:0 3px 8px #000; transition:transform .12s ease,filter .12s ease; }
         .arena-basic-attack:hover { transform:scale(1.04); filter:brightness(1.15); }
         .arena-basic-attack:active { transform:scale(.95); }
         #arena-control-hint { position:absolute; left:58px; bottom:238px; color:rgba(230,245,255,.6); font-size:11px; pointer-events:none; }
@@ -1090,6 +1090,7 @@ let pressTimer = null;
                         name:this.playerName || 'Player',
                         updatedAt:firebase.database.ServerValue.TIMESTAMP
                     }))
+                    .then(()=>this.refreshPresence())
                     .catch(err=>console.warn('Presence setup failed:',err));
             });
             this.presenceReady=true;
@@ -1098,7 +1099,26 @@ let pressTimer = null;
         }
     }
 
+    // Giữ trạng thái online khi người chơi chuyển tab/quay lại game.
+    setupPresenceHeartbeat() {
+        if (this.presenceHeartbeatAttached) return;
+        this.presenceHeartbeatAttached = true;
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) { this.refreshPresence(); this.setupPresence(); }
+        });
+        setInterval(() => { if (!document.hidden) this.refreshPresence(); }, 15000);
+    }
+
     syncFirebase() { if(this.isDeleted||!this.leaderboardRef||!this.playerName)return; try{ this.leaderboardRef.child(this.playerId).set({name:this.playerName,money:this.money,diamonds:this.diamonds,updatedAt:Date.now()}); }catch(e){} }
+
+    refreshPresence() {
+        if(!this.db || !this.playerId || !this.playerName || this.isDeleted) return;
+        try {
+            const ref=this.db.ref('presence/'+this.playerId);
+            ref.set({online:true,name:this.playerName,updatedAt:firebase.database.ServerValue.TIMESTAMP}).catch(err=>console.warn('Presence write failed:',err));
+            ref.onDisconnect().remove().catch(()=>{});
+        } catch(e) {}
+    }
     
     getSlotPrice() { return Math.floor(5e6*(1+this.currentLabId*1.5)*Math.pow(1.3,Math.max(0,this.maxCapacity-20))); }
     
@@ -1110,6 +1130,8 @@ let pressTimer = null;
                 this.sound.init(this.currentLabId); 
                 this.loadGame(); 
                 this.syncFirebase(); 
+                this.setupPresence();
+                this.setupPresenceHeartbeat();
                 this.listenForTransactions();
                 this.setupChallengeSystem();
                 this.start();
@@ -1148,6 +1170,8 @@ let pressTimer = null;
             this.sound.init(this.currentLabId); 
             this.loadGame(); 
             this.syncFirebase(); 
+            this.setupPresence();
+            this.setupPresenceHeartbeat();
             this.listenForTransactions();
             this.setupChallengeSystem();
             this.start(); 
@@ -1630,7 +1654,7 @@ let pressTimer = null;
         const up=e=>{if(pid!==null&&e.pointerId!==pid)return;active=false;pid=null;move={x:0,y:0};knob.style.transform='translate(0,0)';};
         const mm=e=>{if(active)update(e.clientX,e.clientY);};
         joy.addEventListener('pointerdown',down); joy.addEventListener('pointermove',mm); joy.addEventListener('pointerup',up); joy.addEventListener('pointercancel',up);
-        return {getMove:()=>move,destroy:()=>{joy.removeEventListener('pointerdown',down);joy.removeEventListener('pointermove',mm);joy.removeEventListener('pointerup',up);joy.removeEventListener('pointercancel',up);wheel.innerHTML='';move={x:0,y:0};knob.style.transform='translate(0,0)';}};
+        return {getMove:()=>move,isMoveActive:()=>active,destroy:()=>{joy.removeEventListener('pointerdown',down);joy.removeEventListener('pointermove',mm);joy.removeEventListener('pointerup',up);joy.removeEventListener('pointercancel',up);wheel.innerHTML='';active=false;pid=null;move={x:0,y:0};knob.style.transform='translate(0,0)';}};
     }
 
     startArenaBattle() {
@@ -2574,6 +2598,17 @@ let pressTimer = null;
             this.challengeRef = this.db.ref('challenges/' + this.playerId);
             this.challengeRef.on('child_added', snap => this.handleIncomingChallenge(snap));
             this.challengeRef.on('child_changed', snap => this.handleChallengeChanged(snap));
+            // Theo dõi toàn bộ challenge path để bên gửi luôn nhận được trạng thái ACCEPTED,
+            // kể cả khi child_changed bị bỏ lỡ do kết nối realtime chập chờn.
+            this.challengeRef.on('value', snap => {
+                const all = snap.val() || {};
+                Object.keys(all).forEach(id => {
+                    const c = all[id];
+                    if (c && c.status === 'accepted' && c.roomId && c.from === this.playerId) {
+                        this.joinPvPRoom(c.roomId, c, true);
+                    }
+                });
+            });
         } catch (e) {
             console.error('Challenge system init failed:', e);
             this.challengeListenerAttached = false;
@@ -2611,17 +2646,25 @@ let pressTimer = null;
         if (this.challengeSending) return;
         this.challengeSending = true;
         const challengeId = this.db.ref().push().key;
+        // Tạo roomId NGAY KHI GỬI để bên gửi và bên nhận cùng biết chính xác phòng nào.
+        // Đồng thời ghi một bản challenge ở cả 2 phía; như vậy bên gửi không phụ thuộc
+        // child_changed của nhánh người nhận (trước đây đây là nguyên nhân bên gửi không vào trận).
+        const roomId = this.db.ref('pvpRooms').push().key;
+        const team = this.getChallengeTeamSnapshot();
         const payload = {
             from:this.playerId, fromName:this.playerName, to:target.id, toName:target.name,
-            status:'pending', createdAt:firebase.database.ServerValue.TIMESTAMP,
-            team:this.getChallengeTeamSnapshot()
+            status:'pending', roomId, createdAt:firebase.database.ServerValue.TIMESTAMP,
+            team
         };
-        this.db.ref(`challenges/${target.id}/${challengeId}`).set(payload).then(() => {
+        const updates = {};
+        updates[`challenges/${target.id}/${challengeId}`] = payload;
+        updates[`challenges/${this.playerId}/${challengeId}`] = Object.assign({}, payload, {outgoing:true});
+        this.db.ref().update(updates).then(() => {
             this.challengeSending=false;
             showCustomAlert(`⚔️ Đã gửi lời mời thách đấu đến <b>${target.name}</b>.`, 'success');
         }).catch(err => {
             this.challengeSending=false;
-            showCustomAlert('❌ Không thể gửi lời mời: '+err.message+'<br><small>Kiểm tra Firebase Realtime Database Rules cho nhánh <b>challenges</b>.</small>', 'error');
+            showCustomAlert('❌ Không thể gửi lời mời: '+err.message+'<br><small>Kiểm tra Firebase Realtime Database Rules cho nhánh <b>challenges</b> (đọc/ghi challenge ở cả người gửi và người nhận).</small>', 'error');
         });
     }
 
@@ -2629,21 +2672,26 @@ let pressTimer = null;
         const pending = this.pendingChallenge;
         if (!pending || !this.db) return;
         const c = pending.data;
-        const roomId = this.db.ref('pvpRooms').push().key;
+        const roomId = c.roomId || this.db.ref('pvpRooms').push().key;
+        const guestTeam = this.getChallengeTeamSnapshot();
+        const accepted = Object.assign({}, c, {status:'accepted', roomId, respondedAt:firebase.database.ServerValue.TIMESTAMP});
         const updates = {};
-        updates[`challenges/${this.playerId}/${pending.id}/status`] = 'accepted';
-        updates[`challenges/${this.playerId}/${pending.id}/roomId`] = roomId;
-        updates[`challenges/${this.playerId}/${pending.id}/respondedAt`] = firebase.database.ServerValue.TIMESTAMP;
+        // Cập nhật bản challenge của người nhận.
+        updates[`challenges/${this.playerId}/${pending.id}`] = accepted;
+        // Cập nhật bản challenge của người gửi để listener của người gửi chắc chắn bắt được ACCEPTED.
+        updates[`challenges/${c.from}/${pending.id}`] = accepted;
+        // Tạo phòng hoàn chỉnh trong cùng một atomic update.
         updates[`pvpRooms/${roomId}`] = {
             status:'ready', createdAt:firebase.database.ServerValue.TIMESTAMP,
             hostId:c.from, hostName:c.fromName, guestId:this.playerId, guestName:this.playerName,
-            hostTeam:c.team || [], guestTeam:this.getChallengeTeamSnapshot()
+            hostTeam:c.team || [], guestTeam:guestTeam
         };
         this.db.ref().update(updates).then(() => {
             document.getElementById('challenge-inbox-overlay').style.display='none';
             this.pendingChallenge=null;
-            this.joinPvPRoom(roomId, Object.assign({}, c, {roomId}), false);
-        }).catch(err => showCustomAlert('Không thể vào phòng PvP: '+err.message, 'error'));
+            this.joinPvPRoom(roomId, Object.assign({}, c, {roomId, status:'accepted'}), false);
+        }).catch(err => showCustomAlert('Không thể vào phòng PvP: '+err.message+'<br><small>'+
+            'Firebase Rules phải cho phép người nhận cập nhật challenges của hai phía và tạo pvpRooms.</small>', 'error'));
     }
 
     rejectChallenge() {
@@ -2656,6 +2704,11 @@ let pressTimer = null;
 
     joinPvPRoom(roomId, challenge, isHost) {
         if (!this.db || !roomId) return;
+        if (this.inArenaBattle && this.pvpRoomId===roomId) return;
+        if (this.pvpRoomRef && this.pvpRoomId===roomId) {
+            // Đã theo dõi đúng room rồi; không tạo thêm listener trùng.
+            return;
+        }
         if (this.pvpRoomRef) {
             try { this.pvpRoomRef.off(); } catch(e) {}
         }
@@ -2663,6 +2716,11 @@ let pressTimer = null;
         this.pvpFinished=false; this.pvpRoomId=roomId; this.pvpIsHost=!!isHost; this.pvpRemoteState=null;
         const ref=this.db.ref('pvpRooms/'+roomId);
         this.pvpRoomRef=ref;
+        // Hiển thị lỗi đọc phòng thay vì im lặng đứng ngoài trận.
+        ref.once('value').catch(err=>{
+            console.error('PvP room read failed:',err);
+            showCustomAlert('❌ Không đọc được phòng PvP: '+err.message+'<br><small>Kiểm tra Rules của <b>pvpRooms</b>.</small>','error');
+        });
         this.pvpRoomUnsub=ref.on('value', snap=>{
             const room=snap.val();
             if (!room) return;
@@ -2671,7 +2729,7 @@ let pressTimer = null;
             if (room.status==='ready' && !this.inArenaBattle) this.startPvPBattle(room, room.hostId===this.playerId);
             if (room.state && room.state.players && room.state.players[this.playerId!==room.hostId?room.hostId:room.guestId]) this.pvpRemoteState=room.state.players[this.playerId!==room.hostId?room.hostId:room.guestId];
         });
-        ref.child('inputs/'+this.playerId).set({x:0,y:0,skill:0,updatedAt:firebase.database.ServerValue.TIMESTAMP});
+        ref.child('inputs/'+this.playerId).set({x:0,y:0,skill:0,updatedAt:firebase.database.ServerValue.TIMESTAMP}).catch(err=>console.warn('PvP input init failed:',err));
     }
 
     finishPvPBattle(won) {
@@ -2725,9 +2783,9 @@ let pressTimer = null;
         const teamStatsB=teamB.map((p,i)=>makeFighter(p,i,false));
         let activeA=0, activeB=0;
         let effects=[]; let shake=0; let last=performance.now();
-        let localKeys={x:0,y:0}; let skillRequest=0; let localCooldown=0;
+        let localKeys={x:0,y:0}; let skillRequest=0; let localCooldown=0; let lastRemoteSkill=0;
         let remoteInput={x:0,y:0,skill:0};
-        let lastInputPublish=0;
+        let lastInputPublish=0; let lastStatePublish=0; let skillSeq=0; let latestSkillEvent=null; let lastRemoteSkillEvent=0;
         const inputRef=this.pvpRoomRef.child('inputs/'+this.playerId);
         const enemyId=isHost?room.guestId:room.hostId;
         const inputListener=this.pvpRoomRef.child('inputs/'+enemyId);
@@ -2761,12 +2819,15 @@ let pressTimer = null;
         inputListener.on('value',snap=>{ remoteInput=snap.val()||{x:0,y:0,skill:0}; });
 
         const publishInput=()=>{
-            inputRef.set({x:localKeys.x||0,y:localKeys.y||0,skill:skillRequest||0,updatedAt:firebase.database.ServerValue.TIMESTAMP});
-            skillRequest=0;
+            const queuedSkill=skillRequest||0;
+            inputRef.set({x:localKeys.x||0,y:localKeys.y||0,skill:queuedSkill,skillAt:queuedSkill?Date.now():0,updatedAt:firebase.database.ServerValue.TIMESTAMP}).catch(err=>console.warn('PvP input publish failed:',err));
+            if(queuedSkill) skillRequest=0;
         };
 
         const spawnEffect=(type,x,y,color,extra={})=>{
-            effects.push({id:Math.random().toString(36).slice(2),type,x,y,color,life:extra.life||0.65,maxLife:extra.life||0.65,r:extra.r||20,fromX:extra.fromX,toX:extra.toX,fromY:extra.fromY,toY:extra.toY,text:extra.text||'',angle:extra.angle||0});
+            const life=Math.max(0.05,Math.min(Number(extra.life)||0.65,1.5));
+            effects.push({id:Math.random().toString(36).slice(2),type,x,y,color,life,maxLife:life,r:extra.r||20,fromX:extra.fromX,toX:extra.toX,fromY:extra.fromY,toY:extra.toY,text:extra.text||'',angle:extra.angle||0});
+            if(effects.length>120) effects.splice(0,effects.length-120);
         };
         const getActive=(team,idx)=>team[Math.min(idx,team.length-1)];
         const currentA=()=>getActive(teamStatsA,activeA), currentB=()=>getActive(teamStatsB,activeB);
@@ -2804,6 +2865,7 @@ let pressTimer = null;
             else if(['meteor','divinemeteor','volcano'].includes(k)) spawnEffect(k,target.x,target.y,attacker.color,{r:155,life:.9});
             else spawnEffect(k,target.x,target.y,attacker.color,{r:130,life:k==='blackhole'||k==='singularity'||k==='abyss'?1.1:.72,angle:ang});
             spawnEffect('text',target.x,target.y-70,attacker.color,{text:dmg?`-${dmg}`:'+'+Math.floor(attacker.maxHp*.10),life:.65});
+            if(side==='A'){ skillSeq++; latestSkillEvent={seq:skillSeq,ownerId:room.hostId,skill:profile.kind,x:attacker.x,y:attacker.y,targetX:target.x,targetY:target.y,color:attacker.color}; }
             shake=Math.max(shake,profile.kind==='meteor'||profile.kind==='vortex'?.18:.08);
             if(target.hp<=0){target.alive=false;target.hp=0;spawnEffect('ko',target.x,target.y,target.color,{r:130,life:.8,text:'K.O!'});respawnNext(side==='A'?'B':'A');}
         };
@@ -2812,7 +2874,7 @@ let pressTimer = null;
         const processSkill=(attacker,target,skill,side)=>{
             if(!skill)return;
             const pet = side==='A' ? teamA[activeA] : teamB[activeB];
-            const profile=this.getArenaSkillProfile(pet,skill);
+            const profile=this.getArenaSkillProfile(pet,skill)||this.getArenaSkillProfile(pet,1)||{kind:'hit',mult:1,range:900};
             useSkill(attacker,target,profile,side);
         };
 
@@ -2831,10 +2893,15 @@ let pressTimer = null;
             if(p.isGod){ctx.fillStyle='#fff';ctx.font='bold 16px Arial';ctx.textAlign='center';ctx.fillText('✦ THẦN ✦',0,-p.radius-25);}
             ctx.restore();
         };
-        const drawEffects=(now)=>{
-            const dt=Math.min((now-last)/1000,.05);
+        // Hiệu ứng phải giảm tuổi thọ theo dt của FRAME hiện tại.
+        // Bản trước lấy (now-last) sau khi last đã được cập nhật ở đầu frame,
+        // nên dt gần như bằng 0 -> sát thương/chữ/beam không bao giờ biến mất.
+        const drawEffects=(now,frameDt)=>{
+            const dt=Math.max(0,Math.min(Number(frameDt)||0,.05));
             effects.forEach(e=>{
-                e.life-=dt; const q=Math.max(0,e.life/e.maxLife); ctx.save();ctx.globalAlpha=q;
+                if(!e || typeof e!=='object') return;
+                e.life=Number.isFinite(Number(e.life))?Number(e.life)-dt:0;
+                e.maxLife=Math.max(0.001,Number(e.maxLife)||0.65); const q=Math.max(0,e.life/e.maxLife); ctx.save();ctx.globalAlpha=q;
                 if(e.type==='hit'){ctx.strokeStyle=e.color;ctx.lineWidth=5;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-q+.2),0,Math.PI*2);ctx.stroke();}
                 else if(e.type==='arc'){ctx.strokeStyle=e.color;ctx.lineWidth=10;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1.1-q*.25),e.angle-1.15,e.angle+1.15);ctx.stroke();}
                 else if(e.type==='meteor'){ctx.fillStyle=e.color;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-q*.3),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.stroke();}
@@ -2857,33 +2924,60 @@ let pressTimer = null;
                 [room.guestId]:{x:currentB()?.x||W-230,y:currentB()?.y||H/2,hp:currentB()?.hp||0,maxHp:currentB()?.maxHp||1,active:activeB,alive:!!currentB()?.alive}
             },
             teams:{[room.hostId]:teamStatsA.map(f=>({hp:f.hp,maxHp:f.maxHp,alive:f.alive})),[room.guestId]:teamStatsB.map(f=>({hp:f.hp,maxHp:f.maxHp,alive:f.alive}))},
-            effects:effects.slice(-30)
+            skillEvent:latestSkillEvent||null
         });
 
         let remoteState=null;
         const stateListener=this.pvpRoomRef.child('state');
-        stateListener.on('value',snap=>{remoteState=snap.val()||null;});
+        stateListener.on('value',snap=>{ const v=snap.val(); if(v && typeof v==='object'){ remoteState=v; } });
 
         const frame=(now)=>{
+            // PvP render loop must NEVER die because one skill/effect/state is malformed.
+            // A render exception used to stop requestAnimationFrame completely, leaving only the controls visible.
             if(!this.inArenaBattle){arenaControls.destroy();window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);inputListener.off();stateListener.off();return;}
+            try {
             const dt=Math.min((now-last)/1000,.05);last=now; cdA=Math.max(0,cdA-dt);cdB=Math.max(0,cdB-dt);shake=Math.max(0,shake-dt);
-            const dom=arenaControls.getMove(); if(Math.hypot(dom.x,dom.y)>.05){localKeys.x=dom.x;localKeys.y=dom.y;}
+            const dom=arenaControls.getMove(); if(arenaControls.isMoveActive?.()){ localKeys.x=dom.x; localKeys.y=dom.y; }
             if(isHost){
                 const a=currentA(),b=currentB();
                 move(a,localKeys,dt); move(b,remoteInput,dt);
-                if(skillRequest&&cdA<=0){processSkill(a,b,skillRequest,'A');cdA=.38;skillRequest=0;}
-                if(remoteInput.skill&&cdB<=0){processSkill(b,a,remoteInput.skill,'B');cdB=.38;remoteInput.skill=0;}
+                if(skillRequest&&cdA<=0){ try{ processSkill(a,b,skillRequest,'A'); }catch(err){ console.error('PvP skill A error:',err); } cdA=.38;skillRequest=0; }
+                if(remoteInput.skill&&cdB<=0 && Number(remoteInput.skillAt||0)!==lastRemoteSkill){ lastRemoteSkill=Number(remoteInput.skillAt||0); try{ processSkill(b,a,remoteInput.skill,'B'); }catch(err){ console.error('PvP skill B error:',err); } cdB=.38; remoteInput.skill=0; }
                 const allDeadA=activeA>=teamStatsA.length-1&&!teamStatsA[activeA].alive;
                 const allDeadB=activeB>=teamStatsB.length-1&&!teamStatsB[activeB].alive;
                 if(allDeadA||allDeadB){this.pvpRoomRef.update({status:'finished',winnerId:allDeadB?room.hostId:room.guestId});}
-                this.pvpRoomRef.child('state').set(statePayload());
-            } else if(remoteState){
-                const meState=remoteState.players?.[this.playerId], opState=remoteState.players?.[enemyId];
-                const myIndex=Number(meState?.active||0), opIndex=Number(opState?.active||0);
-                if(myIndex<teamStatsA.length){activeA=myIndex; const me=currentA(); if(me){me.x=meState?.x??me.x;me.y=meState?.y??me.y;me.hp=meState?.hp??me.hp;me.alive=meState?.alive!==false;}}
-                if(opIndex<teamStatsB.length){activeB=opIndex; const op=currentB(); if(op){op.x=opState?.x??op.x;op.y=opState?.y??op.y;op.hp=opState?.hp??op.hp;op.alive=opState?.alive!==false;}}
-                if(remoteState.effects) effects=remoteState.effects.map(e=>({...e}));
-                move(currentA(),localKeys,dt);
+                if(now-lastStatePublish>100){ lastStatePublish=now; const payload=statePayload(); this.pvpRoomRef.child('state').set(payload).catch(err=>console.warn('PvP state publish failed:',err)); if(latestSkillEvent) latestSkillEvent=null; }
+            } else {
+                // Guest luôn xử lý chuyển động LOCAL, kể cả khi state Firebase chưa tới.
+                // Đây là điểm quan trọng: không để độ trễ mạng làm nhân vật đứng hình.
+                const me=currentA();
+                if(me) move(me,localKeys,dt);
+                if(remoteState){
+                    const meState=remoteState.players?.[this.playerId], opState=remoteState.players?.[enemyId];
+                    const myIndex=Number(meState?.active||0), opIndex=Number(opState?.active||0);
+                    if(myIndex<teamStatsA.length){
+                        activeA=myIndex;
+                        const me2=currentA();
+                        if(me2){
+                            if(Number.isFinite(meState?.hp)) me2.hp=meState.hp;
+                            if(Number.isFinite(Number(meState?.maxHp))) me2.maxHp=Number(meState.maxHp)||me2.maxHp;
+                            me2.alive=meState?.alive!==false;
+                            // Chỉ sửa vị trí khi lệch lớn; không khóa chuyển động local.
+                            if(Number.isFinite(meState?.x) && Math.abs(me2.x-meState.x)>220) me2.x=meState.x;
+                            if(Number.isFinite(meState?.y) && Math.abs(me2.y-meState.y)>220) me2.y=meState.y;
+                        }
+                    }
+                    if(opIndex<teamStatsB.length){activeB=opIndex; const op=currentB(); if(op){op.x=Number.isFinite(opState?.x)?opState.x:op.x;op.y=Number.isFinite(opState?.y)?opState.y:op.y;op.hp=Number.isFinite(opState?.hp)?opState.hp:op.hp;op.alive=opState?.alive!==false;}}
+                    // Không đồng bộ cả mảng effects qua Firebase: việc reset effects mỗi 80ms
+                    // gây giật và khiến tia/beam bị kéo dài trên màn hình. Chỉ truyền một skill event.
+                    const se=remoteState.skillEvent;
+                    if(se && Number(se.seq||0)>lastRemoteSkillEvent){
+                        lastRemoteSkillEvent=Number(se.seq||0);
+                        if(se.ownerId!==this.playerId && Number.isFinite(se.x) && Number.isFinite(se.y)){
+                            spawnEffect(se.skill||'hit',Number(se.x),Number(se.y),se.color||'#ff4646',{fromX:Number(se.x),fromY:Number(se.y),toX:Number(se.targetX||se.x),toY:Number(se.targetY||se.y),r:130,life:.55,angle:Math.atan2(Number(se.targetY||se.y)-Number(se.y),Number(se.targetX||se.x)-Number(se.x))});
+                        }
+                    }
+                }
             }
             refreshSkillControls();
             ctx.save();
@@ -2891,13 +2985,31 @@ let pressTimer = null;
             ctx.clearRect(-20,-20,W+40,H+40);ctx.fillStyle='#050a11';ctx.fillRect(0,0,W,H);
             ctx.strokeStyle='#132536';ctx.lineWidth=2;for(let x=0;x<W;x+=70){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=70){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
             ctx.fillStyle='rgba(0,255,200,.055)';ctx.fillRect(0,H/2-130,W,260);
-            drawPet(currentA(),now,false);drawPet(currentB(),now,true);drawEffects(now);
+            try { drawPet(currentA(),now,false); } catch(err) { console.warn('draw pet A skipped',err); }
+            try { drawPet(currentB(),now,true); } catch(err) { console.warn('draw pet B skipped',err); }
+            try { drawEffects(now,dt); } catch(err) { console.warn('draw effects skipped',err); effects=[]; }
             const drawHud=(f,x,c,side)=>{ctx.fillStyle='rgba(8,15,24,.92)';ctx.fillRect(x,30,520,95);ctx.strokeStyle=c;ctx.lineWidth=3;ctx.strokeRect(x,30,520,95);ctx.fillStyle='#fff';ctx.font='bold 17px Arial';ctx.fillText(`${side} • ${f.name} • Lv.${f.level} • Bậc ${f.tier}`,x+18,58);ctx.fillStyle='#1c2731';ctx.fillRect(x+18,78,480,20);ctx.fillStyle=c;ctx.fillRect(x+18,78,480*Math.max(0,f.hp/f.maxHp),20);ctx.fillStyle='#fff';ctx.font='12px Arial';ctx.fillText(`HP ${Math.max(0,Math.floor(f.hp))}/${f.maxHp}  •  Công ${f.attack}  •  Thủ ${f.defense}  •  Pet ${f.teamIndex+1}/3`,x+25,93);ctx.font='11px Arial';ctx.fillText(`Kỹ năng: ${f.skills}/5`,x+25,113);};
             drawHud(currentA(),28,'#00ffc8','ĐỘI BẠN');drawHud(currentB(),W-548,'#ff4646','ĐỐI THỦ');
             ctx.fillStyle='#fff';ctx.font='bold 15px Arial';ctx.textAlign='center';ctx.fillText('⚔️ 3 VS 3 • PET TIẾP THEO TỰ ĐỘNG RA SÂN KHI PET TRƯỚC BỊ HẠ',W/2,150);ctx.textAlign='left';
             ctx.restore();
             if(now-lastInputPublish>55){lastInputPublish=now;publishInput();}
-            requestAnimationFrame(frame);
+            } catch(err) {
+                console.error('PvP frame error - loop recovered:', err);
+                // Draw a minimal fallback frame so a bad effect cannot blank/freeze the arena.
+                try {
+                    ctx.save();
+                    ctx.setTransform(1,0,0,1,0,0);
+                    ctx.clearRect(0,0,W,H);
+                    ctx.fillStyle='#050a11'; ctx.fillRect(0,0,W,H);
+                    ctx.fillStyle='#00ffc8'; ctx.font='bold 22px Arial';
+                    ctx.fillText('⚔️ PvP ONLINE',40,42);
+                    ctx.fillStyle='#fff'; ctx.font='16px Arial';
+                    ctx.fillText('Đang khôi phục khung hình...',40,70);
+                    ctx.restore();
+                } catch(_) {}
+            } finally {
+                requestAnimationFrame(frame);
+            }
         };
         requestAnimationFrame(frame);
     }
