@@ -89,6 +89,9 @@
         #btn-arena-main { width: 100%; padding: 9px 4px; background: linear-gradient(135deg, #a02832, #60121a); color: #fff; border: 1.5px solid #ff4646; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; box-shadow: 0 0 10px rgba(255,70,70,0.4); transition: 0.2s; flex-shrink: 0; }
         #btn-arena-main:hover { background: linear-gradient(135deg, #c0392b, #8b0000); }
 
+        .rank-online-dot { width:7px; height:7px; border-radius:50%; background:#00ffc8; box-shadow:0 0 7px rgba(0,255,200,.8); flex-shrink:0; }
+        .rank-pvp-btn { margin-left:auto; width:25px; height:22px; border-radius:5px; border:1px solid #ff4646; background:#5f1820; color:#fff; font-size:12px; line-height:1; cursor:pointer; padding:0; flex-shrink:0; }
+        .rank-pvp-btn:hover { filter:brightness(1.25); transform:scale(1.05); }
         .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-bottom: 1px solid #131c29; font-size: 11.5px; cursor: pointer; transition: 0.2s; }
         .rank-item:hover { background-color: rgba(255, 255, 255, 0.05); }
         .rank-item:nth-child(1) { color: #ffd700; font-weight: bold; }
@@ -786,6 +789,9 @@ class Game {
         this.activePointers = new Map();
         this.lastTime = performance.now(); this.lastSaveTime = performance.now();
         
+        this.onlinePlayers = {};
+        this.rawLeaderboardData = {};
+        this.presenceReady = false;
         this.initFirebase(); this.setupEvents(); this.setupArenaEvents(); this.setupPetPoolEvents(); this.checkLoginStatus();
     }
     
@@ -800,16 +806,64 @@ class Game {
                 this.auth=firebase.auth(); this.db=firebase.database(); this.leaderboardRef=this.db.ref('leaderboard');
                 
                 this.leaderboardRef.on('value', s=>{ 
-                    const l=document.getElementById("rank-list"); if(!l)return; const d=s.val(); l.innerHTML=""; 
-                    if(!d){ if(this.playerName&&!this.isDeleted) l.innerHTML=`<div class="rank-item current-user"><div class="rank-name">1. ${this.playerName}</div><div class="rank-val val-diamond">${this.diamonds>0?`💎 ${this.diamonds}`:formatMoney(this.money)}</div></div>`; return; }
-                    const p=Object.keys(d).filter(k=>d[k]&&d[k].name&&!d[k].deleted).map(k=>({id:k,name:d[k].name,money:Number(d[k].money)||0,diamonds:Number(d[k].diamonds)||0})).sort((a,b)=>b.diamonds-a.diamonds||b.money-a.money);
-                    this.leaderboardPlayers = p;
+                    this.rawLeaderboardData = s.val() || {};
+                    this.renderLeaderboard();
+                });
+                this.db.ref('presence').on('value', snap => {
+                    this.onlinePlayers = snap.val() || {};
+                    this.renderLeaderboard();
+                });
                     
-                    p.slice(0,20).forEach((e,i)=>{ 
-                        const div=document.createElement("div"); div.className="rank-item"+(e.id===this.playerId?" current-user":""); 
-                        div.innerHTML=`<div class="rank-name">${i+1}. ${e.name}</div><div style="display:flex;align-items:center;gap:3px;"><div class="rank-val ${e.diamonds>0?'val-diamond':'val-money'}">${e.diamonds>0?`💎 ${e.diamonds}`:formatMoney(e.money)}</div></div>`; 
-                        
-                        let pressTimer = null;
+            }
+        } catch(e) {}
+    }
+
+    renderLeaderboard() {
+        try {
+            const l=document.getElementById("rank-list");
+            if(!l) return;
+            const d=this.rawLeaderboardData || {};
+            l.innerHTML="";
+            if(!Object.keys(d).length) {
+                if(this.playerName && !this.isDeleted) {
+                    l.innerHTML=`<div class="rank-item current-user"><div class="rank-name">1. ${this.playerName}</div><div class="rank-val val-diamond">${this.diamonds>0?`💎 ${this.diamonds}`:formatMoney(this.money)}</div></div>`;
+                }
+                return;
+            }
+            const p=Object.keys(d)
+                .filter(k=>d[k]&&d[k].name&&!d[k].deleted)
+                .map(k=>({
+                    id:k,
+                    name:d[k].name,
+                    money:Number(d[k].money)||0,
+                    diamonds:Number(d[k].diamonds)||0,
+                    online:!!(this.onlinePlayers && this.onlinePlayers[k] && this.onlinePlayers[k].online)
+                }))
+                .sort((a,b)=>b.diamonds-a.diamonds||b.money-a.money);
+            this.leaderboardPlayers=p;
+
+            p.slice(0,20).forEach((e,i)=>{
+                const div=document.createElement("div");
+                div.className="rank-item"+(e.id===this.playerId?" current-user":"");
+                div.dataset.playerId=e.id;
+                div.innerHTML=`<div class="rank-name">${i+1}. ${e.name}</div><div style="display:flex;align-items:center;gap:5px;"><span class="rank-online-dot" title="${e.online?'Đang online':'Offline'}"></span><div class="rank-val ${e.diamonds>0?'val-diamond':'val-money'}">${e.diamonds>0?`💎 ${e.diamonds}`:formatMoney(e.money)}</div></div>`;
+
+                // Nút PvP trực tiếp ngay trên từng người chơi đang online.
+                if(e.id!==this.playerId && e.online) {
+                    const duelBtn=document.createElement("button");
+                    duelBtn.className="rank-pvp-btn";
+                    duelBtn.type="button";
+                    duelBtn.textContent="⚔️";
+                    duelBtn.title=`Thách đấu ${e.name}`;
+                    duelBtn.onclick=(ev)=>{
+                        ev.stopPropagation();
+                        if(!this.selectedArenaTeam || !this.selectedArenaTeam.some(Boolean)) this.autoFillArenaTeam();
+                        this.sendChallengeTo(e);
+                    };
+                    div.appendChild(duelBtn);
+                }
+
+let pressTimer = null;
                         let isLongPress = false;
                         let startY = 0;
                         let tapCount = 0;
@@ -924,8 +978,6 @@ class Game {
                         div.onpointerleave = () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } };
                         l.appendChild(div); 
                     });
-                });
-            }
         } catch(e) {}
     }
 
@@ -1023,6 +1075,27 @@ class Game {
         showCustomAlert(`💖 Đã chuyển ${formatMoney(amount)} (Tương đương ${percent * 100}% tài sản) cho ${target.name}!`, "success");
         this.saveGame();
         this.pendingConfirmButtons = null;
+    }
+
+    setupPresence() {
+        if(!this.db || !this.playerId || this.isDeleted) return;
+        try {
+            const connectedRef=this.db.ref('.info/connected');
+            const presenceRef=this.db.ref('presence/'+this.playerId);
+            connectedRef.on('value', snap=>{
+                if(snap.val() !== true) return;
+                presenceRef.onDisconnect().remove()
+                    .then(()=>presenceRef.set({
+                        online:true,
+                        name:this.playerName || 'Player',
+                        updatedAt:firebase.database.ServerValue.TIMESTAMP
+                    }))
+                    .catch(err=>console.warn('Presence setup failed:',err));
+            });
+            this.presenceReady=true;
+        } catch(e) {
+            console.warn('Presence init failed:',e);
+        }
     }
 
     syncFirebase() { if(this.isDeleted||!this.leaderboardRef||!this.playerName)return; try{ this.leaderboardRef.child(this.playerId).set({name:this.playerName,money:this.money,diamonds:this.diamonds,updatedAt:Date.now()}); }catch(e){} }
@@ -1449,14 +1522,16 @@ class Game {
         const list = document.getElementById("arena-challenge-list");
         if (!list) return;
         list.innerHTML = "";
-        const players = (this.leaderboardPlayers || []).filter(p => p.id !== this.playerId);
+        const players = (this.leaderboardPlayers || []).filter(p =>
+            p.id !== this.playerId && !!(this.onlinePlayers && this.onlinePlayers[p.id] && this.onlinePlayers[p.id].online)
+        );
         if (!players.length) {
-            list.innerHTML = '<div style="text-align:center;color:#7890a8;padding:18px;">Chưa có người chơi khác đang online trên BXH.</div>';
+            list.innerHTML = '<div style="text-align:center;color:#7890a8;padding:18px;">Không có người chơi nào đang online để thách đấu.</div>';
             return;
         }
         players.slice(0,20).forEach((p,i)=>{
             const row=document.createElement("div"); row.className="arena-challenge-player";
-            row.innerHTML=`<div><b>${i+1}. ${p.name}</b><div style="font-size:10px;color:#7890a8;margin-top:2px;">💎 ${p.diamonds} • ${formatMoney(p.money)}</div></div><button style="background:#a02832;color:#fff;border:1px solid #ff4646;border-radius:5px;padding:6px 8px;font-weight:bold;cursor:pointer;">⚔️ Mời</button>`;
+            row.innerHTML=`<div><b>${i+1}. <span style="color:#00ffc8">●</span> ${p.name}</b><div style="font-size:10px;color:#7890a8;margin-top:2px;">💎 ${p.diamonds} • ${formatMoney(p.money)}</div></div><button style="background:#a02832;color:#fff;border:1px solid #ff4646;border-radius:5px;padding:6px 8px;font-weight:bold;cursor:pointer;">⚔️ Mời</button>`;
             row.querySelector("button").onclick=()=>{
                 if (!this.selectedArenaTeam.some(Boolean)) this.autoFillArenaTeam();
                 this.saveGame();
@@ -2529,6 +2604,12 @@ class Game {
     sendChallengeTo(target) {
         if (!this.playerName || !this.db) { showCustomAlert('⚠️ Máy chủ Firebase chưa sẵn sàng.', 'error'); return; }
         if (target.id === this.playerId) return;
+        if (!(this.onlinePlayers && this.onlinePlayers[target.id] && this.onlinePlayers[target.id].online)) {
+            showCustomAlert('⚠️ Người chơi này vừa offline. Hãy chọn người đang có chấm xanh trên BXH.', 'error');
+            return;
+        }
+        if (this.challengeSending) return;
+        this.challengeSending = true;
         const challengeId = this.db.ref().push().key;
         const payload = {
             from:this.playerId, fromName:this.playerName, to:target.id, toName:target.name,
@@ -2536,8 +2617,12 @@ class Game {
             team:this.getChallengeTeamSnapshot()
         };
         this.db.ref(`challenges/${target.id}/${challengeId}`).set(payload).then(() => {
+            this.challengeSending=false;
             showCustomAlert(`⚔️ Đã gửi lời mời thách đấu đến <b>${target.name}</b>.`, 'success');
-        }).catch(err => showCustomAlert('Không thể gửi lời mời: '+err.message, 'error'));
+        }).catch(err => {
+            this.challengeSending=false;
+            showCustomAlert('❌ Không thể gửi lời mời: '+err.message+'<br><small>Kiểm tra Firebase Realtime Database Rules cho nhánh <b>challenges</b>.</small>', 'error');
+        });
     }
 
     acceptChallenge() {
@@ -2570,8 +2655,12 @@ class Game {
     }
 
     joinPvPRoom(roomId, challenge, isHost) {
-        if (!this.db || this.pvpRoomUnsub) return;
-        this.pvpRoomId=roomId; this.pvpIsHost=!!isHost; this.pvpRemoteState=null;
+        if (!this.db || !roomId) return;
+        if (this.pvpRoomRef) {
+            try { this.pvpRoomRef.off(); } catch(e) {}
+        }
+        this.pvpRoomUnsub=null;
+        this.pvpFinished=false; this.pvpRoomId=roomId; this.pvpIsHost=!!isHost; this.pvpRemoteState=null;
         const ref=this.db.ref('pvpRooms/'+roomId);
         this.pvpRoomRef=ref;
         this.pvpRoomUnsub=ref.on('value', snap=>{
@@ -2592,7 +2681,7 @@ class Game {
         const wheel=document.getElementById('arena-skill-wheel'); if(wheel) wheel.innerHTML='';
         const knob=document.getElementById('arena-joystick-knob'); if(knob) knob.style.transform='translate(0,0)';
         showCustomAlert(won?'🏆 <b>BẠN ĐÃ THẮNG TRẬN PvP!</b>':'💀 <b>BẠN ĐÃ THUA TRẬN PvP!</b>', won?'success':'error');
-        if(this.pvpRoomRef){ this.pvpRoomRef.off(); this.pvpRoomUnsub=null; }
+        if(this.pvpRoomRef){ try{this.pvpRoomRef.off();}catch(e){} this.pvpRoomRef=null; this.pvpRoomUnsub=null; }
     }
 
     // === PvP 3v3: máu/thủ/công theo từng Pet + hiệu ứng kỹ năng + đổi Pet khi bị hạ ===
