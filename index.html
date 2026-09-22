@@ -41,6 +41,50 @@
         #rank-server { text-align: center; color: #6a829a; font-size: 10px; margin-bottom: 6px; border-bottom: 1px solid #1a2636; padding-bottom: 3px; }
         #rank-list { flex: 1; overflow-y: auto; scrollbar-width: none; touch-action: pan-y !important; margin-bottom: 6px; }
         #rank-list::-webkit-scrollbar { display: none; }
+        #challenge-inbox-overlay { position: fixed; inset: 0; display: none; justify-content: center; align-items: center; z-index: 60000; background: rgba(6,9,15,.88); backdrop-filter: blur(6px); }
+        #challenge-inbox-box { width: min(430px,92vw); background:#111a28; border:2px solid #ff4646; border-radius:12px; padding:20px; text-align:center; box-shadow:0 0 35px rgba(255,70,70,.35); }
+        #challenge-inbox-title { color:#ffd700; font-size:19px; margin-bottom:8px; }
+        #challenge-inbox-info { color:#e6f5ff; font-size:13px; line-height:1.6; margin-bottom:16px; }
+        .challenge-actions { display:flex; gap:10px; }
+        .challenge-actions button { flex:1; padding:11px; border-radius:7px; font-weight:bold; cursor:pointer; border:1px solid; }
+        #challenge-accept-btn { background:#14503c; color:#00ffc8; border-color:#00ffc8; }
+        #challenge-reject-btn { background:#5b2028; color:#fff; border-color:#ff4646; }
+        .arena-challenge-btn { width: 100%; margin-top: 8px; padding: 9px; background: linear-gradient(135deg,#14503c,#0b3025); color: #00ffc8; border: 1px solid #00ffc8; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .arena-challenge-btn:hover { filter: brightness(1.15); }
+        #arena-challenge-list { max-height: 48vh; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; margin: 10px 0; }
+        .arena-challenge-player { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px; background:#080c14; border:1px solid #28374b; border-radius:7px; color:#e6f5ff; }
+        #pvp-skillbar { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); display:flex; gap:8px; z-index:2; pointer-events:none; }
+        .pvp-skill-slot { width:58px; height:58px; border:2px solid #28374b; background:rgba(10,16,25,.9); border-radius:9px; color:#fff; display:flex; align-items:center; justify-content:center; flex-direction:column; font-size:10px; }
+        .pvp-skill-slot.ready { border-color:#00ffc8; box-shadow:0 0 12px rgba(0,255,200,.35); }
+        .pvp-skill-slot.locked { opacity:.38; }
+        .pvp-skill-slot.locked { opacity:.38; }
+        #arena-mobile-controls { position:absolute; inset:0; pointer-events:none; z-index:8; overflow:hidden; }
+        #arena-joystick { position:absolute; left:34px; bottom:34px; width:142px; height:142px; border-radius:50%; border:3px solid rgba(0,255,200,.48); background:radial-gradient(circle,rgba(0,255,200,.13),rgba(0,255,200,.035) 55%,transparent 57%); pointer-events:auto; touch-action:none; box-shadow:0 0 24px rgba(0,255,200,.12); }
+        #arena-joystick::before { content:'✥'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:rgba(0,255,200,.28); font-size:42px; }
+        #arena-joystick-knob { position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px; border-radius:50%; background:rgba(0,255,200,.3); border:2px solid #00ffc8; box-shadow:0 0 18px rgba(0,255,200,.35); transform:translate(0,0); }
+        /* Cụm điều khiển đấu trường: joystick bên trái, 5 kỹ năng theo một cung đều bên trái nút đánh lớn */
+        #arena-joystick { left:58px; bottom:52px; width:176px; height:176px; }
+        #arena-joystick-knob { width:64px; height:64px; margin:-32px; }
+        #arena-skill-wheel { position:absolute; right:18px; bottom:18px; width:520px; height:520px; pointer-events:none; z-index:12; }
+        .arena-skill-btn { position:absolute; width:58px; height:58px; border-radius:50%; border:3px solid rgba(255,255,255,.94); background:radial-gradient(circle at 32% 28%,#9b62ed 0%,#3b146c 46%,#0a1020 82%); color:#fff; font-weight:900; cursor:pointer; pointer-events:auto; box-shadow:0 0 20px rgba(145,75,255,.48),inset 0 0 12px rgba(255,255,255,.16); text-shadow:0 2px 4px #000; transition:transform .12s ease,filter .12s ease; }
+        .arena-skill-btn:hover { transform:scale(1.07); filter:brightness(1.18); }
+        .arena-skill-btn:active { transform:scale(.94); }
+        .arena-skill-btn span { display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:27px; line-height:1; }
+        .arena-skill-btn small { position:absolute; right:-6px; bottom:-6px; min-width:21px; height:21px; padding:0 5px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#172653; border:2px solid #e4ebff; color:#fff; font-size:11px; font-weight:900; line-height:1; box-shadow:0 2px 7px #000; }
+        .arena-skill-btn.locked { opacity:.25; filter:grayscale(1); border-color:#657084; pointer-events:none; box-shadow:none; }
+        /* Tâm các kỹ năng nằm trên cùng một cung tròn, chia đều góc => khoảng cách giữa các nút bằng nhau, không đè nhau. */
+        #arena-skill-wheel .arena-skill-btn:nth-child(1){left:185px;top:449px;}
+        #arena-skill-wheel .arena-skill-btn:nth-child(2){left:142px;top:370px;}
+        #arena-skill-wheel .arena-skill-btn:nth-child(3){left:132px;top:281px;}
+        #arena-skill-wheel .arena-skill-btn:nth-child(4){left:157px;top:195px;}
+        #arena-skill-wheel .arena-skill-btn:nth-child(5){left:216px;top:125px;}
+        #arena-skill-wheel .arena-skill-btn{margin:0;}
+        /* Nút đánh lớn nằm riêng ở góc phải dưới; không chiếm chỗ của cung kỹ năng. */
+        .arena-basic-attack { position:absolute; left:330px; top:340px; width:132px; height:132px; border-radius:50%; border:4px solid rgba(190,235,255,.9); background:radial-gradient(circle at 35% 30%,rgba(105,170,210,.45),rgba(24,55,76,.72) 55%,rgba(8,18,28,.9) 78%); color:#ffd15c; font-size:58px; line-height:1; cursor:pointer; pointer-events:auto; box-shadow:0 0 28px rgba(105,190,240,.24),inset 0 0 25px rgba(160,220,255,.12); text-shadow:0 3px 8px #000; transition:transform .12s ease,filter .12s ease; }
+        .arena-basic-attack:hover { transform:scale(1.04); filter:brightness(1.15); }
+        .arena-basic-attack:active { transform:scale(.95); }
+        #arena-control-hint { position:absolute; left:58px; bottom:238px; color:rgba(230,245,255,.6); font-size:11px; pointer-events:none; }
+        @media (max-width:900px){#arena-joystick{left:20px;bottom:20px;width:150px;height:150px}#arena-skill-wheel{right:8px;bottom:8px;transform:scale(.72);transform-origin:bottom right}#arena-control-hint{display:none}}
         
         #btn-arena-main { width: 100%; padding: 9px 4px; background: linear-gradient(135deg, #a02832, #60121a); color: #fff; border: 1.5px solid #ff4646; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; box-shadow: 0 0 10px rgba(255,70,70,0.4); transition: 0.2s; flex-shrink: 0; }
         #btn-arena-main:hover { background: linear-gradient(135deg, #c0392b, #8b0000); }
@@ -59,12 +103,18 @@
         #game-wrapper { flex: 1; height: 100%; display: flex; position: relative; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; background-color: #0c1018; border-radius: 8px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.9); border: 1.5px solid #1c2838; }
         
-        #welcome-modal, #custom-input-overlay, #html-alert-overlay, #arena-modal, #arena-queue-overlay, #arena-battle-overlay { position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        #welcome-modal, #custom-input-overlay, #html-alert-overlay, #arena-modal, #arena-queue-overlay, #arena-battle-overlay, #pet-pool-modal { position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); display: none; justify-content: center; align-items: center; z-index: 10000; }
         #custom-input-overlay { z-index: 20000; } #html-alert-overlay { z-index: 999999; backdrop-filter: blur(4px); }
-        #arena-modal, #arena-queue-overlay { z-index: 30000; backdrop-filter: blur(6px); }
+        
+        /* Phân cấp z-index chuẩn: Đấu trường dưới, Bảng Pet Pool nổi hẳn lên trên cùng */
+        #arena-modal { z-index: 30000; backdrop-filter: blur(6px); }
+        #arena-queue-overlay { z-index: 35000; backdrop-filter: blur(6px); }
         #arena-battle-overlay { z-index: 40000; background: #000; padding: 0; }
+        #pet-pool-modal { z-index: 50000; backdrop-filter: blur(8px); }
 
-        #welcome-panel, #custom-input-box, #html-alert-box, #arena-box { background-color: #111a28; border: 1.5px solid #ff4646; border-radius: 12px; width: min(420px, 90vw); padding: 22px 18px; text-align: center; box-shadow: 0 0 30px rgba(255, 70, 70, 0.3); }
+        #welcome-panel, #custom-input-box, #html-alert-box, #arena-box, #pet-pool-box { background-color: #111a28; border: 1.5px solid #ff4646; border-radius: 12px; width: min(480px, 92vw); padding: 22px 18px; text-align: center; box-shadow: 0 0 30px rgba(255, 70, 70, 0.3); }
+        #pet-pool-box { border-color: #00ffc8; width: min(650px, 95vw); max-height: 85vh; display: flex; flex-direction: column; }
+        
         #welcome-title { color: #ffd700; font-size: 18px; font-weight: bold; margin-bottom: 4px; }
         #welcome-server { color: #7890a8; font-size: 11px; margin-bottom: 14px; }
         .welcome-input, #custom-input-field, #arena-bet-input { width: 100%; padding: 10px 12px; background-color: #080c14; border: 1px solid #28374b; color: #fff; border-radius: 6px; margin-bottom: 12px; font-size: 13px; outline: none; text-align: center; }
@@ -79,6 +129,53 @@
         #custom-input-ok { background: #14503c; color: #fff; border: 1px solid #00ffc8; } #custom-input-cancel { background: #283c50; color: #fff; }
         #html-alert-btn { background: #a02832; color: #fff; border: 1px solid #ff4646; padding: 10px 30px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-transform: uppercase; }
     </style>
+
+<style id="arena-skill-arc-final">
+/* FINAL: cụm kỹ năng nhỏ, sát góc dưới bên phải, 5 nút cách đều trên 1/4 vòng cung quanh nút đánh */
+#arena-mobile-controls #arena-skill-wheel{
+  position:absolute !important;
+  right:14px !important;
+  bottom:14px !important;
+  left:auto !important;
+  width:320px !important;
+  height:320px !important;
+  transform:none !important;
+  pointer-events:none !important;
+  z-index:20 !important;
+}
+#arena-mobile-controls #arena-skill-wheel .arena-skill-btn{
+  position:absolute !important;
+  width:52px !important;
+  height:52px !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+  pointer-events:auto !important;
+}
+/* Tâm cung = (250,250), bán kính = 145px; góc 180° -> 270°, chia đều 22.5°.
+   Tăng nhẹ bán kính để các nút thoáng hơn nhưng vẫn ôm sát nút đánh. */
+#arena-mobile-controls #arena-skill-wheel .arena-skill-btn:nth-child(1){left:79px !important;top:224px !important;}
+#arena-mobile-controls #arena-skill-wheel .arena-skill-btn:nth-child(2){left:87px !important;top:168px !important;}
+#arena-mobile-controls #arena-skill-wheel .arena-skill-btn:nth-child(3){left:121px !important;top:121px !important;}
+#arena-mobile-controls #arena-skill-wheel .arena-skill-btn:nth-child(4){left:168px !important;top:87px !important;}
+#arena-mobile-controls #arena-skill-wheel .arena-skill-btn:nth-child(5){left:224px !important;top:79px !important;}
+#arena-mobile-controls #arena-skill-wheel .arena-skill-btn span{font-size:22px !important;}
+#arena-mobile-controls #arena-skill-wheel .arena-skill-btn small{right:-5px !important;bottom:-5px !important;min-width:18px !important;height:18px !important;padding:0 4px !important;font-size:10px !important;}
+#arena-mobile-controls #arena-skill-wheel .arena-basic-attack{
+  position:absolute !important;
+  left:200px !important;
+  top:200px !important;
+  width:100px !important;
+  height:100px !important;
+  margin:0 !important;
+  border-radius:50% !important;
+  font-size:48px !important;
+  box-sizing:border-box !important;
+  pointer-events:auto !important;
+}
+@media (max-width:900px){
+  #arena-mobile-controls #arena-skill-wheel{right:6px !important;bottom:6px !important;transform:scale(.82) !important;transform-origin:bottom right !important;}
+}
+</style>
 </head>
 <body>
     <audio id="bgm-stardew" loop></audio>
@@ -90,6 +187,24 @@
             <h3 id="html-alert-title" style="color: #ff4646; font-size: 20px; font-weight: bold; margin-bottom: 15px;">CẢNH BÁO</h3>
             <p id="html-alert-msg" style="color: #e6f5ff; font-size: 15px; margin-bottom: 25px; line-height: 1.5;"></p>
             <button id="html-alert-btn">XÁC NHẬN</button>
+        </div>
+    </div>
+
+    <!-- MODAL BỂ PET THỦ CÔNG (PET POOL / INVENTORY SYSTEM - HIỆN ĐÈ LÊN TRÊN CÙNG) -->
+    <div id="pet-pool-modal">
+        <div id="pet-pool-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 id="pet-pool-title" style="color: #00ffc8; font-size: 18px; font-weight: bold;">🐾 BỂ PET SỞ HỮU (PET POOL)</h3>
+                <button id="pet-pool-close" style="background: #a02832; color: #fff; border: none; width: 30px; height: 30px; border-radius: 6px; font-weight: bold; cursor: pointer;">✕</button>
+            </div>
+            <p id="pet-pool-subtitle" style="color: #7890a8; font-size: 11.5px; margin-bottom: 12px; text-align: left;">Chạm vào một pet để xem chi tiết, sau đó bấm nút xác nhận bên dưới.</p>
+            <div id="pet-pool-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; overflow-y: auto; max-height: 50vh; padding: 4px; margin-bottom: 12px; flex: 1;">
+                <!-- Danh sách pet render bằng JS -->
+            </div>
+            <div id="pet-selected-preview" style="background: #080c14; border: 1px solid #28374b; border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span id="pet-preview-info" style="font-size: 12px; color: #e6f5ff;">Chưa chọn pet nào</span>
+                <button id="pet-select-confirm-btn" style="background: #14503c; color: #00ffc8; border: 1px solid #00ffc8; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; opacity: 0.5;" disabled>🎯 Chọn Đại Diện</button>
+            </div>
         </div>
     </div>
 
@@ -110,10 +225,21 @@
                 ℹ️ <b>Quy định:</b> Phí vào cửa mặc định là <b>1 💎</b>. Thắng nhận x2 kim cương cược + 5% tài sản địch. Thua mất vé + tiền cược + 5% tài sản của bạn!
             </div>
 
-            <div style="display: flex; gap: 10px;">
+            <button id="arena-challenge-open-btn" class="arena-challenge-btn">⚔️ MỜI NGƯỜI CHƠI THÁCH ĐẤU</button>
+
+            <div style="display: flex; gap: 10px; margin-top: 8px;">
                 <button id="arena-start-search-btn" style="flex: 2; background: #c0392b; color: white; border: 1px solid #ff4646; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">🚀 TÌM TRẬN NGAY</button>
                 <button id="arena-close-btn" style="flex: 1; background: #283c50; color: white; border: none; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">Đóng</button>
             </div>
+        </div>
+    </div>
+
+    <div id="arena-challenge-target-modal" style="display:none; position:fixed; inset:0; background:rgba(6,9,15,.97); z-index:36000; justify-content:center; align-items:center;">
+        <div style="background:#111a28; border:1.5px solid #00ffc8; border-radius:12px; width:min(430px,92vw); padding:18px; box-shadow:0 0 30px rgba(0,255,200,.18);">
+            <h3 style="color:#00ffc8; margin:0 0 5px; text-align:center;">⚔️ MỜI THÁCH ĐẤU</h3>
+            <div style="font-size:11px;color:#7890a8;text-align:center;">Đội hình hiện tại trong Đấu Trường sẽ được gửi đi.</div>
+            <div id="arena-challenge-list"></div>
+            <button id="arena-challenge-close" style="width:100%;padding:10px;background:#283c50;color:#fff;border:0;border-radius:6px;font-weight:bold;cursor:pointer;">Đóng</button>
         </div>
     </div>
 
@@ -127,14 +253,74 @@
         </div>
     </div>
 
-    <!-- MÀN HÌNH BATTLE CANVAS TRỰC TIẾP -->
+    <!-- MÀN HÌNH BATTLE CANVAS TRỰC TIẾP VỚI GIAO DIỆN MOBA UI -->
     <div id="arena-battle-overlay">
-        <canvas id="arenaBattleCanvas" width="1280" height="720"></canvas>
+        <canvas id="arenaBattleCanvas" width="1920" height="1080"></canvas>
+        <div id="arena-mobile-controls">
+            <div id="arena-joystick"><div id="arena-joystick-knob"></div></div>
+            <div id="arena-control-hint">Kéo để di chuyển • WASD / phím mũi tên</div>
+            <div id="arena-skill-wheel"></div>
+        </div>
+    </div>
+
+    <div id="challenge-inbox-overlay">
+        <div id="challenge-inbox-box">
+            <div id="challenge-inbox-title">⚔️ LỜI MỜI THÁCH ĐẤU</div>
+            <div id="challenge-inbox-info"></div>
+            <div class="challenge-actions">
+                <button id="challenge-accept-btn">✅ ĐỒNG Ý</button>
+                <button id="challenge-reject-btn">❌ TỪ CHỐI</button>
+            </div>
+        </div>
     </div>
 
     <style>
         @keyframes pulseAnim { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.15); opacity: 1; } }
-    </style>
+    
+        /* === BỐ CỤC ĐIỀU KHIỂN CUỐI: KỸ NĂNG NHỎ, GÓC PHẢI DƯỚI, VÒNG CUNG ĐỀU === */
+        #arena-skill-wheel{
+            position:absolute;
+            right:18px;
+            bottom:18px;
+            width:360px;
+            height:320px;
+            pointer-events:none;
+            z-index:12;
+        }
+        #arena-skill-wheel .arena-skill-btn{
+            width:52px;
+            height:52px;
+            margin:0;
+            box-sizing:border-box;
+        }
+        #arena-skill-wheel .arena-skill-btn span{font-size:23px;}
+        #arena-skill-wheel .arena-skill-btn small{
+            right:-5px;
+            bottom:-5px;
+            min-width:18px;
+            height:18px;
+            padding:0 4px;
+            font-size:10px;
+            border-width:2px;
+        }
+        /* 5 tâm nằm trên cùng một cung tròn, chia đều 22.5 độ => không chồng nhau. */
+        #arena-skill-wheel .arena-skill-btn:nth-child(1){left:29px;top:194px;}
+        #arena-skill-wheel .arena-skill-btn:nth-child(2){left:37px;top:141px;}
+        #arena-skill-wheel .arena-skill-btn:nth-child(3){left:64px;top:91px;}
+        #arena-skill-wheel .arena-skill-btn:nth-child(4){left:125px;top:59px;}
+        #arena-skill-wheel .arena-skill-btn:nth-child(5){left:174px;top:49px;}
+        /* Nút đánh lớn nằm bên phải cung kỹ năng, không đè lên kỹ năng. */
+        #arena-skill-wheel .arena-basic-attack{
+            left:250px;
+            top:180px;
+            width:120px;
+            height:120px;
+            font-size:52px;
+        }
+        @media (max-width:900px){
+            #arena-skill-wheel{right:8px;bottom:8px;transform:scale(.78);transform-origin:bottom right;}
+        }
+</style>
 
     <!-- KHU VỰC NHẬP TÍNH NĂNG ẨN (EASTER EGG) -->
     <div id="easter-egg-overlay" style="display: none; position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); justify-content: center; align-items: center; z-index: 25000; backdrop-filter: blur(4px);">
@@ -189,8 +375,7 @@
             <button id="btn-toggle-manager" style="position: absolute; top: 35px; left: 7px; z-index: 101; background: #1e3246; color: #00ffc8; border: 1.5px solid #3498db; padding: 6px 12px; border-radius: 6px; font-size: 9px; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); transition: 0.2s;">
                 📊 Bảng Quản Lý
             </button>
-
-            <div id="strain-manager" style="display: none; position: absolute; top: 70px; left: 22px; width: 230px; max-height: 45%; background: rgba(17, 26, 40, 0.92); border: 1px solid #3498db; border-radius: 8px; padding: 8px; flex-direction: column; z-index: 100; backdrop-filter: blur(4px);">
+            <div id="strain-manager" style="display: none; position: absolute; top: 115px; left: 22px; width: 230px; max-height: 40%; background: rgba(17, 26, 40, 0.92); border: 1px solid #3498db; border-radius: 8px; padding: 8px; flex-direction: column; z-index: 100; backdrop-filter: blur(4px);">
                 <h4 style="color: #00ffc8; margin: 0 0 8px 0; font-size: 12px; text-align: center;">DANH SÁCH CHỦNG LOẠI</h4>
                 <div id="strain-list" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; touch-action: pan-y !important; -webkit-overflow-scrolling: touch;"></div>
                 <button onclick="if(window.gameInstance) window.gameInstance.sellAllNonGods()" style="background: #e74c3c; color: white; border: none; padding: 6px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold;">🗑️ Bán Tất Cả (Trừ Thần/Khóa)</button>
@@ -269,32 +454,32 @@ const TANK_THEMES = [
 
 const LAB_STRAIN_SETS = {};
 LAB_STRAIN_SETS[0] = [
-    { id: 0, name: "Alpha Lục Bảo", tier: 1, color: "#3cdc64", valMult: 1.0, mutRate: 0.08, mood: "cute" },
-    { id: 1, name: "Bong Bóng Nước", tier: 1, color: "#00a8ff", valMult: 1.5, mutRate: 0.075, mood: "happy" },
-    { id: 2, name: "Độc Axit Tím", tier: 2, color: "#9c88ff", valMult: 2.5, mutRate: 0.07, mood: "silly" },
-    { id: 3, name: "Hỏa Tinh Diệm", tier: 2, color: "#eb2d41", valMult: 4.0, mutRate: 0.065, mood: "angry" },
-    { id: 4, name: "Lôi Quang Sét", tier: 3, color: "#ffe632", valMult: 7.0, mutRate: 0.06, mood: "excited" },
-    { id: 5, name: "Băng Cực Tuyết", tier: 3, color: "#dcdde1", valMult: 12.0, mutRate: 0.055, mood: "sleepy" },
-    { id: 6, name: "Thạch Anh Hồng", tier: 4, color: "#fd79a8", valMult: 20.0, mutRate: 0.05, mood: "sparkle" },
-    { id: 7, name: "Hổ Phách Cổ", tier: 4, color: "#e67e22", valMult: 35.0, mutRate: 0.045, mood: "mysterious" },
-    { id: 8, name: "Kim Cương Quang", tier: 5, color: "#74b9ff", valMult: 60.0, mutRate: 0.04, mood: "sparkle" },
-    { id: 9, name: "Hắc Diệu Thạch", tier: 5, color: "#2d3436", valMult: 100.0, mutRate: 0.035, mood: "void" },
-    { id: 10, name: "Ruby Huyết Tinh", tier: 6, color: "#d63031", valMult: 180.0, mutRate: 0.03, mood: "fierce" },
-    { id: 11, name: "Cầu Vồng Prism", tier: 6, color: "#e056fd", valMult: 300.0, mutRate: 0.025, mood: "happy" },
-    { id: 12, name: "Phóng Xạ Nuclear", tier: 7, color: "#badc58", valMult: 500.0, mutRate: 0.02, mood: "excited" },
-    { id: 13, name: "Plasma Nguyên Thủy", tier: 7, color: "#f39c12", valMult: 900.0, mutRate: 0.015, mood: "fierce" },
-    { id: 14, name: "Vực Thẳm Void", tier: 8, color: "#1e272e", valMult: 1600.0, mutRate: 0.012, mood: "void" },
-    { id: 15, name: "Tinh Vân Galaxy", tier: 8, color: "#5f27cd", valMult: 3000.0, mutRate: 0.01, mood: "starry" },
-    { id: 16, name: "Long Tộc Dragon", tier: 9, color: "#ff5252", valMult: 5500.0, mutRate: 0.008, mood: "fierce" },
-    { id: 17, name: "Virus Chúa Tể", tier: 9, color: "#800000", valMult: 10000.0, mutRate: 0.006, mood: "angry" },
-    { id: 18, name: "Cổ Ma Pháp Runes", tier: 10, color: "#341f97", valMult: 20000.0, mutRate: 0.004, mood: "mysterious" },
-    { id: 19, name: "Thủy Ngân Bạc", tier: 10, color: "#c8d6e5", valMult: 40000.0, mutRate: 0.003, mood: "sparkle" },
-    { id: 100, name: "🌟 Thần Quang Thái Dương", tier: 11, color: "#ffffff", valMult: 100000.0, mutRate: 0.000008, mood: "divine", isGod: true },
-    { id: 101, name: "🌌 Ma Thần Hư Không", tier: 11, color: "#130f40", valMult: 250000.0, mutRate: 0.000005, mood: "divine", isGod: true },
-    { id: 102, name: "⏳ Thần Thời Gian Chronos", tier: 12, color: "#00ffff", valMult: 600000.0, mutRate: 0.000003, mood: "divine", isGod: true },
-    { id: 103, name: "🔥 Phượng Hoàng Lửa", tier: 12, color: "#ff3838", valMult: 1500000.0, mutRate: 0.000002, mood: "divine", isGod: true },
-    { id: 104, name: "⚡ Vạn Lôi Zeus", tier: 13, color: "#17c0eb", valMult: 4000000.0, mutRate: 0.000001, mood: "divine", isGod: true },
-    { id: 105, name: "👑 Slime Vũ Trụ Tối Cao", tier: 14, color: "#ffd700", valMult: 10000000.0, mutRate: 0.0000005, mood: "divine", isGod: true }
+    { id: 0, name: "Alpha Lục Bảo", tier: 1, color: "#3cdc64", valMult: 1.0, mutRate: 0.08, mood: "cute", skillsCount: 1 },
+    { id: 1, name: "Bong Bóng Nước", tier: 1, color: "#00a8ff", valMult: 1.5, mutRate: 0.075, mood: "happy", skillsCount: 1 },
+    { id: 2, name: "Độc Axit Tím", tier: 2, color: "#9c88ff", valMult: 2.5, mutRate: 0.07, mood: "silly", skillsCount: 2 },
+    { id: 3, name: "Hỏa Tinh Diệm", tier: 2, color: "#eb2d41", valMult: 4.0, mutRate: 0.065, mood: "angry", skillsCount: 2 },
+    { id: 4, name: "Lôi Quang Sét", tier: 3, color: "#ffe632", valMult: 7.0, mutRate: 0.06, mood: "excited", skillsCount: 3 },
+    { id: 5, name: "Băng Cực Tuyết", tier: 3, color: "#dcdde1", valMult: 12.0, mutRate: 0.055, mood: "sleepy", skillsCount: 3 },
+    { id: 6, name: "Thạch Anh Hồng", tier: 4, color: "#fd79a8", valMult: 20.0, mutRate: 0.05, mood: "sparkle", skillsCount: 3 },
+    { id: 7, name: "Hổ Phách Cổ", tier: 4, color: "#e67e22", valMult: 35.0, mutRate: 0.045, mood: "mysterious", skillsCount: 3 },
+    { id: 8, name: "Kim Cương Quang", tier: 5, color: "#74b9ff", valMult: 60.0, mutRate: 0.04, mood: "sparkle", skillsCount: 3 },
+    { id: 9, name: "Hắc Diệu Thạch", tier: 5, color: "#2d3436", valMult: 100.0, mutRate: 0.035, mood: "void", skillsCount: 3 },
+    { id: 10, name: "Ruby Huyết Tinh", tier: 6, color: "#d63031", valMult: 180.0, mutRate: 0.03, mood: "fierce", skillsCount: 3 },
+    { id: 11, name: "Cầu Vồng Prism", tier: 6, color: "#e056fd", valMult: 300.0, mutRate: 0.025, mood: "happy", skillsCount: 3 },
+    { id: 12, name: "Phóng Xạ Nuclear", tier: 7, color: "#badc58", valMult: 500.0, mutRate: 0.02, mood: "excited", skillsCount: 3 },
+    { id: 13, name: "Plasma Nguyên Thủy", tier: 7, color: "#f39c12", valMult: 900.0, mutRate: 0.015, mood: "fierce", skillsCount: 3 },
+    { id: 14, name: "Vực Thẳm Void", tier: 8, color: "#1e272e", valMult: 1600.0, mutRate: 0.012, mood: "void", skillsCount: 3 },
+    { id: 15, name: "Tinh Vân Galaxy", tier: 8, color: "#5f27cd", valMult: 3000.0, mutRate: 0.01, mood: "starry", skillsCount: 3 },
+    { id: 16, name: "Long Tộc Dragon", tier: 9, color: "#ff5252", valMult: 5500.0, mutRate: 0.008, mood: "fierce", skillsCount: 3 },
+    { id: 17, name: "Virus Chúa Tể", tier: 9, color: "#800000", valMult: 10000.0, mutRate: 0.006, mood: "angry", skillsCount: 3 },
+    { id: 18, name: "Cổ Ma Pháp Runes", tier: 10, color: "#341f97", valMult: 20000.0, mutRate: 0.004, mood: "mysterious", skillsCount: 3 },
+    { id: 19, name: "Thủy Ngân Bạc", tier: 10, color: "#c8d6e5", valMult: 40000.0, mutRate: 0.003, mood: "sparkle", skillsCount: 3 },
+    { id: 100, name: "🌟 Thần Quang Thái Dương", tier: 11, color: "#ffffff", valMult: 100000.0, mutRate: 0.000008, mood: "divine", isGod: true, skillsCount: 5 },
+    { id: 101, name: "🌌 Ma Thần Hư Không", tier: 11, color: "#130f40", valMult: 250000.0, mutRate: 0.000005, mood: "divine", isGod: true, skillsCount: 5 },
+    { id: 102, name: "⏳ Thần Thời Gian Chronos", tier: 12, color: "#00ffff", valMult: 600000.0, mutRate: 0.000003, mood: "divine", isGod: true, skillsCount: 5 },
+    { id: 103, name: "🔥 Phượng Hoàng Lửa", tier: 12, color: "#ff3838", valMult: 1500000.0, mutRate: 0.000002, mood: "divine", isGod: true, skillsCount: 5 },
+    { id: 104, name: "⚡ Vạn Lôi Zeus", tier: 13, color: "#17c0eb", valMult: 4000000.0, mutRate: 0.000001, mood: "divine", isGod: true, skillsCount: 5 },
+    { id: 105, name: "👑 Slime Vũ Trụ Tối Cao", tier: 14, color: "#ffd700", valMult: 10000000.0, mutRate: 0.0000005, mood: "divine", isGod: true, skillsCount: 5 }
 ];
 
 const THEME_NAMES = [
@@ -313,15 +498,15 @@ const THEME_NAMES = [
 for (let lab = 1; lab < 10; lab++) {
     const t = THEME_NAMES[lab];
     LAB_STRAIN_SETS[lab] = [
-        { id: lab * 10, name: `Khuẩn Mầm ${t.p[0]}`, tier: 1, color: `hsl(${t.h}, 90%, 75%)`, valMult: 5.0 * lab, mutRate: 0.08, mood: "excited" },
-        { id: lab * 10 + 1, name: `Tế Bào ${t.p[0]}`, tier: 2, color: `hsl(${t.h + 10}, 85%, 70%)`, valMult: 10.0 * lab, mutRate: 0.07, mood: "silly" },
+        { id: lab * 10, name: `Khuẩn Mầm ${t.p[0]}`, tier: 1, color: `hsl(${t.h}, 90%, 75%)`, valMult: 5.0 * lab, mutRate: 0.08, mood: "excited", skillsCount: 1 },
+        { id: lab * 10 + 1, name: `Tế Bào ${t.p[0]}`, tier: 2, color: `hsl(${t.h + 10}, 85%, 70%)`, valMult: 10.0 * lab, mutRate: 0.07, mood: "silly", skillsCount: 2 },
         ...Array.from({ length: 18 }, (_, i) => ({ 
             id: lab * 100 + 12 + i, 
             name: `${t.p[Math.floor(i / 3)]} MK-${(i % 3) + 1}`, 
             tier: 3 + Math.floor(i / 3), 
             color: `hsl(${(t.h + i * 15) % 360}, ${75 + (i % 20)}%, ${50 + (i % 20)}%)`, 
             valMult: 50.0 * Math.pow(1.6, i) * lab, 
-            mutRate: 0.03 / (i + 1), mood: "excited" 
+            mutRate: 0.03 / (i + 1), mood: "excited", skillsCount: 3 
         })),
         ...Array.from({ length: 6 }, (_, i) => ({ 
             id: lab * 1000 + i, 
@@ -329,7 +514,7 @@ for (let lab = 1; lab < 10; lab++) {
             tier: 11 + i, 
             color: `hsl(${(t.h + i * 30) % 360}, 100%, 65%)`, 
             valMult: 100000.0 * Math.pow(2.5, i) * lab, 
-            mutRate: 0.000005 / (i + 1), mood: "divine", isGod: true 
+            mutRate: 0.000005 / (i + 1), mood: "divine", isGod: true, skillsCount: 5 
         }))
     ];
 }
@@ -423,8 +608,9 @@ class AmbientBubble {
 }
 
 class Slime {
-    constructor(x, y, labId=0, strainId=null, level=1, repTimer=null, locked=false) {
+    constructor(x, y, labId=0, strainId=null, level=1, repTimer=null, locked=false, arenaId=null) {
         this.x=x||600; this.y=y||380; this.labId=labId;
+        this.arenaId=arenaId || ("pet_" + Math.random().toString(36).slice(2) + Date.now().toString(36));
         const strains=LAB_STRAIN_SETS[this.labId]||LAB_STRAIN_SETS[0];
         this.strain=strainId!==null?(strains.find(s=>s.id===strainId)||strains[0]):strains[0];
         this.level=Math.max(1,parseInt(level)||1); 
@@ -443,6 +629,10 @@ class Slime {
         this.targetX = 0;
         this.targetY = 0;
 
+        this.blinkTimer = 0;
+        this.isBlinking = false;
+        this.floatOffset = Math.random() * 100;
+
         const baseVal=Math.floor(Math.random()*8)+3; const lm=1+(this.labId*0.1);
         this.value=Math.floor(baseVal*Math.pow(1.02,this.level-1)*(this.strain.valMult||1)*lm);
         this.timerMax=(6+(this.level-1)*4)*(1+this.labId*0.5);
@@ -454,6 +644,18 @@ class Slime {
         this.radius += (this.targetRadius - this.radius) * 0.1 * spd;
 
         this.rotationAngle += 1.5 * dt * spd; 
+
+        this.floatOffset += dt * 3 * spd;
+        this.sinOffset = Math.sin(this.floatOffset) * 4;
+
+        this.blinkTimer += dt * spd;
+        if (this.blinkTimer > 4) {
+            this.isBlinking = true;
+            if (this.blinkTimer > 4.2) {
+                this.isBlinking = false;
+                this.blinkTimer = Math.random() * 1.5; 
+            }
+        }
 
         if (this.isDragged || this.frozen) return null; 
 
@@ -468,14 +670,14 @@ class Slime {
             return null; 
         }
 
-        this.buoyancy+=dt*2*spd; this.x+=this.vx*(dt*60)*spd; this.y+=(this.vy+Math.sin(this.buoyancy)*0.2)*(dt*60)*spd;
+        this.buoyancy+=dt*2*spd; this.x+=this.vx*(dt*60)*spd; this.y+=(this.vy+Math.sin(this.buoyancy)*0.2+Math.sin(this.floatOffset)*0.1)*(dt*60)*spd;
         this.angle+=this.rotSpeed*(dt*60)*spd; this.blobWobble+=dt*4*spd;
         this.stretchX+=(1-this.stretchX)*0.12; this.stretchY+=(1-this.stretchY)*0.12;
         const p=this.radius+10;
         if(this.x-p<wB.left){this.x=wB.left+p;this.vx=Math.abs(this.vx);} else if(this.x+p>wB.right){this.x=wB.right-p;this.vx=-Math.abs(this.vx);}
         if(this.y-p<wB.top){this.y=wB.top+p;this.vy=Math.abs(this.vy);} else if(this.y+p>wB.bottom){this.y=wB.bottom-p;this.vy=-Math.abs(this.vy);}
         
-        if(isCurrentLab && Math.random()<0.03*dt*60*spd)eL.push(new Particle(this.x+(Math.random()-0.5)*this.radius,this.y+(Math.random()-0.5)*this.radius,this.strain.color));
+        if(isCurrentLab && Math.random()<0.04*dt*60*spd)eL.push(new Particle(this.x+(Math.random()-0.5)*this.radius,this.y+(Math.random()-0.5)*this.radius,this.strain.color));
         
         if(!this.locked&&!isLabPaused&&!this.isPaused&&Math.random()<0.00008*dt*spd)return "DEAD";
         if(!isLabPaused && !this.isPaused){ 
@@ -506,8 +708,10 @@ class Slime {
     }
     draw(ctx) {
         ctx.save(); const r=this.radius; const time=Date.now()*0.003;
+        const renderY = this.y + (this.sinOffset || 0);
+
         if(this.strain.isGod) { 
-            ctx.save(); ctx.translate(this.x, this.y); const tier = this.strain.tier;
+            ctx.save(); ctx.translate(this.x, renderY); const tier = this.strain.tier;
             if (tier === 11) { const pulse = Math.sin(time * 3) * 0.2 + 1; for(let i=0; i<3; i++) { ctx.save(); ctx.rotate(time * (i%2===0?1:-1) + i * Math.PI/1.5); ctx.scale(1, 0.3); ctx.shadowBlur = 10; ctx.shadowColor = this.strain.color; ctx.strokeStyle = this.strain.color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, r * 2.5 * pulse, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(Math.cos(time*4)*r*2.5*pulse, Math.sin(time*4)*r*2.5*pulse, 4.5, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore(); } } 
             else if (tier === 12) { ctx.rotate(time * 0.5); for (let i = 0; i < 2; i++) { ctx.rotate(Math.PI / 6 * i + (i%2===0?time:-time)); ctx.shadowBlur = 15; ctx.shadowColor = this.strain.color; ctx.strokeStyle = i===0 ? this.strain.color : "#fff"; ctx.lineWidth = i===0 ? 3 : 1.5; ctx.beginPath(); for(let j=0; j<6; j++) { const a = j * Math.PI / 3; const dist = r * 2.2 + Math.sin(time * 4) * 8; if(j===0) ctx.moveTo(Math.cos(a)*dist, Math.sin(a)*dist); else ctx.lineTo(Math.cos(a)*dist, Math.sin(a)*dist); } ctx.closePath(); ctx.stroke(); } } 
             else if (tier === 13) { ctx.shadowBlur = 20; ctx.shadowColor = this.strain.color; ctx.strokeStyle = this.strain.color; ctx.lineWidth = 2.5; ctx.beginPath(); const spikes = 14; for (let i = 0; i < spikes; i++) { const a = i * Math.PI * 2 / spikes + time * 2; const spikeR = r * 1.5 + Math.random() * r * 1.8; if(i===0) ctx.moveTo(Math.cos(a)*spikeR, Math.sin(a)*spikeR); else ctx.lineTo(Math.cos(a)*spikeR, Math.sin(a)*spikeR); } ctx.closePath(); ctx.stroke(); ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, r * 2.8 + Math.random()*5, 0, Math.PI*2); ctx.stroke(); } 
@@ -515,25 +719,34 @@ class Slime {
             ctx.restore();
         }
 
-        if(this.customAura&&this.customAura!=='none'){ const aId=parseInt(this.customAura.replace('aura_',''))||1; new MasterpieceArtRenderer(aId,'auras').draw(ctx,this.x,this.y,time,r,false); }
+        if(this.customAura&&this.customAura!=='none'){ const aId=parseInt(this.customAura.replace('aura_',''))||1; new MasterpieceArtRenderer(aId,'auras').draw(ctx,this.x,renderY,time,r,false); }
         
-        ctx.save(); ctx.translate(this.x,this.y); ctx.scale(this.stretchX,this.stretchY); ctx.translate(-this.x,-this.y);
-        ctx.beginPath(); for(let i=0;i<this.numPoints;i++){ const a=(this.angle+i*(360/this.numPoints))*(Math.PI/180), w=Math.sin(this.blobWobble+i*1.5)*2.5, d=r+w, px=this.x+Math.cos(a)*d, py=this.y+Math.sin(a)*d; if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); } ctx.closePath();
+        ctx.save(); ctx.translate(this.x,renderY); ctx.scale(this.stretchX,this.stretchY); ctx.translate(-this.x,-renderY);
+        ctx.beginPath(); for(let i=0;i<this.numPoints;i++){ const a=(this.angle+i*(360/this.numPoints))*(Math.PI/180), w=Math.sin(this.blobWobble+i*1.5)*2.5, d=r+w, px=this.x+Math.cos(a)*d, py=renderY+Math.sin(a)*d; if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py); } ctx.closePath();
         
         ctx.fillStyle=this.strain.color; 
         if(this.strain.isGod) { ctx.shadowBlur = 25; ctx.shadowColor = this.strain.color; }
         else if (this.isFormingText) { ctx.shadowBlur = 15 + Math.abs(Math.sin(time * 4)) * 25; ctx.shadowColor = this.strain.color; }
         ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle="rgba(0,0,0,0.28)"; ctx.lineWidth=3; ctx.stroke();
-        ctx.fillStyle="rgba(255,255,255,0.4)"; ctx.beginPath(); ctx.ellipse(this.x-r*0.35,this.y-r*0.35,r*0.28,r*0.14,-Math.PI/4,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,0.4)"; ctx.beginPath(); ctx.ellipse(this.x-r*0.35,renderY-r*0.35,r*0.28,r*0.14,-Math.PI/4,0,Math.PI*2); ctx.fill();
         
-        if (this.strain.isGod) { ctx.fillStyle="#fff"; ctx.shadowBlur = 12; ctx.shadowColor = "#fff"; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.25,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.25,0,Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; ctx.fillStyle=this.strain.color; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.12,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.12,0,Math.PI*2); ctx.fill(); } 
-        else { ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.2,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.2,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#141414"; ctx.beginPath(); ctx.arc(this.x-r*0.3,this.y-r*0.1,r*0.1,0,Math.PI*2); ctx.arc(this.x+r*0.3,this.y-r*0.1,r*0.1,0,Math.PI*2); ctx.fill(); }
+        if (!this.isBlinking) {
+            if (this.strain.isGod) { 
+                ctx.fillStyle="#fff"; ctx.shadowBlur = 12; ctx.shadowColor = "#fff"; ctx.beginPath(); ctx.arc(this.x-r*0.3,renderY-r*0.1,r*0.25,0,Math.PI*2); ctx.arc(this.x+r*0.3,renderY-r*0.1,r*0.25,0,Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; ctx.fillStyle=this.strain.color; ctx.beginPath(); ctx.arc(this.x-r*0.3,renderY-r*0.1,r*0.12,0,Math.PI*2); ctx.arc(this.x+r*0.3,renderY-r*0.1,r*0.12,0,Math.PI*2); ctx.fill(); 
+            } else { 
+                ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(this.x-r*0.3,renderY-r*0.1,r*0.2,0,Math.PI*2); ctx.arc(this.x+r*0.3,renderY-r*0.1,r*0.2,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#141414"; ctx.beginPath(); ctx.arc(this.x-r*0.3,renderY-r*0.1,r*0.1,0,Math.PI*2); ctx.arc(this.x+r*0.3,renderY-r*0.1,r*0.1,0,Math.PI*2); ctx.fill(); 
+            }
+        } else {
+            ctx.strokeStyle = "#141414"; ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(this.x-r*0.4, renderY-r*0.1); ctx.lineTo(this.x-r*0.2, renderY-r*0.1); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(this.x+r*0.2, renderY-r*0.1); ctx.lineTo(this.x+r*0.4, renderY-r*0.1); ctx.stroke();
+        }
         ctx.restore();
         
-        if(this.customSkin&&this.customSkin!=='skin_0'){ const sId=parseInt(this.customSkin.replace('skin_',''))||1; new MasterpieceArtRenderer(sId,'weapons').draw(ctx,this.x,this.y,time,r,false); }
-        if(!this.isPaused && !this.isFormingText) { const p=1-(this.replicateTimer/(this.timerMax+(this.sameCloneCount*5))); ctx.strokeStyle=COLOR_ACCENT; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(this.x,this.y,r+8,-Math.PI/2,-Math.PI/2+p*2*Math.PI); ctx.stroke(); }
-        if(this.locked){ ctx.font="bold 14px Arial"; ctx.fillStyle=COLOR_GOLD; ctx.fillText("🔒",this.x+10,this.y-r-10); }
-        if(this.isPaused){ ctx.font="bold 14px Arial"; ctx.fillStyle="#ff4646"; ctx.fillText("⏸",this.x-10,this.y-r-10); }
+        if(this.customSkin&&this.customSkin!=='skin_0'){ const sId=parseInt(this.customSkin.replace('skin_',''))||1; new MasterpieceArtRenderer(sId,'weapons').draw(ctx,this.x,renderY,time,r,false); }
+        if(!this.isPaused && !this.isFormingText) { const p=1-(this.replicateTimer/(this.timerMax+(this.sameCloneCount*5))); ctx.strokeStyle=COLOR_ACCENT; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(this.x,renderY,r+8,-Math.PI/2,-Math.PI/2+p*2*Math.PI); ctx.stroke(); }
+        if(this.locked){ ctx.font="bold 14px Arial"; ctx.fillStyle=COLOR_GOLD; ctx.fillText("🔒",this.x+10,renderY-r-10); }
+        if(this.isPaused){ ctx.font="bold 14px Arial"; ctx.fillStyle="#ff4646"; ctx.fillText("⏸",this.x-10,renderY-r-10); }
         ctx.restore();
     }
 }
@@ -548,11 +761,14 @@ class Game {
         this.diamonds = 0; this.pendingDiscoveryQueue = []; this.giftingTo = null;
         this.isFormingTextActive = false;
         
-        // Đấu trường variables
+        // Đấu trường & Pet Pool variables
         this.selectedArenaTeam = [null, null, null];
+        this.arenaTeamLoaded = false;
         this.arenaBetDiamonds = 0;
         this.inArenaQueue = false;
         this.inArenaBattle = false;
+        this.selectedPoolPet = null; 
+        this.arenaSlotSelecting = null; // Theo dõi slot đấu trường đang chọn pet (0, 1, 2 hoặc đại diện)
 
         this.playerId = localStorage.getItem("slime_player_id") || ('usr_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36)); localStorage.setItem("slime_player_id", this.playerId);
         this.containerRect = { left: 12, top: 66, width: CANVAS_W - 24, height: CANVAS_H - 78, right: CANVAS_W - 12, bottom: CANVAS_H - 12 };
@@ -570,7 +786,7 @@ class Game {
         this.activePointers = new Map();
         this.lastTime = performance.now(); this.lastSaveTime = performance.now();
         
-        this.initFirebase(); this.setupEvents(); this.setupArenaEvents(); this.checkLoginStatus();
+        this.initFirebase(); this.setupEvents(); this.setupArenaEvents(); this.setupPetPoolEvents(); this.checkLoginStatus();
     }
     
     updateWorldDimensions() { const t=TANK_THEMES[this.currentLabId]||TANK_THEMES[0]; const s=t.scale||1; this.worldWidth=this.containerRect.width*20*s; this.worldHeight=this.containerRect.height*20*s; }
@@ -587,10 +803,11 @@ class Game {
                     const l=document.getElementById("rank-list"); if(!l)return; const d=s.val(); l.innerHTML=""; 
                     if(!d){ if(this.playerName&&!this.isDeleted) l.innerHTML=`<div class="rank-item current-user"><div class="rank-name">1. ${this.playerName}</div><div class="rank-val val-diamond">${this.diamonds>0?`💎 ${this.diamonds}`:formatMoney(this.money)}</div></div>`; return; }
                     const p=Object.keys(d).filter(k=>d[k]&&d[k].name&&!d[k].deleted).map(k=>({id:k,name:d[k].name,money:Number(d[k].money)||0,diamonds:Number(d[k].diamonds)||0})).sort((a,b)=>b.diamonds-a.diamonds||b.money-a.money);
+                    this.leaderboardPlayers = p;
                     
                     p.slice(0,20).forEach((e,i)=>{ 
                         const div=document.createElement("div"); div.className="rank-item"+(e.id===this.playerId?" current-user":""); 
-                        div.innerHTML=`<div class="rank-name">${i+1}. ${e.name}</div><div class="rank-val ${e.diamonds>0?'val-diamond':'val-money'}">${e.diamonds>0?`💎 ${e.diamonds}`:formatMoney(e.money)}</div>`; 
+                        div.innerHTML=`<div class="rank-name">${i+1}. ${e.name}</div><div style="display:flex;align-items:center;gap:3px;"><div class="rank-val ${e.diamonds>0?'val-diamond':'val-money'}">${e.diamonds>0?`💎 ${e.diamonds}`:formatMoney(e.money)}</div></div>`; 
                         
                         let pressTimer = null;
                         let isLongPress = false;
@@ -820,7 +1037,8 @@ class Game {
                 this.sound.init(this.currentLabId); 
                 this.loadGame(); 
                 this.syncFirebase(); 
-                this.listenForTransactions(); 
+                this.listenForTransactions();
+                this.setupChallengeSystem();
                 this.start();
             } 
         };
@@ -857,7 +1075,8 @@ class Game {
             this.sound.init(this.currentLabId); 
             this.loadGame(); 
             this.syncFirebase(); 
-            this.listenForTransactions(); 
+            this.listenForTransactions();
+            this.setupChallengeSystem();
             this.start(); 
         };
         const sN=localStorage.getItem("slimeLab_playerName"); if(sN)n.value=sN;
@@ -889,14 +1108,25 @@ class Game {
                         
                         this.labsData[i].unlocked=ld.unlocked??(i===0); this.labsData[i].isPaused=!!ld.isPaused; this.labsData[i].collection=ld.collection||{}; 
                         this.labsData[i].slimes=(ld.slimes||[]).map(s=>{ 
-                            const sl=new Slime(s.x, s.y, i, s.strainId, s.level, s.replicateTimer, s.locked); 
+                            const sl=new Slime(s.x, s.y, i, s.strainId, s.level, s.replicateTimer, s.locked, s.arenaId); 
                             sl.isPaused=!!s.isPaused; sl.customSkin=s.customSkin||'skin_0'; sl.customAura=s.customAura||'none'; return sl; 
                         }); 
                         if(this.labsData[i].slimes.length===0&&i===0)this.labsData[i].slimes=[new Slime(this.worldWidth/2,this.worldHeight/2,0,0,1)]; 
                     } 
                 } 
-            } 
+            }
+            this.restoreSavedArenaTeam(d.arenaTeam);
         }catch(e){}
+    }
+
+    restoreSavedArenaTeam(saved) {
+        if (this.arenaTeamLoaded) return;
+        this.arenaTeamLoaded = true;
+        if (!Array.isArray(saved)) return;
+        const all=[];
+        for(let i=0;i<10;i++){ if(this.labsData[i] && this.labsData[i].slimes) all.push(...this.labsData[i].slimes); }
+        this.selectedArenaTeam = saved.map(id => id ? (all.find(p => p.arenaId === id) || null) : null).slice(0,3);
+        while(this.selectedArenaTeam.length<3) this.selectedArenaTeam.push(null);
     }
 
     saveGame() {
@@ -913,7 +1143,7 @@ class Game {
                         collection: this.labsData[i].collection || {},
                         slimes: (this.labsData[i].slimes || []).map(s => ({
                             x: s.x, y: s.y, strainId: s.strain.id, level: s.level, 
-                            replicateTimer: s.replicateTimer, locked: Boolean(s.locked), 
+                            replicateTimer: s.replicateTimer, locked: Boolean(s.locked), arenaId: s.arenaId, 
                             isPaused: s.isPaused, customSkin: s.customSkin, customAura: s.customAura
                         }))
                     }; 
@@ -923,7 +1153,8 @@ class Game {
             const saveDataStr = JSON.stringify({
                 currentLabId: this.currentLabId || 0, activeTheme: this.activeTheme || 0, ownedThemes: this.ownedThemes || [0],
                 ownedSkins: this.ownedSkins || [], ownedAuras: this.ownedAuras || [], diamonds: this.diamonds || 0,
-                lockedStrains: this.lockedStrains || {}, labsData: el, 
+                lockedStrains: this.lockedStrains || {}, labsData: el,
+                arenaTeam: (this.selectedArenaTeam || []).map(p => p ? p.arenaId : null),
                 musicPlaying: this.sound.musicPlaying,
                 lastUpdated: Date.now()
             });
@@ -1033,6 +1264,106 @@ class Game {
         this.sound.playMutate();
     }
 
+    // === CƠ CHẾ CHỌN PET THỦ CÔNG (INVENTORY/POOL SYSTEM & OVERLAY HIỆN ĐÈ LÊN TRÊN) ===
+    setupPetPoolEvents() {
+        const btnPetPool = document.getElementById("btn-pet-pool");
+        const modalPool = document.getElementById("pet-pool-modal");
+        const closePool = document.getElementById("pet-pool-close");
+        const confirmBtn = document.getElementById("pet-select-confirm-btn");
+
+        if (btnPetPool) {
+            btnPetPool.onclick = () => {
+                this.arenaSlotSelecting = null; // Chọn đại diện chung
+                document.getElementById("pet-pool-title").innerText = "🐾 BỂ PET SỞ HỮU (PET POOL)";
+                document.getElementById("pet-pool-subtitle").innerText = "Chạm vào một pet để xem chi tiết, sau đó bấm 'Chọn Đại Diện'.";
+                confirmBtn.innerText = "🎯 Chọn Đại Diện";
+                this.renderPetPoolGrid();
+                modalPool.style.display = "flex";
+            };
+        }
+
+        if (closePool) {
+            closePool.onclick = () => {
+                modalPool.style.display = "none";
+            };
+        }
+
+        if (confirmBtn) {
+            confirmBtn.onclick = () => {
+                if (this.selectedPoolPet) {
+                    if (this.arenaSlotSelecting !== null && this.arenaSlotSelecting !== undefined) {
+                        // Nếu đang chọn pet cho Slot Đấu Trường cụ thể
+                        this.selectedArenaTeam[this.arenaSlotSelecting] = this.selectedPoolPet;
+                        this.saveGame();
+                        modalPool.style.display = "none";
+                        this.sound.playCoin();
+                        this.renderArenaModalSlots();
+                        document.getElementById("arena-modal").style.display = "flex"; // Hiện lại bảng đấu trường ở dưới
+                    } else {
+                        // Chọn pet đại diện chung ngoài màn hình chính
+                        this.camera.x = this.selectedPoolPet.x;
+                        this.camera.y = this.selectedPoolPet.y;
+                        this.selectedSlime = this.selectedPoolPet;
+                        this.selectedPoolPet.frozen = true;
+                        modalPool.style.display = "none";
+                        this.sound.playCoin();
+                        showCustomAlert(`✨ Đã chọn [${this.selectedPoolPet.strain.name}] làm Pet Đại Diện!`, "success");
+                    }
+                }
+            };
+        }
+    }
+
+    renderPetPoolGrid() {
+        const gridContainer = document.getElementById("pet-pool-grid");
+        const previewInfo = document.getElementById("pet-preview-info");
+        const confirmBtn = document.getElementById("pet-select-confirm-btn");
+        gridContainer.innerHTML = "";
+        this.selectedPoolPet = null;
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = 0.5;
+        previewInfo.innerText = "Chưa chọn pet nào";
+
+        let allOwnedPets = [];
+        for (let i = 0; i < 10; i++) {
+            if (this.labsData[i] && this.labsData[i].slimes) {
+                this.labsData[i].slimes.forEach(s => {
+                    allOwnedPets.push({ slime: s, labId: i });
+                });
+            }
+        }
+
+        if (allOwnedPets.length === 0) {
+            gridContainer.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #7890a8; padding: 20px;">Bạn chưa sở hữu pet nào!</div>`;
+            return;
+        }
+
+        allOwnedPets.forEach((item) => {
+            const pet = item.slime;
+            const card = document.createElement("div");
+            card.style.cssText = `background: #080c14; border: 1.5px solid #28374b; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; justify-content: space-between;`;
+            
+            card.innerHTML = `
+                <div style="font-size: 11.5px; font-weight: bold; color: ${pet.strain.color}; margin-bottom: 4px;">${pet.strain.name}</div>
+                <div style="font-size: 10.5px; color: #ffd700;">Lv.${pet.level} (Bậc ${pet.strain.tier})</div>
+                <div style="font-size: 9.5px; color: #00ffc8; margin-top: 4px;">🛠️ ${this.getArenaSkillCount(pet)} Kỹ năng</div>
+                <div style="font-size: 9px; color: #7890a8; margin-top: 2px;">Lab ${item.labId + 1}</div>
+            `;
+
+            card.onclick = () => {
+                Array.from(gridContainer.children).forEach(c => c.style.borderColor = "#28374b");
+                card.style.borderColor = "#00ffc8";
+                this.selectedPoolPet = pet;
+                previewInfo.innerHTML = `Đang chọn: <b style="color:${pet.strain.color}">${pet.strain.name}</b> (Lv.${pet.level}, ${this.getArenaSkillCount(pet)} kỹ năng)`;
+                confirmBtn.disabled = false;
+                confirmBtn.style.opacity = 1;
+                this.sound.playPop();
+            };
+
+            gridContainer.appendChild(card);
+        });
+    }
+
     // === HỆ THỐNG ĐẤU TRƯỜNG (ARENA SYSTEM) ===
     setupArenaEvents() {
         const btnArena = document.getElementById("btn-arena-main");
@@ -1041,9 +1372,18 @@ class Game {
         const startSearchBtn = document.getElementById("arena-start-search-btn");
         const cancelQueueBtn = document.getElementById("arena-cancel-queue-btn");
         const queueOverlay = document.getElementById("arena-queue-overlay");
+        const challengeOpenBtn = document.getElementById("arena-challenge-open-btn");
+        const challengeModal = document.getElementById("arena-challenge-target-modal");
+        const challengeList = document.getElementById("arena-challenge-list");
+        const challengeClose = document.getElementById("arena-challenge-close");
+
+        if (challengeOpenBtn) challengeOpenBtn.onclick = () => {
+            this.renderArenaChallengeTargets();
+            if (challengeModal) challengeModal.style.display = "flex";
+        };
+        if (challengeClose) challengeClose.onclick = () => { if(challengeModal) challengeModal.style.display = "none"; };
 
         btnArena.onclick = () => {
-            // Kiểm tra điều kiện: Phải có ít nhất 1 Slime trong bất kỳ bể nào
             let totalPets = 0;
             for(let i=0; i<10; i++) {
                 if(this.labsData[i] && this.labsData[i].slimes) {
@@ -1055,7 +1395,6 @@ class Game {
                 return;
             }
 
-            // Tự động quét và chọn pet mạnh nhất cho 3 slot nếu chưa chọn
             this.autoFillArenaTeam();
             this.renderArenaModalSlots();
             modalArena.style.display = "flex";
@@ -1075,7 +1414,6 @@ class Game {
                 return;
             }
 
-            // Trừ phí và tiền cược trước
             this.diamonds -= totalRequiredDia;
             this.arenaBetDiamonds = betInput;
             this.saveGame();
@@ -1084,7 +1422,6 @@ class Game {
             queueOverlay.style.display = "flex";
             this.inArenaQueue = true;
 
-            // Giả lập tìm trận trong 2-4 giây
             const searchTime = 2000 + Math.random() * 2000;
             this.arenaSearchTimeout = setTimeout(() => {
                 if (this.inArenaQueue) {
@@ -1097,7 +1434,6 @@ class Game {
 
         cancelQueueBtn.onclick = () => {
             if (this.arenaSearchTimeout) clearTimeout(this.arenaSearchTimeout);
-            // Hoàn lại toàn bộ kim cương (phí + cược)
             const entryFee = 1;
             const totalRefund = entryFee + this.arenaBetDiamonds;
             this.diamonds += totalRefund;
@@ -1109,8 +1445,30 @@ class Game {
         };
     }
 
+    renderArenaChallengeTargets() {
+        const list = document.getElementById("arena-challenge-list");
+        if (!list) return;
+        list.innerHTML = "";
+        const players = (this.leaderboardPlayers || []).filter(p => p.id !== this.playerId);
+        if (!players.length) {
+            list.innerHTML = '<div style="text-align:center;color:#7890a8;padding:18px;">Chưa có người chơi khác đang online trên BXH.</div>';
+            return;
+        }
+        players.slice(0,20).forEach((p,i)=>{
+            const row=document.createElement("div"); row.className="arena-challenge-player";
+            row.innerHTML=`<div><b>${i+1}. ${p.name}</b><div style="font-size:10px;color:#7890a8;margin-top:2px;">💎 ${p.diamonds} • ${formatMoney(p.money)}</div></div><button style="background:#a02832;color:#fff;border:1px solid #ff4646;border-radius:5px;padding:6px 8px;font-weight:bold;cursor:pointer;">⚔️ Mời</button>`;
+            row.querySelector("button").onclick=()=>{
+                if (!this.selectedArenaTeam.some(Boolean)) this.autoFillArenaTeam();
+                this.saveGame();
+                this.sendChallengeTo(p);
+                const m=document.getElementById("arena-challenge-target-modal"); if(m)m.style.display="none";
+            };
+            list.appendChild(row);
+        });
+    }
+
     autoFillArenaTeam() {
-        // Thu thập tất cả pet từ mọi lab
+        if (this.selectedArenaTeam && this.selectedArenaTeam.some(Boolean)) return;
         let allPets = [];
         for(let i=0; i<10; i++) {
             if(this.labsData[i] && this.labsData[i].slimes) {
@@ -1120,7 +1478,6 @@ class Game {
                 });
             }
         }
-        // Sắp xếp giảm dần theo sức mạnh
         allPets.sort((a,b) => b.power - a.power);
 
         this.selectedArenaTeam = [null, null, null];
@@ -1145,371 +1502,115 @@ class Game {
                     <div style="font-size: 11px; font-weight: bold; color: ${pet.strain.color};">${pet.strain.name}</div>
                     <div style="font-size: 10px; color: #ffd700;">Lv.${pet.level} (Bậc ${pet.strain.tier})</div>
                     <div style="font-size: 9.5px; color: #00ffc8;">PWR: ${pet.level * pet.strain.tier}</div>
-                    <button style="background: #a02832; color: #fff; border: none; padding: 3px; border-radius: 4px; font-size: 9px; cursor: pointer; margin-top: 4px;" onclick="window.gameInstance.removeArenaSlot(${i})">Đổi Pet</button>
+                    <button id="arena-change-btn-${i}" style="background: #a02832; color: #fff; border: none; padding: 4px; border-radius: 4px; font-size: 10px; cursor: pointer; margin-top: 4px; font-weight: bold;">Đổi Pet</button>
                 `;
             } else {
                 slotDiv.innerHTML = `
                     <div style="font-size: 11px; color: #6a829a; margin-top: 20px;">Trống [Slot ${i+1}]</div>
-                    <button style="background: #14503c; color: #00ffc8; border: 1px solid #00ffc8; padding: 4px; border-radius: 4px; font-size: 10px; cursor: pointer;" onclick="window.gameInstance.pickArenaSlot(${i})">+ Chọn Pet</button>
+                    <button id="arena-change-btn-${i}" style="background: #14503c; color: #00ffc8; border: 1px solid #00ffc8; padding: 4px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: bold;">+ Chọn Pet</button>
                 `;
             }
+
+            // Gán sự kiện bấm nút "Đổi Pet" hiện bảng chọn pet đè lên trên đấu trường
+            const btn = slotDiv.querySelector(`#arena-change-btn-${i}`);
+            btn.onclick = () => {
+                this.arenaSlotSelecting = i; // Đánh dấu đang chọn pet cho slot đấu trường i
+                document.getElementById("pet-pool-title").innerText = `🐾 CHỌN PET CHO SLOT ${i+1}`;
+                document.getElementById("pet-pool-subtitle").innerText = `Chọn một pet từ bể của bạn để đưa vào đội hình đấu trường.`;
+                document.getElementById("pet-select-confirm-btn").innerText = `🎯 Xác Nhận Chọn Slot ${i+1}`;
+                
+                // Ẩn bảng đấu trường tạm thời để hiện bảng chọn pet (hoặc để bảng pet đè lên trên do z-index cao hơn)
+                this.renderPetPoolGrid();
+                document.getElementById("pet-pool-modal").style.display = "flex";
+            };
+
             slotsContainer.appendChild(slotDiv);
         }
     }
 
-    removeArenaSlot(index) {
-        this.selectedArenaTeam[index] = null;
-        this.renderArenaModalSlots();
-    }
-
-    pickArenaSlot(index) {
-        // Lấy danh sách tất cả pet để người chơi chọn
-        let allPets = [];
-        for(let i=0; i<10; i++) {
-            if(this.labsData[i] && this.labsData[i].slimes) {
-                this.labsData[i].slimes.forEach(s => {
-                    allPets.push(s);
-                });
-            }
+    setupArenaBattleControls(skillCount, onSkill, petOverride=null) {
+        const wheel=document.getElementById('arena-skill-wheel');
+        const joy=document.getElementById('arena-joystick');
+        const knob=document.getElementById('arena-joystick-knob');
+        if(!wheel||!joy||!knob) return {getMove:()=>({x:0,y:0}),destroy:()=>{}};
+        wheel.innerHTML='';
+        const sourcePet = petOverride || (this.inArenaBattle && this.selectedArenaTeam ? (this.selectedArenaTeam.find(Boolean) || null) : null);
+        for(let i=0;i<5;i++){
+            const profile = sourcePet ? this.getArenaSkillProfile(sourcePet, i+1) : ({icon:['⚡','🔥','❄️','☄️','💥'][i],name:`Kỹ năng ${i+1}`,mult:1});
+            const b=document.createElement('button'); b.className='arena-skill-btn '+(i<skillCount?'':'locked'); b.title=i<skillCount?profile.name:'Chưa mở';
+            b.innerHTML=`<span>${i<skillCount?profile.icon:'🔒'}</span><small>${i+1}</small>`;
+            if(i<skillCount) b.onclick=(e)=>{e.preventDefault();e.stopPropagation();onSkill(i+1);};
+            wheel.appendChild(b);
         }
-        if(allPets.length === 0) {
-            showCustomAlert("Không có Pet nào trong các Lab!", "error");
-            return;
-        }
-        // Chọn ngẫu nhiên 1 pet mạnh chưa có trong team hoặc pet đầu tiên
-        let chosen = allPets.find(p => !this.selectedArenaTeam.includes(p)) || allPets[0];
-        this.selectedArenaTeam[index] = chosen;
-        this.renderArenaModalSlots();
+        const basic=document.createElement('button');
+        basic.className='arena-basic-attack';
+        basic.title='Đánh thường';
+        basic.setAttribute('aria-label','Đánh thường');
+        basic.innerHTML='✊';
+        basic.onclick=(e)=>{e.preventDefault();e.stopPropagation();onSkill(0);};
+        wheel.appendChild(basic);
+        let move={x:0,y:0}, active=false, pid=null;
+        const update=(clientX,clientY)=>{const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=clientX-cx,dy=clientY-cy;const d=Math.hypot(dx,dy),m=48;if(d>m){dx=dx/d*m;dy=dy/d*m;}move={x:dx/m,y:dy/m};knob.style.transform=`translate(${dx}px,${dy}px)`;};
+        const down=e=>{active=true;pid=e.pointerId;joy.setPointerCapture?.(pid);update(e.clientX,e.clientY);e.preventDefault();};
+        const up=e=>{if(pid!==null&&e.pointerId!==pid)return;active=false;pid=null;move={x:0,y:0};knob.style.transform='translate(0,0)';};
+        const mm=e=>{if(active)update(e.clientX,e.clientY);};
+        joy.addEventListener('pointerdown',down); joy.addEventListener('pointermove',mm); joy.addEventListener('pointerup',up); joy.addEventListener('pointercancel',up);
+        return {getMove:()=>move,destroy:()=>{joy.removeEventListener('pointerdown',down);joy.removeEventListener('pointermove',mm);joy.removeEventListener('pointerup',up);joy.removeEventListener('pointercancel',up);wheel.innerHTML='';move={x:0,y:0};knob.style.transform='translate(0,0)';}};
     }
 
     startArenaBattle() {
-        const battleOverlay = document.getElementById("arena-battle-overlay");
-        battleOverlay.style.display = "flex";
-        this.inArenaBattle = true;
+        const battleOverlay = document.getElementById('arena-battle-overlay');
+        battleOverlay.style.display='flex'; this.inArenaBattle=true;
+        const canvas=document.getElementById('arenaBattleCanvas'), ctx=canvas.getContext('2d');
+        const W=1920,H=1080; canvas.width=W; canvas.height=H;
 
-        const battleCanvas = document.getElementById("arenaBattleCanvas");
-        const bCtx = battleCanvas.getContext("2d");
-
-        // Lấy pet đầu tiên trong team (hoặc pet mạnh nhất) làm đại diện chiến đấu
-        let activePet = this.selectedArenaTeam.find(p => p !== null);
-        if(!activePet) {
-            this.autoFillArenaTeam();
-            activePet = this.selectedArenaTeam[0];
-        }
-
-        // Chỉ số chiến đấu theo yêu cầu
-        const pLevel = activePet.level;
-        const pTier = activePet.strain.tier;
-
-        const playerStats = {
-            x: 200,
-            y: 360,
-            radius: 35,
-            maxHp: pLevel * pTier * 50,
-            hp: pLevel * pTier * 50,
-            dmg: pLevel * pTier * 10,
-            spd: 200 + (pTier * 10),
-            color: activePet.strain.color,
-            name: `${this.playerName} (${activePet.strain.name})`,
-            strain: activePet.strain
-        };
-
-        // Đối thủ tự động cân xứng
-        const enemyLevel = Math.max(1, pLevel + Math.floor((Math.random() - 0.4) * 3));
-        const enemyTier = Math.max(1, pTier + (Math.random() > 0.7 ? 1 : 0));
-        const enemyStats = {
-            x: 1080,
-            y: 360,
-            radius: 35,
-            maxHp: enemyLevel * enemyTier * 50,
-            hp: enemyLevel * enemyTier * 50,
-            dmg: enemyLevel * enemyTier * 10,
-            spd: 200 + (enemyTier * 10),
-            color: '#ff4646',
-            name: `Bot Đấu Sĩ [Lv.${enemyLevel}]`,
-            lastShot: 0
-        };
-
-        let bullets = [];
-        let keys = { w: false, a: false, s: false, d: false };
-        let mouseX = 1080, mouseY = 360;
-        let joystickActive = false;
-        let joystickCenter = { x: 0, y: 0 };
-        let joystickVector = { x: 0, y: 0 };
-
-        // Xử lý sự kiện bàn phím PC
-        const handleKeyDown = (e) => {
-            if(!this.inArenaBattle) return;
-            if(e.key === 'w' || e.key === 'W') keys.w = true;
-            if(e.key === 'a' || e.key === 'A') keys.a = true;
-            if(e.key === 's' || e.key === 'S') keys.s = true;
-            if(e.key === 'd' || e.key === 'D') keys.d = true;
-        };
-        const handleKeyUp = (e) => {
-            if(!this.inArenaBattle) return;
-            if(e.key === 'w' || e.key === 'W') keys.w = false;
-            if(e.key === 'a' || e.key === 'A') keys.a = false;
-            if(e.key === 's' || e.key === 'S') keys.s = false;
-            if(e.key === 'd' || e.key === 'D') keys.d = false;
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-
-        // Xử lý chuột & bắn trên PC
-        const handleMouseMove = (e) => {
-            const rect = battleCanvas.getBoundingClientRect();
-            mouseX = (e.clientX - rect.left) * (1280 / rect.width);
-            mouseY = (e.clientY - rect.top) * (720 / rect.height);
-        };
-        const handleMouseDown = (e) => {
-            if(!this.inArenaBattle) return;
-            const rect = battleCanvas.getBoundingClientRect();
-            const cx = (e.clientX - rect.left) * (1280 / rect.width);
-            const cy = (e.clientY - rect.top) * (720 / rect.height);
-
-            // Bắn đạn về hướng click
-            const angle = Math.atan2(cy - playerStats.y, cx - playerStats.x);
-            bullets.push({
-                x: playerStats.x,
-                y: playerStats.y,
-                vx: Math.cos(angle) * 900,
-                vy: Math.sin(angle) * 900,
-                isPlayer: true,
-                dmg: playerStats.dmg,
-                life: 1.5
-            });
-            this.sound.playPop();
-        };
-        battleCanvas.addEventListener('mousemove', handleMouseMove);
-        battleCanvas.addEventListener('mousedown', handleMouseDown);
-
-        // Xử lý cảm ứng Mobile (Joystick nửa trái, Bắn nửa phải)
-        const handleTouchStart = (e) => {
-            if(!this.inArenaBattle) return;
-            for(let i=0; i<e.touches.length; i++) {
-                const t = e.touches[i];
-                const rect = battleCanvas.getBoundingClientRect();
-                const tx = (t.clientX - rect.left) * (1280 / rect.width);
-                const ty = (t.clientY - rect.top) * (720 / rect.height);
-
-                if (tx < 640 && !joystickActive) {
-                    // Nửa trái: Joystick di chuyển
-                    joystickActive = true;
-                    joystickCenter = { x: tx, y: ty };
-                    joystickVector = { x: 0, y: 0 };
-                } else if (tx >= 640) {
-                    // Nửa phải: Bắn đạn về hướng chạm
-                    const angle = Math.atan2(ty - playerStats.y, tx - playerStats.x);
-                    bullets.push({
-                        x: playerStats.x,
-                        y: playerStats.y,
-                        vx: Math.cos(angle) * 900,
-                        vy: Math.sin(angle) * 900,
-                        isPlayer: true,
-                        dmg: playerStats.dmg,
-                        life: 1.5
-                    });
-                    this.sound.playPop();
-                }
-            }
-        };
-
-        const handleTouchMove = (e) => {
-            if(!this.inArenaBattle || !joystickActive) return;
-            for(let i=0; i<e.touches.length; i++) {
-                const t = e.touches[i];
-                const rect = battleCanvas.getBoundingClientRect();
-                const tx = (t.clientX - rect.left) * (1280 / rect.width);
-                const ty = (t.clientY - rect.top) * (720 / rect.height);
-
-                if (tx < 640) {
-                    const dx = tx - joystickCenter.x;
-                    const dy = ty - joystickCenter.y;
-                    const dist = Math.hypot(dx, dy);
-                    const maxR = 50;
-                    if (dist > 0) {
-                        joystickVector.x = (dx / dist) * Math.min(1, dist / maxR);
-                        joystickVector.y = (dy / dist) * Math.min(1, dist / maxR);
-                    }
-                }
-            }
-        };
-
-        const handleTouchEnd = (e) => {
-            joystickActive = false;
-            joystickVector = { x: 0, y: 0 };
-        };
-
-        battleCanvas.addEventListener('touchstart', handleTouchStart);
-        battleCanvas.addEventListener('touchmove', handleTouchMove);
-        battleCanvas.addEventListener('touchend', handleTouchEnd);
-
-        let lastFrameTime = performance.now();
-        let battleLoopId = null;
-
-        const runBattle = (now) => {
-            if (!this.inArenaBattle) return;
-            const dt = Math.min((now - lastFrameTime) / 1000, 0.1);
-            lastFrameTime = now;
-
-            // --- 1. DI CHUYỂN PLAYER ---
-            let moveX = 0, moveY = 0;
-            if (keys.w) moveY -= 1;
-            if (keys.s) moveY += 1;
-            if (keys.a) moveX -= 1;
-            if (keys.d) moveX += 1;
-
-            if (moveX !== 0 && moveY !== 0) { moveX *= 0.7071; moveY *= 0.7071; }
-
-            if (joystickActive) {
-                playerStats.x += joystickVector.x * playerStats.spd * dt;
-                playerStats.y += joystickVector.y * playerStats.spd * dt;
-            } else {
-                playerStats.x += moveX * playerStats.spd * dt;
-                playerStats.y += moveY * playerStats.spd * dt;
-            }
-
-            // Giới hạn trong sân đấu 1280x720
-            playerStats.x = Math.max(40, Math.min(1240, playerStats.x));
-            playerStats.y = Math.max(40, Math.min(680, playerStats.y));
-
-            // --- 2. AI ĐỐI THỦ (DI CHUYỂN & BẮN) ---
-            const edx = playerStats.x - enemyStats.x;
-            const edy = playerStats.y - enemyStats.y;
-            const edist = Math.hypot(edx, edy);
-            if (edist > 120) {
-                enemyStats.x += (edx / edist) * enemyStats.spd * 0.7 * dt;
-                enemyStats.y += (edy / edist) * enemyStats.spd * 0.7 * dt;
-            }
-            // Bot bắn định kỳ
-            if (now - enemyStats.lastShot > 1000) {
-                enemyStats.lastShot = now;
-                const eAngle = Math.atan2(playerStats.y - enemyStats.y, playerStats.x - enemyStats.x);
-                bullets.push({
-                    x: enemyStats.x,
-                    y: enemyStats.y,
-                    vx: Math.cos(eAngle) * 700,
-                    vy: Math.sin(eAngle) * 700,
-                    isPlayer: false,
-                    dmg: enemyLevel * enemyTier * 8,
-                    life: 1.5
-                });
-            }
-
-            // --- 3. CẬP NHẬT ĐẠN ---
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                const b = bullets[i];
-                b.x += b.vx * dt;
-                b.y += b.vy * dt;
-                b.life -= dt;
-
-                if (b.life <= 0 || b.x < 0 || b.x > 1280 || b.y < 0 || b.y > 720) {
-                    bullets.splice(i, 1);
-                    continue;
-                }
-
-                // Kiểm tra va chạm hitbox bán kính 35
-                if (b.isPlayer) {
-                    if (Math.hypot(b.x - enemyStats.x, b.y - enemyStats.y) <= 35) {
-                        enemyStats.hp -= b.dmg;
-                        bullets.splice(i, 1);
-                        if (enemyStats.hp <= 0) enemyStats.hp = 0;
-                    }
-                } else {
-                    if (Math.hypot(b.x - playerStats.x, b.y - playerStats.y) <= 35) {
-                        playerStats.hp -= b.dmg;
-                        bullets.splice(i, 1);
-                        if (playerStats.hp <= 0) playerStats.hp = 0;
-                    }
-                }
-            }
-
-            // --- 4. RENDER TRẬN ĐẤU ---
-            bCtx.fillStyle = '#06090f';
-            bCtx.fillRect(0, 0, 1280, 720);
-
-            // Vẽ lưới sàn đấu
-            bCtx.strokeStyle = '#1a2636';
-            bCtx.lineWidth = 1;
-            for (let x = 0; x < 1280; x += 60) { bCtx.beginPath(); bCtx.moveTo(x, 0); bCtx.lineTo(x, 720); bCtx.stroke(); }
-            for (let y = 0; y < 720; y += 60) { bCtx.beginPath(); bCtx.moveTo(0, y); bCtx.lineTo(1280, y); bCtx.stroke(); }
-
-            // Vẽ Player
-            bCtx.save();
-            bCtx.fillStyle = playerStats.color;
-            bCtx.beginPath(); bCtx.arc(playerStats.x, playerStats.y, playerStats.radius, 0, Math.PI * 2); bCtx.fill();
-            bCtx.strokeStyle = '#fff'; bCtx.lineWidth = 3; bCtx.stroke();
-            bCtx.restore();
-
-            // Vẽ Enemy
-            bCtx.save();
-            bCtx.fillStyle = enemyStats.color;
-            bCtx.beginPath(); bCtx.arc(enemyStats.x, enemyStats.y, enemyStats.radius, 0, Math.PI * 2); bCtx.fill();
-            bCtx.strokeStyle = '#fff'; bCtx.lineWidth = 3; bCtx.stroke();
-            bCtx.restore();
-
-            // Vẽ Đạn
-            bullets.forEach(b => {
-                bCtx.fillStyle = b.isPlayer ? '#00ffc8' : '#ff4646';
-                bCtx.beginPath(); bCtx.arc(b.x, b.y, 6, 0, Math.PI * 2); bCtx.fill();
-            });
-
-            // Vẽ UI Máu & Thông tin trên cùng
-            bCtx.fillStyle = 'rgba(15, 22, 34, 0.85)';
-            bCtx.fillRect(20, 20, 450, 70);
-            bCtx.strokeStyle = '#00ffc8'; bCtx.lineWidth = 2; bCtx.strokeRect(20, 20, 450, 70);
-            bCtx.fillStyle = '#fff'; bCtx.font = 'bold 14px Arial'; bCtx.fillText(playerStats.name, 35, 45);
-            // Thanh máu Player
-            bCtx.fillStyle = '#222'; bCtx.fillRect(35, 55, 420, 16);
-            bCtx.fillStyle = '#00ffc8'; bCtx.fillRect(35, 55, Math.max(0, 420 * (playerStats.hp / playerStats.maxHp)), 16);
-            bCtx.fillStyle = '#fff'; bCtx.font = '11px Arial'; bCtx.fillText(`HP: ${Math.max(0, Math.floor(playerStats.hp))} / ${playerStats.maxHp}`, 45, 68);
-
-            // Thanh máu Enemy
-            bCtx.fillStyle = 'rgba(15, 22, 34, 0.85)';
-            bCtx.fillRect(810, 20, 450, 70);
-            bCtx.strokeStyle = '#ff4646'; bCtx.lineWidth = 2; bCtx.strokeRect(810, 20, 450, 70);
-            bCtx.fillStyle = '#fff'; bCtx.font = 'bold 14px Arial'; bCtx.fillText(enemyStats.name, 825, 45);
-            bCtx.fillStyle = '#222'; bCtx.fillRect(825, 55, 420, 16);
-            bCtx.fillStyle = '#ff4646'; bCtx.fillRect(825, 55, Math.max(0, 420 * (enemyStats.hp / enemyStats.maxHp)), 16);
-            bCtx.fillStyle = '#fff'; bCtx.font = '11px Arial'; bCtx.fillText(`HP: ${Math.max(0, Math.floor(enemyStats.hp))} / ${enemyStats.maxHp}`, 835, 68);
-
-            // Kiểm tra kết quả Thắng / Thua
-            if (playerStats.hp <= 0 || enemyStats.hp <= 0) {
-                this.inArenaBattle = false;
-                window.removeEventListener('keydown', handleKeyDown);
-                window.removeEventListener('keyup', handleKeyUp);
-                battleCanvas.removeEventListener('mousemove', handleMouseMove);
-                battleCanvas.removeEventListener('mousedown', handleMouseDown);
-                battleCanvas.removeEventListener('touchstart', handleTouchStart);
-                battleCanvas.removeEventListener('touchmove', handleTouchMove);
-                battleCanvas.removeEventListener('touchend', handleTouchEnd);
-
-                battleOverlay.style.display = 'none';
-
-                if (enemyStats.hp <= 0) {
-                    // --- THẮNG ---
-                    const moneyReward = Math.floor(this.money * 0.05);
-                    const diamondReward = this.arenaBetDiamonds * 2;
-                    this.money += moneyReward;
-                    this.diamonds += diamondReward;
-                    this.saveGame();
-
-                    showCustomAlert(`🎉 <b>CHIẾN THẮNG VINH QUANG!</b><br><br>• Cướp được VNĐ từ đối thủ: <b>+${formatMoney(moneyReward)}</b><br>• Nhận thưởng Kim Cương cược x2: <b>+${diamondReward} 💎</b>`, "success");
-                } else {
-                    // --- THUA ---
-                    const moneyLoss = Math.floor(this.money * 0.05);
-                    this.money = Math.max(0, this.money - moneyLoss);
-                    this.saveGame();
-
-                    showCustomAlert(`💀 <b>THẤT BẠI THẢM HẢI!</b><br><br>• Bị cướp mất VNĐ: <b>-${formatMoney(moneyLoss)}</b><br>• Mất toàn bộ vé vào cửa và ${this.arenaBetDiamonds} 💎 cược!`, "error");
-                }
-                return;
-            }
-
-            battleLoopId = requestAnimationFrame(runBattle);
-        };
-
-        requestAnimationFrame(runBattle);
+        if(!this.selectedArenaTeam?.some(Boolean)) this.autoFillArenaTeam();
+        const myTeam=this.selectedArenaTeam.filter(Boolean).slice(0,3);
+        while(myTeam.length<3) myTeam.push(myTeam[myTeam.length-1]||null);
+        const makeBotPet=(base,i)=>({
+            name:`Bot ${base?.strain?.name||'Đấu Sĩ'} [Pet ${i+1}]`, color:base?.strain?.color||'#ff4646',
+            level:Math.max(1,(base?.level||1)+Math.floor(Math.random()*5-2)),
+            tier:Math.max(1,(base?.strain?.tier||1)+(Math.random()>.72?1:0)),
+            strainId:base?.strain?.id||i, isGod:!!base?.strain?.isGod
+        });
+        const botTeam=myTeam.map((p,i)=>makeBotPet(p,i));
+        const teamA=myTeam, teamB=botTeam;
+        const fighter=(p,i,left)=>{ const f=this.getArenaCombatStats({level:p?.level||1,tier:p?.strain?.tier||p?.tier||1,strainId:p?.strain?.id??p?.strainId??0,isGod:!!p?.strain?.isGod||!!p?.isGod,color:p?.strain?.color||p?.color,name:p?.strain?.name||p?.name},i); f.x=left?250:W-250; f.y=H/2; f.teamIndex=i; f.alive=true; return f; };
+        const A=teamA.map((p,i)=>fighter(p,i,true)), B=teamB.map((p,i)=>fighter(p,i,false));
+        let ai=0, bi=0, bullets=[], effects=[], skillFlash=0, shake=0, last=performance.now(), enemyShot=0;
+        let keys={x:0,y:0}, skillReq=0;
+        const currentA=()=>A[ai], currentB=()=>B[bi];
+        const controls=this.setupArenaBattleControls(this.getArenaSkillCount(teamA[0]),n=>skillReq=n,teamA[0]);
+        let shown=-1;
+        const refresh=()=>{if(shown===ai)return;shown=ai;controls.destroy();/* rebuilt below */};
+        // Controls object is rebuilt when the active Pet changes.
+        let ctl=controls;
+        const rebuildControls=()=>{ctl.destroy();ctl=this.setupArenaBattleControls(this.getArenaSkillCount(teamA[ai]),n=>skillReq=n,teamA[ai]);shown=ai;};
+        rebuildControls();
+        const keydown=e=>{if(/^w$/i.test(e.key)||e.key==='ArrowUp')keys.y=-1;if(/^s$/i.test(e.key)||e.key==='ArrowDown')keys.y=1;if(/^a$/i.test(e.key)||e.key==='ArrowLeft')keys.x=-1;if(/^d$/i.test(e.key)||e.key==='ArrowRight')keys.x=1;if(/^[1-5]$/.test(e.key))skillReq=+e.key;};
+        const keyup=e=>{if(['w','W','ArrowUp','s','S','ArrowDown'].includes(e.key))keys.y=0;if(['a','A','ArrowLeft','d','D','ArrowRight'].includes(e.key))keys.x=0;};
+        window.addEventListener('keydown',keydown);window.addEventListener('keyup',keyup);
+        const effect=(type,x,y,color,extra={})=>effects.push({type,x,y,color,life:extra.life||.6,max:extra.life||.6,r:extra.r||30,ang:extra.ang||0,fromX:extra.fromX,toX:extra.toX,fromY:extra.fromY,toY:extra.toY,text:extra.text||''});
+        const switchPet=(side)=>{if(side==='A'&&ai<A.length-1){currentA().alive=false;ai++;currentA().hp=currentA().maxHp;currentA().alive=true;currentA().x=250;currentA().y=H/2;effect('switch',250,H/2,currentA().color,{r:150,text:`${currentA().name} RA SÂN`,life:1});rebuildControls();return true;}if(side==='B'&&bi<B.length-1){currentB().alive=false;bi++;currentB().hp=currentB().maxHp;currentB().alive=true;currentB().x=W-250;currentB().y=H/2;effect('switch',W-250,H/2,currentB().color,{r:150,text:`${currentB().name} RA SÂN`,life:1});return true;}return false;};
+        const hit=(att,tgt,profile)=>{if(!att?.alive||!tgt?.alive)return;const d=Math.hypot(att.x-tgt.x,att.y-tgt.y);if(d>profile.range)return;const raw=att.attack*profile.mult;const dmg=Math.max(1,Math.floor(raw*Math.max(.18,1-tgt.defense/(tgt.defense+raw*.9))));tgt.hp=Math.max(0,tgt.hp-dmg);const ang=Math.atan2(tgt.y-att.y,tgt.x-att.x);if(['beam','sunbeam','divinebeam'].includes(profile.kind))effect(profile.kind,att.x,att.y,att.color,{fromX:att.x,toX:tgt.x,fromY:att.y,toY:tgt.y,life:.34});else if(['arc','slash','rift'].includes(profile.kind))effect(profile.kind,tgt.x,tgt.y,att.color,{r:105,ang:ang,life:.5});else effect(profile.kind,tgt.x,tgt.y,att.color,{r:140,life:.85,ang:ang});effect('text',tgt.x,tgt.y-55,att.color,{text:`-${dmg}`,life:.7});shake=Math.max(shake,profile.mult>2.5?.22:.06);if(tgt.hp<=0){tgt.hp=0;effect('ko',tgt.x,tgt.y,tgt.color,{r:130,text:'K.O!',life:.9});switchPet(tgt===currentA()?'A':'B');}};
+        const shoot=(att,tgt,profile)=>{if(!att?.alive||!tgt?.alive)return;const ang=Math.atan2(tgt.y-att.y,tgt.x-att.x);bullets.push({x:att.x,y:att.y,vx:Math.cos(ang)*900,vy:Math.sin(ang)*900,att,tgt,dmg:att.attack*profile.mult,life:1.3,color:att.color});};
+        const frame=(now)=>{if(!this.inArenaBattle){ctl.destroy();window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);return;}const dt=Math.min((now-last)/1000,.05);last=now;shake=Math.max(0,shake-dt);skillFlash=Math.max(0,skillFlash-dt);
+            const a=currentA(),b=currentB();const mv=ctl.getMove();const mx=Math.abs(mv.x)>0.05?mv.x:keys.x,my=Math.abs(mv.y)>0.05?mv.y:keys.y;const len=Math.hypot(mx,my)||1;a.x=Math.max(90,Math.min(W/2-60,a.x+mx/len*a.speed*dt));a.y=Math.max(170,Math.min(H-100,a.y+my/len*a.speed*dt));
+            const dx=a.x-b.x,dy=a.y-b.y,dist=Math.hypot(dx,dy)||1;if(dist>250){b.x+=dx/dist*b.speed*.45*dt;b.y+=dy/dist*b.speed*.45*dt;}else if(dist<170){b.x-=dx/dist*b.speed*.25*dt;b.y-=dy/dist*b.speed*.25*dt;}
+            if(skillReq){const p=this.getArenaSkillProfile(teamA[ai],skillReq);hit(a,b,p);skillReq=0;skillFlash=.15;this.sound.playPop();}
+            if(now-enemyShot>900){enemyShot=now;const p=this.getArenaSkillProfile(teamB[bi],Math.min(this.getArenaSkillCount(teamB[bi]),2));shoot(b,a,p);}
+            for(let i=bullets.length-1;i>=0;i--){const q=bullets[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;if(q.life<=0||q.x<0||q.x>W||q.y<0||q.y>H){bullets.splice(i,1);continue;}if(q.tgt?.alive&&Math.hypot(q.x-q.tgt.x,q.y-q.tgt.y)<q.tgt.radius+9){q.tgt.hp=Math.max(0,q.tgt.hp-q.dmg*.55);effect('hit',q.tgt.x,q.tgt.y,q.color,{r:35,life:.25});if(q.tgt.hp<=0){q.tgt.hp=0;effect('ko',q.tgt.x,q.tgt.y,q.tgt.color,{r:130,text:'K.O!',life:.8});switchPet(q.tgt===a?'A':'B');}bullets.splice(i,1);}}
+            ctx.save();if(shake>0)ctx.translate((Math.random()-.5)*14,(Math.random()-.5)*14);ctx.fillStyle='#050a11';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#132536';for(let x=0;x<W;x+=70){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=70){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+            const drawPet=(p,flip)=>{if(!p)return;ctx.save();ctx.translate(p.x,p.y+Math.sin(now*.007+p.teamIndex)*7);const pulse=1+Math.sin(now*.012+p.teamIndex)*.05;ctx.scale(pulse,pulse);ctx.shadowBlur=28+p.tier*2;ctx.shadowColor=p.color;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(0,0,p.radius,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-17,-14,10,14,0,0,Math.PI*2);ctx.ellipse(17,-14,10,14,0,0,Math.PI*2);ctx.fill();const look=Math.sin(now*.004)*3*(flip?-1:1);ctx.fillStyle='#101820';ctx.beginPath();ctx.arc(-14+look,-12,5,0,Math.PI*2);ctx.arc(14+look,-12,5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#111';ctx.beginPath();ctx.arc(0,9,10,.1,Math.PI-.1);ctx.stroke();
+                if(p.tier>=8||p.isGod){ctx.globalAlpha=.35+.2*Math.sin(now*.005);ctx.strokeStyle=p.color;ctx.lineWidth=5;for(let r=p.radius+18;r<p.radius+65;r+=16){ctx.beginPath();ctx.arc(0,0,r+Math.sin(now*.004+r)*5,0,Math.PI*2);ctx.stroke();}ctx.globalAlpha=.9;for(let i=0;i<6;i++){const a=now*.001+i*Math.PI/3;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(Math.cos(a)*(p.radius+28),Math.sin(a)*(p.radius+28),4,0,Math.PI*2);ctx.fill();}}
+                if(p.isGod){ctx.fillStyle='#fff';ctx.font='bold 15px Arial';ctx.textAlign='center';ctx.fillText('✦ THẦN ✦',0,-p.radius-25);}
+                ctx.restore();};
+            const drawFx=()=>{effects.forEach(e=>{e.life-=dt;const q=Math.max(0,e.life/e.max);ctx.save();ctx.globalAlpha=q;if(e.type==='sunbeam'||e.type==='beam'){ctx.strokeStyle=e.color;ctx.lineWidth=(e.type==='sunbeam'?30:18)*q;ctx.shadowBlur=28;ctx.shadowColor=e.color;ctx.beginPath();ctx.moveTo(e.fromX,e.fromY);ctx.lineTo(e.toX,e.toY);ctx.stroke();ctx.shadowBlur=0;}else if(e.type==='slash'||e.type==='arc'){ctx.strokeStyle=e.color;ctx.lineWidth=12;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-q*.25),e.ang-1.2,e.ang+1.2);ctx.stroke();}else if(e.type==='meteor'){ctx.fillStyle=e.color;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-q*.3),0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.stroke();}else if(e.type==='vortex'){ctx.strokeStyle=e.color;ctx.lineWidth=8;for(let j=0;j<4;j++){ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-j*.17),now*.004+j,now*.004+j+4);ctx.stroke();}}else if(e.type==='switch'||e.type==='ko'){ctx.strokeStyle=e.color;ctx.lineWidth=8;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1.3-q*.3),0,7);ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillText(e.text,e.x,e.y-120);}else if(e.type==='text'){ctx.fillStyle=e.color;ctx.font='bold 25px Arial';ctx.textAlign='center';ctx.fillText(e.text,e.x,e.y-(1-q)*55);}else{ctx.strokeStyle=e.color;ctx.lineWidth=5;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-q+.2),0,7);ctx.stroke();}ctx.restore();});effects=effects.filter(e=>e.life>0);};
+            drawPet(a,false);drawPet(b,true);bullets.forEach(q=>{ctx.fillStyle=q.color;ctx.shadowBlur=14;ctx.shadowColor=q.color;ctx.beginPath();ctx.arc(q.x,q.y,7,0,7);ctx.fill();ctx.shadowBlur=0;});drawFx();
+            const hud=(f,x,c,side)=>{ctx.fillStyle='rgba(8,15,24,.94)';ctx.fillRect(x,25,560,105);ctx.strokeStyle=c;ctx.lineWidth=3;ctx.strokeRect(x,25,560,105);ctx.fillStyle='#fff';ctx.font='bold 17px Arial';ctx.fillText(`${side} • ${f.name} • Lv.${f.level} • Bậc ${f.tier}`,x+18,52);ctx.fillStyle='#222';ctx.fillRect(x+18,70,524,20);ctx.fillStyle=c;ctx.fillRect(x+18,70,524*Math.max(0,f.hp/f.maxHp),20);ctx.fillStyle='#fff';ctx.font='12px Arial';ctx.fillText(`HP ${Math.floor(f.hp)}/${f.maxHp} • Công ${f.attack} • Thủ ${f.defense} • Pet ${f.teamIndex+1}/3 • Kỹ năng ${f.skills}/5`,x+20,108);};hud(a,28,'#00ffc8','ĐỘI BẠN');hud(b,W-588,'#ff4646','BOT');
+            ctx.fillStyle='#fff';ctx.font='bold 16px Arial';ctx.textAlign='center';ctx.fillText(`⚔️ 3 VS 3 • PET ${ai+1}/3 ↔ PET ${bi+1}/3`,W/2,155);ctx.textAlign='left';ctx.restore();
+            if(a.hp<=0&&ai>=2||b.hp<=0&&bi>=2){this.inArenaBattle=false;ctl.destroy();window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);battleOverlay.style.display='none';if(b.hp<=0&&bi>=2){const mr=Math.floor(this.money*.05);const dr=this.arenaBetDiamonds*2;this.money+=mr;this.diamonds+=dr;this.saveGame();showCustomAlert(`🎉 <b>CHIẾN THẮNG 3V3!</b><br>+${formatMoney(mr)} VNĐ<br>+${dr} 💎`,'success');}else{const ml=Math.floor(this.money*.05);this.money=Math.max(0,this.money-ml);this.saveGame();showCustomAlert(`💀 <b>THẤT BẠI 3V3!</b><br>-${formatMoney(ml)} VNĐ`,'error');}return;}requestAnimationFrame(frame);};
+        requestAnimationFrame(frame);
     }
 
     setupEvents() {
@@ -1988,7 +2089,7 @@ class Game {
     } 
 
     drawCustomConfirm(title, subtitle) {
-        const mw = 480, mh = 180, mx = (CANVAS_W - mw) / 2, my = (CANVAS_H - mh) / 2;
+        const mw = 480, mh = 180, mx = (CANVAS_W-mw)/2, my = (CANVAS_H-mh)/2;
         this.ctx.save(); this.ctx.fillStyle = "rgba(11, 19, 32, 0.98)"; this.ctx.fillRect(mx, my, mw, mh); this.ctx.strokeStyle = COLOR_WARNING; this.ctx.lineWidth = 3; this.ctx.strokeRect(mx, my, mw, mh);
         this.ctx.fillStyle = "#ffd700"; this.ctx.font = "bold 18px Arial"; this.ctx.textAlign = "center"; this.ctx.textBaseline = "top"; this.ctx.fillText(title, mx + mw/2, my + 25, mw-40);
         if (subtitle) { this.ctx.fillStyle = "#e6f5ff"; this.ctx.font = "16px Arial"; this.ctx.fillText(subtitle, mx + mw/2, my + 60, mw-40); }
@@ -2003,7 +2104,7 @@ class Game {
         this.actionPanelRect = { x: px, y: py, w: panelW, h: panelH };
         this.ctx.fillStyle = "rgba(16, 24, 38, 0.98)"; this.ctx.fillRect(px, py, panelW, panelH); this.ctx.strokeStyle = COLOR_ACCENT; this.ctx.lineWidth = 3; this.ctx.strokeRect(px, py, panelW, panelH);
         this.ctx.fillStyle = s.strain.color || "#fff"; this.ctx.font = "bold 26px Arial"; this.ctx.fillText(`📊 THÔNG SỐ: ${s.strain.name}`, px + 25, py + 42);
-        this.ctx.fillStyle = "#a0c0db"; this.ctx.font = "17px Arial"; this.ctx.fillText(`• Cấp độ: Lv.${s.level} | Bậc: ${s.strain.tier} | Tâm trạng: ${s.strain.mood.toUpperCase()}`, px + 25, py + 72);
+        this.ctx.fillStyle = "#a0c0db"; this.ctx.font = "17px Arial"; this.ctx.fillText(`• Cấp độ: Lv.${s.level} | Bậc: ${s.strain.tier} | Kỹ năng: ${s.strain.skillsCount || 1}`, px + 25, py + 72);
         this.ctx.fillStyle = COLOR_GOLD; this.ctx.font = "bold 18px Arial"; this.ctx.fillText(`• Giá trị bán: ${formatMoney(s.value)}`, px + 25, py + 100);
         this.ctx.fillStyle = "#00ffc8"; this.ctx.font = "16px Arial"; this.ctx.fillText(`• Chu kỳ: ${(s.timerMax + (s.sameCloneCount * 5.0)).toFixed(1)}s | Đột biến: ${(s.strain.mutRate * 100).toFixed(6)}%`, px + 25, py + 128);
         const sU = this.slimes.filter(i => i.level === s.level && i.strain.id === s.strain.id && !i.locked);
@@ -2321,6 +2422,395 @@ class Game {
             }},
             { text: "Hủy", bg: "#283c50", action: () => { this.pendingConfirmButtons = null; } }
         ];
+    }
+
+    // ==================== PVP THÁCH ĐẤU TRỰC TIẾP (BỔ SUNG, KHÔNG XÓA HỆ THỐNG CŨ) ====================
+    // === HỆ THỐNG KỸ NĂNG THEO BẬC PET ===
+    getArenaSkillCount(petOrStrain) {
+        const s = petOrStrain?.strain || petOrStrain || {};
+        const tier = Number(s.tier || 1);
+        if (s.isGod || tier >= 11) return 5;
+        if (tier <= 1) return 1;
+        if (tier === 2) return 2;
+        if (tier <= 5) return 3;
+        return 4;
+    }
+
+    getArenaSkillProfile(petOrStrain, index) {
+        const s = petOrStrain?.strain || petOrStrain || {};
+        const tier = Number(s.tier || 1);
+        const id = Number(s.id ?? s.strainId ?? 0);
+        const god = !!s.isGod || tier >= 11;
+        const high = tier >= 8;
+        const normal = [
+            {icon:'⚡', name:'Lôi Kích', mult:1.00, range:360, kind:'beam'},
+            {icon:'🔥', name:'Hỏa Cầu', mult:1.28, range:390, kind:'fireball'},
+            {icon:'❄️', name:'Băng Thương', mult:1.55, range:420, kind:'ice'},
+            {icon:'☄️', name:'Thiên Thạch', mult:2.00, range:470, kind:'meteor'},
+        ];
+        const highSkills = [
+            {icon:'🌀',name:'Hư Không Trảm',mult:1.35,range:410,kind:'slash'},
+            {icon:'💠',name:'Tinh Thể Pháo',mult:1.75,range:450,kind:'crystal'},
+            {icon:'🌪️',name:'Bão Năng Lượng',mult:2.10,range:430,kind:'nova'},
+            {icon:'🌑',name:'Hắc Nhật',mult:2.65,range:500,kind:'blackhole'}
+        ];
+        const godProfiles = {
+            100:[['☀️','Thái Dương Thần Quang',1.55,'sunbeam'],['🌞','Nhật Diệu Phán Xét',1.95,'solarburst'],['🔥','Thần Hỏa Thiêu Đốt',2.35,'inferno'],['🌟','Siêu Tân Tinh',2.85,'supernova'],['☀️','Đại Nhật Diệt Thế',3.60,'sunnova']],
+            101:[['🌌','Hư Không Xé Nứt',1.65,'rift'],['🕳️','Hắc Động Nuốt Chửng',2.05,'blackhole'],['👁️','Ma Nhãn Hư Vô',2.45,'eye'],['🌑','Vực Thẳm Tận Diệt',2.95,'abyss'],['🌀','Hư Không Chung Yên',3.80,'singularity']],
+            102:[['⏳','Thời Gian Trì Hoãn',1.45,'time'],['⌛','Nghịch Lưu Thời Gian',1.90,'rewind'],['🕰️','Vạn Niên Lao',2.30,'timeprison'],['⚛️','Đóng Băng Thời Không',2.85,'freeze'],['♾️','Chronos Tận Thế',3.70,'chronos']],
+            103:[['🔥','Phượng Hỏa',1.55,'flame'],['🪽','Hỏa Vũ',1.95,'feathers'],['☄️','Thiên Hỏa Lưu Tinh',2.40,'meteor'],['🌋','Hỏa Ngục Phượng Hoàng',2.95,'volcano'],['🐦‍🔥','Niết Bàn Phán Xét',3.75,'phoenix']],
+            104:[['⚡','Lôi Thần Kích',1.60,'thunder'],['🌩️','Thiên Lôi',2.00,'chainlightning'],['⚡','Vạn Lôi Giáng Thế',2.45,'storm'],['🔱','Thần Sấm Phán Quyết',3.00,'judgement'],['⚡','Zeus Diệt Thế',3.90,'zeus']],
+            105:[['👑','Vương Quyền Vũ Trụ',1.70,'crown'],['🌌','Tinh Hà Phá Diệt',2.10,'galaxy'],['💫','Siêu Tân Tinh Tối Cao',2.55,'supernova'],['🌠','Hư Không Tối Thượng',3.10,'cosmic'],['👑','Chung Cực Vũ Trụ',4.10,'creation']]
+        };
+        if (god) {
+            const arr=godProfiles[id] || [['✨','Thần Kích',1.60,'divine'],['🌟','Thần Quang',2.00,'divinebeam'],['💫','Thần Bạo',2.50,'divineburst'],['☄️','Thần Diệt',3.10,'divinemeteor'],['👑','Thần Tối Thượng',4.00,'divineend']];
+            const x=arr[Math.max(0,Math.min(4,index-1))];
+            return {icon:x[0],name:x[1],mult:x[2]*(1+Math.max(0,tier-11)*0.10),range:420+index*22,kind:x[3]};
+        }
+        if (high) {
+            const x=highSkills[Math.max(0,Math.min(3,index-1))];
+            return {icon:x.icon,name:`${x.name} • Bậc ${tier}`,mult:x.mult*(1+Math.max(0,tier-8)*0.07),range:x.range+Math.max(0,tier-8)*14,kind:x.kind};
+        }
+        const x=normal[Math.max(0,Math.min(3,index-1))];
+        return {icon:x.icon,name:`${x.name} • Bậc ${tier}`,mult:x.mult*(1+Math.max(0,tier-1)*0.045),range:x.range+Math.max(0,tier-3)*10,kind:x.kind};
+    }
+
+    getChallengeTeamSnapshot() {
+        if (!this.selectedArenaTeam || !this.selectedArenaTeam.some(Boolean)) this.autoFillArenaTeam();
+        return (this.selectedArenaTeam || []).filter(Boolean).slice(0,3).map(s => ({
+            arenaId:s.arenaId, labId:s.labId, strainId:s.strain.id, level:s.level, name:s.strain.name,
+            color:s.strain.color, tier:s.strain.tier, isGod:!!s.strain.isGod, skillsCount:this.getArenaSkillCount(s)
+        }));
+    }
+
+    setupChallengeSystem() {
+        try {
+            if (!this.db || !this.playerId) {
+                if (!this.challengeRetryTimer) {
+                    this.challengeRetryTimer = setTimeout(() => {
+                        this.challengeRetryTimer = null;
+                        this.setupChallengeSystem();
+                    }, 1000);
+                }
+                return;
+            }
+            if (this.challengeListenerAttached) return;
+            this.challengeListenerAttached = true;
+            this.challengeRef = this.db.ref('challenges/' + this.playerId);
+            this.challengeRef.on('child_added', snap => this.handleIncomingChallenge(snap));
+            this.challengeRef.on('child_changed', snap => this.handleChallengeChanged(snap));
+        } catch (e) {
+            console.error('Challenge system init failed:', e);
+            this.challengeListenerAttached = false;
+        }
+    }
+
+    handleIncomingChallenge(snap) {
+        const c = snap.val();
+        if (!c || c.status !== 'pending' || c.to !== this.playerId) return;
+        this.pendingChallenge = { id:snap.key, data:c };
+        const info = document.getElementById('challenge-inbox-info');
+        if (info) info.innerHTML = `<b>${c.fromName || 'Đối thủ'}</b> đang thách đấu bạn!<br>Đội hình: ${Array.isArray(c.team)?c.team.map(p=>`${p.name} Lv.${p.level}`).join(' • '):'Chưa xác định'}<br><span style="color:#00ffc8">Chấp nhận để vào phòng PvP Canvas trực tiếp.</span>`;
+        document.getElementById('challenge-inbox-overlay').style.display = 'flex';
+        document.getElementById('challenge-accept-btn').onclick = () => this.acceptChallenge();
+        document.getElementById('challenge-reject-btn').onclick = () => this.rejectChallenge();
+    }
+
+    handleChallengeChanged(snap) {
+        const c = snap.val();
+        if (!c) return;
+        if (c.status === 'accepted' && c.roomId && c.from === this.playerId) {
+            this.joinPvPRoom(c.roomId, c, true);
+        } else if (c.status === 'rejected' && c.from === this.playerId) {
+            showCustomAlert(`❌ ${c.toName || 'Đối thủ'} đã từ chối lời mời thách đấu.`, 'info');
+        }
+    }
+
+    sendChallengeTo(target) {
+        if (!this.playerName || !this.db) { showCustomAlert('⚠️ Máy chủ Firebase chưa sẵn sàng.', 'error'); return; }
+        if (target.id === this.playerId) return;
+        const challengeId = this.db.ref().push().key;
+        const payload = {
+            from:this.playerId, fromName:this.playerName, to:target.id, toName:target.name,
+            status:'pending', createdAt:firebase.database.ServerValue.TIMESTAMP,
+            team:this.getChallengeTeamSnapshot()
+        };
+        this.db.ref(`challenges/${target.id}/${challengeId}`).set(payload).then(() => {
+            showCustomAlert(`⚔️ Đã gửi lời mời thách đấu đến <b>${target.name}</b>.`, 'success');
+        }).catch(err => showCustomAlert('Không thể gửi lời mời: '+err.message, 'error'));
+    }
+
+    acceptChallenge() {
+        const pending = this.pendingChallenge;
+        if (!pending || !this.db) return;
+        const c = pending.data;
+        const roomId = this.db.ref('pvpRooms').push().key;
+        const updates = {};
+        updates[`challenges/${this.playerId}/${pending.id}/status`] = 'accepted';
+        updates[`challenges/${this.playerId}/${pending.id}/roomId`] = roomId;
+        updates[`challenges/${this.playerId}/${pending.id}/respondedAt`] = firebase.database.ServerValue.TIMESTAMP;
+        updates[`pvpRooms/${roomId}`] = {
+            status:'ready', createdAt:firebase.database.ServerValue.TIMESTAMP,
+            hostId:c.from, hostName:c.fromName, guestId:this.playerId, guestName:this.playerName,
+            hostTeam:c.team || [], guestTeam:this.getChallengeTeamSnapshot()
+        };
+        this.db.ref().update(updates).then(() => {
+            document.getElementById('challenge-inbox-overlay').style.display='none';
+            this.pendingChallenge=null;
+            this.joinPvPRoom(roomId, Object.assign({}, c, {roomId}), false);
+        }).catch(err => showCustomAlert('Không thể vào phòng PvP: '+err.message, 'error'));
+    }
+
+    rejectChallenge() {
+        const pending=this.pendingChallenge;
+        if (!pending || !this.db) return;
+        this.db.ref(`challenges/${this.playerId}/${pending.id}`).update({status:'rejected',respondedAt:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});
+        document.getElementById('challenge-inbox-overlay').style.display='none';
+        this.pendingChallenge=null;
+    }
+
+    joinPvPRoom(roomId, challenge, isHost) {
+        if (!this.db || this.pvpRoomUnsub) return;
+        this.pvpRoomId=roomId; this.pvpIsHost=!!isHost; this.pvpRemoteState=null;
+        const ref=this.db.ref('pvpRooms/'+roomId);
+        this.pvpRoomRef=ref;
+        this.pvpRoomUnsub=ref.on('value', snap=>{
+            const room=snap.val();
+            if (!room) return;
+            this.pvpRoom=room;
+            if (room.status==='finished') { this.finishPvPBattle(room.winnerId===this.playerId); return; }
+            if (room.status==='ready' && !this.inArenaBattle) this.startPvPBattle(room, room.hostId===this.playerId);
+            if (room.state && room.state.players && room.state.players[this.playerId!==room.hostId?room.hostId:room.guestId]) this.pvpRemoteState=room.state.players[this.playerId!==room.hostId?room.hostId:room.guestId];
+        });
+        ref.child('inputs/'+this.playerId).set({x:0,y:0,skill:0,updatedAt:firebase.database.ServerValue.TIMESTAMP});
+    }
+
+    finishPvPBattle(won) {
+        if (this.pvpFinished) return;
+        this.pvpFinished=true; this.inArenaBattle=false;
+        const ov=document.getElementById('arena-battle-overlay'); if(ov) ov.style.display='none';
+        const wheel=document.getElementById('arena-skill-wheel'); if(wheel) wheel.innerHTML='';
+        const knob=document.getElementById('arena-joystick-knob'); if(knob) knob.style.transform='translate(0,0)';
+        showCustomAlert(won?'🏆 <b>BẠN ĐÃ THẮNG TRẬN PvP!</b>':'💀 <b>BẠN ĐÃ THUA TRẬN PvP!</b>', won?'success':'error');
+        if(this.pvpRoomRef){ this.pvpRoomRef.off(); this.pvpRoomUnsub=null; }
+    }
+
+    // === PvP 3v3: máu/thủ/công theo từng Pet + hiệu ứng kỹ năng + đổi Pet khi bị hạ ===
+    getArenaCombatStats(pet, teamIndex=0) {
+        const level=Math.max(1,Number(pet?.level||1));
+        const tier=Math.max(1,Number(pet?.tier||1));
+        const id=Number(pet?.strainId ?? pet?.id ?? 0);
+        const god=!!pet?.isGod || tier>=11;
+        // Mỗi Pet có nền chỉ số riêng theo ID, cộng thêm hệ số Bậc/Lv.
+        const archetype=[
+            {hp:1.16,atk:.94,def:1.22,spd:1.05}, {hp:.92,atk:1.28,def:.88,spd:1.16},
+            {hp:1.05,atk:1.10,def:1.02,spd:1.08}, {hp:1.28,atk:1.04,def:1.16,spd:.92},
+            {hp:.98,atk:1.34,def:.94,spd:1.12}, {hp:1.22,atk:1.08,def:1.28,spd:.88}
+        ][Math.abs(id)%6];
+        const hpBase=(5200+Math.pow(level,1.48)*420+Math.pow(tier,2.25)*1450)*(god?1.55:1)*archetype.hp;
+        const attackBase=(260+Math.pow(level,1.24)*58+Math.pow(tier,1.8)*250)*(god?1.65:1)*archetype.atk;
+        const defenseBase=(110+Math.pow(level,1.16)*15+Math.pow(tier,1.72)*150)*(god?1.75:1)*archetype.def;
+        const hp=Math.floor(hpBase),attack=Math.floor(attackBase),defense=Math.floor(defenseBase);
+        const speed=Math.floor((205+tier*9+level*.42)*archetype.spd);
+        const radius=god?68:(tier>=8?60:48);
+        return {hp,maxHp:hp,attack,defense,speed,level,tier,skills:this.getArenaSkillCount(pet),color:pet?.color||'#00ffc8',name:pet?.name||'Pet',radius,angle:0,teamIndex,alive:true,x:0,y:0};
+    }
+
+    startPvPBattle(room, isHost) {
+        this.pvpFinished=false; this.inArenaBattle=true;
+        const overlay=document.getElementById('arena-battle-overlay'); overlay.style.display='flex';
+        const canvas=document.getElementById('arenaBattleCanvas'), ctx=canvas.getContext('2d');
+        const W=1920,H=1080; canvas.width=W; canvas.height=H;
+        const myTeam=(isHost?room.hostTeam:room.guestTeam)||[];
+        const oppTeam=(isHost?room.guestTeam:room.hostTeam)||[];
+        const fallback={name:this.playerName,color:'#00ffc8',level:1,tier:1,skillsCount:1,strainId:0};
+        const teamA=myTeam.length?myTeam.slice(0,3):[fallback];
+        const teamB=oppTeam.length?oppTeam.slice(0,3):[{name:'Đối thủ',color:'#ff4646',level:1,tier:1,skillsCount:1,strainId:0}];
+
+        const makeFighter=(pet,index,isLeft)=>{
+            const f=this.getArenaCombatStats(pet,index);
+            f.x=isLeft?230:W-230; f.y=H/2 + (index-1)*155; f.spawnX=f.x; f.spawnY=f.y;
+            return f;
+        };
+        const teamStatsA=teamA.map((p,i)=>makeFighter(p,i,true));
+        const teamStatsB=teamB.map((p,i)=>makeFighter(p,i,false));
+        let activeA=0, activeB=0;
+        let effects=[]; let shake=0; let last=performance.now();
+        let localKeys={x:0,y:0}; let skillRequest=0; let localCooldown=0;
+        let remoteInput={x:0,y:0,skill:0};
+        let lastInputPublish=0;
+        const inputRef=this.pvpRoomRef.child('inputs/'+this.playerId);
+        const enemyId=isHost?room.guestId:room.hostId;
+        const inputListener=this.pvpRoomRef.child('inputs/'+enemyId);
+        const skillbar=document.getElementById('arena-skill-wheel');
+        if(skillbar) skillbar.style.pointerEvents='auto';
+
+        // Xóa skillbar cũ do PvP trước đó tạo ra.
+        const old=document.getElementById('pvp-skillbar'); if(old) old.remove();
+        let shownSkillPetIndex=-1;
+        let arenaControls=this.setupArenaBattleControls(this.getArenaSkillCount(teamA[0]||fallback),(skill)=>{skillRequest=skill;},teamA[0]||fallback);
+        const refreshSkillControls=()=>{
+            const idx=activeA; if(idx===shownSkillPetIndex) return; shownSkillPetIndex=idx;
+            arenaControls.destroy();
+            arenaControls=this.setupArenaBattleControls(this.getArenaSkillCount(teamA[idx]||fallback),(skill)=>{skillRequest=skill;},teamA[idx]||fallback);
+        };
+        refreshSkillControls();
+
+        const keydown=e=>{
+            const k=e.key;
+            if(k==='w'||k==='ArrowUp')localKeys.y=-1;
+            if(k==='s'||k==='ArrowDown')localKeys.y=1;
+            if(k==='a'||k==='ArrowLeft')localKeys.x=-1;
+            if(k==='d'||k==='ArrowRight')localKeys.x=1;
+            if(/^[1-5]$/.test(k)) skillRequest=Number(k);
+        };
+        const keyup=e=>{
+            if(['w','ArrowUp','s','ArrowDown'].includes(e.key))localKeys.y=0;
+            if(['a','ArrowLeft','d','ArrowRight'].includes(e.key))localKeys.x=0;
+        };
+        window.addEventListener('keydown',keydown); window.addEventListener('keyup',keyup);
+        inputListener.on('value',snap=>{ remoteInput=snap.val()||{x:0,y:0,skill:0}; });
+
+        const publishInput=()=>{
+            inputRef.set({x:localKeys.x||0,y:localKeys.y||0,skill:skillRequest||0,updatedAt:firebase.database.ServerValue.TIMESTAMP});
+            skillRequest=0;
+        };
+
+        const spawnEffect=(type,x,y,color,extra={})=>{
+            effects.push({id:Math.random().toString(36).slice(2),type,x,y,color,life:extra.life||0.65,maxLife:extra.life||0.65,r:extra.r||20,fromX:extra.fromX,toX:extra.toX,fromY:extra.fromY,toY:extra.toY,text:extra.text||'',angle:extra.angle||0});
+        };
+        const getActive=(team,idx)=>team[Math.min(idx,team.length-1)];
+        const currentA=()=>getActive(teamStatsA,activeA), currentB=()=>getActive(teamStatsB,activeB);
+        const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+        const move=(f,inp,dt)=>{
+            if(!f||!f.alive)return;
+            let x=Number(inp?.x||0), y=Number(inp?.y||0); const len=Math.hypot(x,y)||1;
+            const speed=f.speed; f.x=Math.max(80,Math.min(W-80,f.x+x/len*speed*dt)); f.y=Math.max(150,Math.min(H-100,f.y+y/len*speed*dt));
+            f.angle=Math.atan2(y,x)||f.angle;
+        };
+        const respawnNext=(side)=>{
+            if(side==='A'){
+                if(activeA<teamStatsA.length-1){activeA++; const f=currentA(); f.alive=true;f.hp=f.maxHp;f.x=230;f.y=H/2+(activeA-1)*155;spawnEffect('switch',f.x,f.y,f.color,{r:100,text:`PET ${activeA+1} RA SÂN`});return true;}
+                return false;
+            }
+            if(activeB<teamStatsB.length-1){activeB++; const f=currentB();f.alive=true;f.hp=f.maxHp;f.x=W-230;f.y=H/2+(activeB-1)*155;spawnEffect('switch',f.x,f.y,f.color,{r:100,text:`PET ${activeB+1} RA SÂN`});return true;}
+            return false;
+        };
+        const useSkill=(attacker,target,profile,side)=>{
+            if(!attacker||!target||!attacker.alive||!target.alive)return;
+            const dist=distance(attacker,target);
+            if(dist>profile.range)return;
+            const raw=attacker.attack*profile.mult;
+            const mitigation=Math.max(0.18,1-(target.defense/(target.defense+raw*0.9)));
+            let dmg=Math.max(1,Math.floor(raw*mitigation));
+            // Kỹ năng đặc biệt có hiệu ứng chiến đấu khác nhau.
+            if(profile.kind==='heal') { attacker.hp=Math.min(attacker.maxHp,attacker.hp+Math.floor(attacker.maxHp*0.10)); dmg=0; }
+            else target.hp=Math.max(0,target.hp-dmg);
+            const dx=target.x-attacker.x,dy=target.y-attacker.y,ang=Math.atan2(dy,dx);
+            const k=profile.kind;
+            const ranged=['beam','sunbeam','divinebeam'];
+            if(ranged.includes(k)) spawnEffect(k,attacker.x,attacker.y,attacker.color,{fromX:attacker.x,toX:target.x,fromY:attacker.y,toY:target.y,life:.34});
+            else if(k==='heal') spawnEffect('heal',attacker.x,attacker.y,attacker.color,{r:95,life:.8});
+            else if(['arc','slash','rift'].includes(k)) spawnEffect(k,target.x,target.y,attacker.color,{r:105,angle:ang,life:.5});
+            else if(['meteor','divinemeteor','volcano'].includes(k)) spawnEffect(k,target.x,target.y,attacker.color,{r:155,life:.9});
+            else spawnEffect(k,target.x,target.y,attacker.color,{r:130,life:k==='blackhole'||k==='singularity'||k==='abyss'?1.1:.72,angle:ang});
+            spawnEffect('text',target.x,target.y-70,attacker.color,{text:dmg?`-${dmg}`:'+'+Math.floor(attacker.maxHp*.10),life:.65});
+            shake=Math.max(shake,profile.kind==='meteor'||profile.kind==='vortex'?.18:.08);
+            if(target.hp<=0){target.alive=false;target.hp=0;spawnEffect('ko',target.x,target.y,target.color,{r:130,life:.8,text:'K.O!'});respawnNext(side==='A'?'B':'A');}
+        };
+
+        let cdA=0,cdB=0;
+        const processSkill=(attacker,target,skill,side)=>{
+            if(!skill)return;
+            const pet = side==='A' ? teamA[activeA] : teamB[activeB];
+            const profile=this.getArenaSkillProfile(pet,skill);
+            useSkill(attacker,target,profile,side);
+        };
+
+        const drawPet=(p,t,flip=false)=>{
+            if(!p)return;
+            ctx.save();ctx.translate(p.x,p.y);ctx.scale(flip?-1:1,1);
+            const bob=Math.sin(t*0.006+p.teamIndex*1.7)*7, pulse=Math.sin(t*0.008+p.teamIndex)*3;
+            ctx.translate(0,bob);
+            ctx.shadowBlur=28+p.tier*1.5;ctx.shadowColor=p.color;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(0,0,p.radius+pulse,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+            ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();
+            // Mắt + con ngươi chuyển động theo hướng nhìn.
+            ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-17,-13,10,14,0,0,Math.PI*2);ctx.ellipse(17,-13,10,14,0,0,Math.PI*2);ctx.fill();
+            const look=Math.sin(t*0.004+p.teamIndex)*2.5;ctx.fillStyle='#101820';ctx.beginPath();ctx.arc(-14+look,-11,4.8,0,Math.PI*2);ctx.arc(14+look,-11,4.8,0,Math.PI*2);ctx.fill();
+            ctx.strokeStyle='#111';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,9,10,0.1,Math.PI-0.1);ctx.stroke();
+            if(p.tier>=8||p.isGod){ctx.globalAlpha=.35+.2*Math.sin(t*.005);ctx.strokeStyle=p.color;ctx.lineWidth=5;for(let r=p.radius+18;r<p.radius+68;r+=16){ctx.beginPath();ctx.arc(0,0,r+Math.sin(t*.004+r)*5,0,Math.PI*2);ctx.stroke();}ctx.globalAlpha=.9;for(let i=0;i<7;i++){const a=t*.001+i*Math.PI/3.5;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(Math.cos(a)*(p.radius+30),Math.sin(a)*(p.radius+30),4,0,Math.PI*2);ctx.fill();}}
+            if(p.isGod){ctx.fillStyle='#fff';ctx.font='bold 16px Arial';ctx.textAlign='center';ctx.fillText('✦ THẦN ✦',0,-p.radius-25);}
+            ctx.restore();
+        };
+        const drawEffects=(now)=>{
+            const dt=Math.min((now-last)/1000,.05);
+            effects.forEach(e=>{
+                e.life-=dt; const q=Math.max(0,e.life/e.maxLife); ctx.save();ctx.globalAlpha=q;
+                if(e.type==='hit'){ctx.strokeStyle=e.color;ctx.lineWidth=5;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-q+.2),0,Math.PI*2);ctx.stroke();}
+                else if(e.type==='arc'){ctx.strokeStyle=e.color;ctx.lineWidth=10;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1.1-q*.25),e.angle-1.15,e.angle+1.15);ctx.stroke();}
+                else if(e.type==='meteor'){ctx.fillStyle=e.color;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-q*.3),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.stroke();}
+                else if(e.type==='vortex'){ctx.strokeStyle=e.color;ctx.lineWidth=7;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-i*.18)*(1-q*.3),i*1.5+now*.003,i*1.5+now*.003+4);ctx.stroke();}}
+                else if(e.type==='sunbeam'||e.type==='beam'){ctx.strokeStyle=e.color;ctx.lineWidth=(e.type==='sunbeam'?30:18)*q;ctx.shadowBlur=30;ctx.shadowColor=e.color;ctx.beginPath();ctx.moveTo(e.fromX,e.fromY);ctx.lineTo(e.toX,e.toY);ctx.stroke();ctx.shadowBlur=0;}
+                else if(e.type==='fireball'){ctx.fillStyle=e.color;ctx.shadowBlur=30;ctx.shadowColor=e.color;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(.45+q*.55),0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}else if(e.type==='ice'){ctx.strokeStyle='#dffcff';ctx.lineWidth=7;for(let i=0;i<6;i++){const a=i*Math.PI/3+e.angle;ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(e.x+Math.cos(a)*e.r*q,e.y+Math.sin(a)*e.r*q);ctx.stroke();}}else if(e.type==='crystal'){ctx.fillStyle=e.color;ctx.beginPath();ctx.moveTo(e.x,e.y-e.r*q);ctx.lineTo(e.x+e.r*.45*q,e.y);ctx.lineTo(e.x,e.y+e.r*q);ctx.lineTo(e.x-e.r*.45*q,e.y);ctx.closePath();ctx.fill();}else if(e.type==='nova'||e.type==='solarburst'||e.type==='supernova'||e.type==='divineburst'){ctx.strokeStyle=e.color;ctx.lineWidth=9;for(let i=0;i<12;i++){const a=i*Math.PI/6;ctx.beginPath();ctx.moveTo(e.x+Math.cos(a)*12,e.y+Math.sin(a)*12);ctx.lineTo(e.x+Math.cos(a)*e.r*q,e.y+Math.sin(a)*e.r*q);ctx.stroke();}ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-q*.3),0,Math.PI*2);ctx.stroke();}else if(e.type==='blackhole'||e.type==='abyss'||e.type==='singularity'){ctx.fillStyle='#080014';ctx.shadowBlur=35;ctx.shadowColor=e.color;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(.65+.35*q),0,Math.PI*2);ctx.fill();ctx.strokeStyle=e.color;ctx.lineWidth=6;for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-i*.22),now*.004+i,now*.004+i+4.5);ctx.stroke();}ctx.shadowBlur=0;}else if(e.type==='rift'||e.type==='slash'){ctx.strokeStyle=e.color;ctx.lineWidth=14*q;ctx.beginPath();ctx.moveTo(e.x-e.r,e.y+e.r*.55);ctx.quadraticCurveTo(e.x,e.y-e.r,e.x+e.r,e.y-e.r*.35);ctx.stroke();}else if(e.type==='flame'||e.type==='inferno'||e.type==='phoenix'){ctx.fillStyle=e.color;for(let i=0;i<9;i++){const a=i*.7;ctx.beginPath();ctx.arc(e.x+Math.cos(a)*e.r*q*.55,e.y+Math.sin(a)*e.r*q*.55,e.r*.16*q,0,Math.PI*2);ctx.fill();}}else if(e.type==='chainlightning'||e.type==='thunder'||e.type==='storm'||e.type==='judgement'||e.type==='zeus'){ctx.strokeStyle=e.color;ctx.lineWidth=5;for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(e.x,e.y);for(let j=1;j<6;j++){ctx.lineTo(e.x+(Math.random()-.5)*e.r*2*q,e.y+(Math.random()-.5)*e.r*2*q);}ctx.stroke();}}else if(e.type==='time'||e.type==='rewind'||e.type==='timeprison'||e.type==='freeze'||e.type==='chronos'){ctx.strokeStyle=e.color;ctx.lineWidth=6;ctx.beginPath();ctx.arc(e.x,e.y,e.r*q,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(e.x,e.y-e.r*q*.7);ctx.moveTo(e.x,e.y);ctx.lineTo(e.x+e.r*q*.45,e.y);ctx.stroke();}else if(e.type==='galaxy'||e.type==='cosmic'||e.type==='creation'||e.type==='crown'){ctx.strokeStyle=e.color;ctx.lineWidth=5;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(e.x,e.y,e.r*q,e.r*q*(.35+i*.08),i*.7,0,Math.PI*2);ctx.stroke();}}else if(e.type==='heal'){ctx.strokeStyle=e.color;ctx.lineWidth=7;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-q),0,Math.PI*2);ctx.stroke();ctx.font='bold 28px Arial';ctx.fillStyle='#fff';ctx.fillText('✚',e.x-12,e.y+10);}
+                else if(e.type==='switch'){ctx.strokeStyle=e.color;ctx.lineWidth=8;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1.5-q*.5),0,Math.PI*2);ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 20px Arial';ctx.textAlign='center';ctx.fillText(e.text,e.x,e.y-115);}
+                else if(e.type==='ko'){ctx.strokeStyle=e.color;ctx.lineWidth=9;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(1-q*.4),0,Math.PI*2);ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 28px Arial';ctx.textAlign='center';ctx.fillText(e.text,e.x,e.y);}
+                else if(e.type==='text'){ctx.fillStyle=e.color;ctx.font='bold 24px Arial';ctx.textAlign='center';ctx.fillText(e.text,e.x,e.y-(1-q)*55);}
+                ctx.restore();
+            });
+            effects=effects.filter(e=>e.life>0);
+        };
+
+        const statePayload=()=>({
+            updatedAt:firebase.database.ServerValue.TIMESTAMP,
+            active:{[room.hostId]:activeA,[room.guestId]:activeB},
+            players:{
+                [room.hostId]:{x:currentA()?.x||230,y:currentA()?.y||H/2,hp:currentA()?.hp||0,maxHp:currentA()?.maxHp||1,active:activeA,alive:!!currentA()?.alive},
+                [room.guestId]:{x:currentB()?.x||W-230,y:currentB()?.y||H/2,hp:currentB()?.hp||0,maxHp:currentB()?.maxHp||1,active:activeB,alive:!!currentB()?.alive}
+            },
+            teams:{[room.hostId]:teamStatsA.map(f=>({hp:f.hp,maxHp:f.maxHp,alive:f.alive})),[room.guestId]:teamStatsB.map(f=>({hp:f.hp,maxHp:f.maxHp,alive:f.alive}))},
+            effects:effects.slice(-30)
+        });
+
+        let remoteState=null;
+        const stateListener=this.pvpRoomRef.child('state');
+        stateListener.on('value',snap=>{remoteState=snap.val()||null;});
+
+        const frame=(now)=>{
+            if(!this.inArenaBattle){arenaControls.destroy();window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);inputListener.off();stateListener.off();return;}
+            const dt=Math.min((now-last)/1000,.05);last=now; cdA=Math.max(0,cdA-dt);cdB=Math.max(0,cdB-dt);shake=Math.max(0,shake-dt);
+            const dom=arenaControls.getMove(); if(Math.hypot(dom.x,dom.y)>.05){localKeys.x=dom.x;localKeys.y=dom.y;}
+            if(isHost){
+                const a=currentA(),b=currentB();
+                move(a,localKeys,dt); move(b,remoteInput,dt);
+                if(skillRequest&&cdA<=0){processSkill(a,b,skillRequest,'A');cdA=.38;skillRequest=0;}
+                if(remoteInput.skill&&cdB<=0){processSkill(b,a,remoteInput.skill,'B');cdB=.38;remoteInput.skill=0;}
+                const allDeadA=activeA>=teamStatsA.length-1&&!teamStatsA[activeA].alive;
+                const allDeadB=activeB>=teamStatsB.length-1&&!teamStatsB[activeB].alive;
+                if(allDeadA||allDeadB){this.pvpRoomRef.update({status:'finished',winnerId:allDeadB?room.hostId:room.guestId});}
+                this.pvpRoomRef.child('state').set(statePayload());
+            } else if(remoteState){
+                const meState=remoteState.players?.[this.playerId], opState=remoteState.players?.[enemyId];
+                const myIndex=Number(meState?.active||0), opIndex=Number(opState?.active||0);
+                if(myIndex<teamStatsA.length){activeA=myIndex; const me=currentA(); if(me){me.x=meState?.x??me.x;me.y=meState?.y??me.y;me.hp=meState?.hp??me.hp;me.alive=meState?.alive!==false;}}
+                if(opIndex<teamStatsB.length){activeB=opIndex; const op=currentB(); if(op){op.x=opState?.x??op.x;op.y=opState?.y??op.y;op.hp=opState?.hp??op.hp;op.alive=opState?.alive!==false;}}
+                if(remoteState.effects) effects=remoteState.effects.map(e=>({...e}));
+                move(currentA(),localKeys,dt);
+            }
+            refreshSkillControls();
+            ctx.save();
+            if(shake>0)ctx.translate((Math.random()-.5)*12,(Math.random()-.5)*12);
+            ctx.clearRect(-20,-20,W+40,H+40);ctx.fillStyle='#050a11';ctx.fillRect(0,0,W,H);
+            ctx.strokeStyle='#132536';ctx.lineWidth=2;for(let x=0;x<W;x+=70){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=70){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+            ctx.fillStyle='rgba(0,255,200,.055)';ctx.fillRect(0,H/2-130,W,260);
+            drawPet(currentA(),now,false);drawPet(currentB(),now,true);drawEffects(now);
+            const drawHud=(f,x,c,side)=>{ctx.fillStyle='rgba(8,15,24,.92)';ctx.fillRect(x,30,520,95);ctx.strokeStyle=c;ctx.lineWidth=3;ctx.strokeRect(x,30,520,95);ctx.fillStyle='#fff';ctx.font='bold 17px Arial';ctx.fillText(`${side} • ${f.name} • Lv.${f.level} • Bậc ${f.tier}`,x+18,58);ctx.fillStyle='#1c2731';ctx.fillRect(x+18,78,480,20);ctx.fillStyle=c;ctx.fillRect(x+18,78,480*Math.max(0,f.hp/f.maxHp),20);ctx.fillStyle='#fff';ctx.font='12px Arial';ctx.fillText(`HP ${Math.max(0,Math.floor(f.hp))}/${f.maxHp}  •  Công ${f.attack}  •  Thủ ${f.defense}  •  Pet ${f.teamIndex+1}/3`,x+25,93);ctx.font='11px Arial';ctx.fillText(`Kỹ năng: ${f.skills}/5`,x+25,113);};
+            drawHud(currentA(),28,'#00ffc8','ĐỘI BẠN');drawHud(currentB(),W-548,'#ff4646','ĐỐI THỦ');
+            ctx.fillStyle='#fff';ctx.font='bold 15px Arial';ctx.textAlign='center';ctx.fillText('⚔️ 3 VS 3 • PET TIẾP THEO TỰ ĐỘNG RA SÂN KHI PET TRƯỚC BỊ HẠ',W/2,150);ctx.textAlign='left';
+            ctx.restore();
+            if(now-lastInputPublish>55){lastInputPublish=now;publishInput();}
+            requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
     }
 
     start() {
