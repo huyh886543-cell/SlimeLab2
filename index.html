@@ -33,12 +33,18 @@
         #rotate-warning .icon { font-size: 48px; margin-bottom: 12px; animation: rotateAnim 2s infinite ease-in-out; }
         @keyframes rotateAnim { 0%, 20% { transform: rotate(0deg); } 50%, 70% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
         @media (orientation: portrait) { #rotate-warning { display: flex !important; } }
+        
         #app-layout { display: flex; flex-direction: row; width: 100vw; height: 100dvh; padding: 4px; gap: 6px; align-items: center; justify-content: center; }
-        #rank-board { width: clamp(155px, 18vw, 210px); height: 100%; background-color: #0f1622; border: 1.5px solid #223145; border-radius: 8px; display: flex; flex-direction: column; padding: 8px 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7); flex-shrink: 0; }
+        
+        #rank-board { width: clamp(165px, 18vw, 215px); height: 100%; background-color: #0f1622; border: 1.5px solid #223145; border-radius: 8px; display: flex; flex-direction: column; padding: 8px 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7); flex-shrink: 0; }
         #rank-header { text-align: center; color: #ffd700; font-size: 13px; font-weight: bold; }
         #rank-server { text-align: center; color: #6a829a; font-size: 10px; margin-bottom: 6px; border-bottom: 1px solid #1a2636; padding-bottom: 3px; }
-        #rank-list { flex: 1; overflow-y: auto; scrollbar-width: none; touch-action: pan-y !important; }
+        #rank-list { flex: 1; overflow-y: auto; scrollbar-width: none; touch-action: pan-y !important; margin-bottom: 6px; }
         #rank-list::-webkit-scrollbar { display: none; }
+        
+        #btn-arena-main { width: 100%; padding: 9px 4px; background: linear-gradient(135deg, #a02832, #60121a); color: #fff; border: 1.5px solid #ff4646; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; box-shadow: 0 0 10px rgba(255,70,70,0.4); transition: 0.2s; flex-shrink: 0; }
+        #btn-arena-main:hover { background: linear-gradient(135deg, #c0392b, #8b0000); }
+
         .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-bottom: 1px solid #131c29; font-size: 11.5px; cursor: pointer; transition: 0.2s; }
         .rank-item:hover { background-color: rgba(255, 255, 255, 0.05); }
         .rank-item:nth-child(1) { color: #ffd700; font-weight: bold; }
@@ -53,13 +59,16 @@
         #game-wrapper { flex: 1; height: 100%; display: flex; position: relative; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; background-color: #0c1018; border-radius: 8px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.9); border: 1.5px solid #1c2838; }
         
-        #welcome-modal, #custom-input-overlay, #html-alert-overlay { position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        #welcome-modal, #custom-input-overlay, #html-alert-overlay, #arena-modal, #arena-queue-overlay, #arena-battle-overlay { position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); display: none; justify-content: center; align-items: center; z-index: 10000; }
         #custom-input-overlay { z-index: 20000; } #html-alert-overlay { z-index: 999999; backdrop-filter: blur(4px); }
-        #welcome-panel, #custom-input-box, #html-alert-box { background-color: #111a28; border: 1.5px solid #00ffc8; border-radius: 10px; width: min(360px, 85vw); padding: 22px 18px; text-align: center; box-shadow: 0 0 25px rgba(0, 255, 200, 0.2); }
+        #arena-modal, #arena-queue-overlay { z-index: 30000; backdrop-filter: blur(6px); }
+        #arena-battle-overlay { z-index: 40000; background: #000; padding: 0; }
+
+        #welcome-panel, #custom-input-box, #html-alert-box, #arena-box { background-color: #111a28; border: 1.5px solid #ff4646; border-radius: 12px; width: min(420px, 90vw); padding: 22px 18px; text-align: center; box-shadow: 0 0 30px rgba(255, 70, 70, 0.3); }
         #welcome-title { color: #ffd700; font-size: 18px; font-weight: bold; margin-bottom: 4px; }
         #welcome-server { color: #7890a8; font-size: 11px; margin-bottom: 14px; }
-        .welcome-input, #custom-input-field { width: 100%; padding: 10px 12px; background-color: #080c14; border: 1px solid #28374b; color: #fff; border-radius: 6px; margin-bottom: 12px; font-size: 13px; outline: none; text-align: center; }
-        .welcome-input:focus, #custom-input-field:focus { border-color: #00ffc8; }
+        .welcome-input, #custom-input-field, #arena-bet-input { width: 100%; padding: 10px 12px; background-color: #080c14; border: 1px solid #28374b; color: #fff; border-radius: 6px; margin-bottom: 12px; font-size: 13px; outline: none; text-align: center; }
+        .welcome-input:focus, #custom-input-field:focus, #arena-bet-input:focus { border-color: #ff4646; }
         .modal-btn { width: 100%; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
         #start-btn { background-color: #14503c; color: #e6f5ff; border: 1px solid #00ffc8; }
         #google-btn { background-color: #ffffff; color: #2b2b2b; border: 1px solid #ddd; font-size: 13px; }
@@ -83,6 +92,49 @@
             <button id="html-alert-btn">XÁC NHẬN</button>
         </div>
     </div>
+
+    <!-- MODAL ĐẤU TRƯỜNG: CHỌN TEAM & CƯỢC KIM CƯƠNG -->
+    <div id="arena-modal">
+        <div id="arena-box">
+            <h3 style="color: #ff4646; font-size: 20px; font-weight: bold; margin-bottom: 6px;">⚔️ ĐẤU TRƯỜNG SINH TỬ ⚔️</h3>
+            <p style="color: #7890a8; font-size: 11.5px; margin-bottom: 14px;">Chọn tối đa 3 Pet xuất trận (Tự động chọn pet mạnh nhất nếu chưa chọn)</p>
+            
+            <div id="arena-pet-slots" style="display: flex; gap: 8px; margin-bottom: 14px; justify-content: center;">
+                <!-- 3 Slot pet render bằng JS -->
+            </div>
+
+            <div style="text-align: left; font-size: 12px; color: #e6f5ff; margin-bottom: 6px;">Số lượng Kim Cương cược thêm (Tối thiểu 0):</div>
+            <input type="number" id="arena-bet-input" min="0" value="0" placeholder="Nhập số kim cương muốn cược...">
+            
+            <div style="background: rgba(255,70,70,0.1); border: 1px solid rgba(255,70,70,0.3); border-radius: 6px; padding: 8px; font-size: 11px; color: #ff9999; margin-bottom: 15px; text-align: left;">
+                ℹ️ <b>Quy định:</b> Phí vào cửa mặc định là <b>1 💎</b>. Thắng nhận x2 kim cương cược + 5% tài sản địch. Thua mất vé + tiền cược + 5% tài sản của bạn!
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button id="arena-start-search-btn" style="flex: 2; background: #c0392b; color: white; border: 1px solid #ff4646; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">🚀 TÌM TRẬN NGAY</button>
+                <button id="arena-close-btn" style="flex: 1; background: #283c50; color: white; border: none; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PHÒNG CHỜ TÌM TRẬN (QUEUE) -->
+    <div id="arena-queue-overlay">
+        <div style="background-color: #111a28; border: 2px solid #00ffc8; border-radius: 12px; width: min(350px, 85vw); padding: 30px 20px; text-align: center; box-shadow: 0 0 35px rgba(0, 255, 200, 0.3);">
+            <div style="font-size: 50px; margin-bottom: 15px; animation: pulseAnim 1.5s infinite alternate;">🔍</div>
+            <h3 style="color: #00ffc8; font-size: 18px; font-weight: bold; margin-bottom: 10px;">ĐANG TÌM ĐỐI THỦ...</h3>
+            <p id="queue-timer-text" style="color: #7890a8; font-size: 13px; margin-bottom: 25px;">Đã trừ phí vào cửa & cược. Đang quét sàn đấu...</p>
+            <button id="arena-cancel-queue-btn" style="width: 100%; padding: 12px; background-color: #a02832; color: #fff; border: 1px solid #ff4646; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer;">HỦY (Hoàn tiền)</button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH BATTLE CANVAS TRỰC TIẾP -->
+    <div id="arena-battle-overlay">
+        <canvas id="arenaBattleCanvas" width="1280" height="720"></canvas>
+    </div>
+
+    <style>
+        @keyframes pulseAnim { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.15); opacity: 1; } }
+    </style>
 
     <!-- KHU VỰC NHẬP TÍNH NĂNG ẨN (EASTER EGG) -->
     <div id="easter-egg-overlay" style="display: none; position: fixed; inset: 0; background-color: rgba(6, 9, 15, 0.96); justify-content: center; align-items: center; z-index: 25000; backdrop-filter: blur(4px);">
@@ -128,6 +180,7 @@
             <div id="rank-header">🏆 BẢNG XẾP HẠNG</div>
             <div id="rank-server">ONLINE SERVER 1</div>
             <div id="rank-list"><div style="text-align:center; padding:10px; font-size:10.5px; color:#6a829a;">Đang kết nối...</div></div>
+            <button id="btn-arena-main">⚔️ ĐẤU TRƯỜNG</button>
         </div>
         
         <div id="game-wrapper">
@@ -402,10 +455,8 @@ class Slime {
 
         this.rotationAngle += 1.5 * dt * spd; 
 
-        // Nếu người chơi đang bấm giữ kéo pet, quyền kéo thả luôn được ưu tiên
         if (this.isDragged || this.frozen) return null; 
 
-        // Chế độ tự động bơi xếp chữ
         if (this.isFormingText) {
             const dx = this.targetX - this.x;
             const dy = this.targetY - this.y;
@@ -497,6 +548,12 @@ class Game {
         this.diamonds = 0; this.pendingDiscoveryQueue = []; this.giftingTo = null;
         this.isFormingTextActive = false;
         
+        // Đấu trường variables
+        this.selectedArenaTeam = [null, null, null];
+        this.arenaBetDiamonds = 0;
+        this.inArenaQueue = false;
+        this.inArenaBattle = false;
+
         this.playerId = localStorage.getItem("slime_player_id") || ('usr_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36)); localStorage.setItem("slime_player_id", this.playerId);
         this.containerRect = { left: 12, top: 66, width: CANVAS_W - 24, height: CANVAS_H - 78, right: CANVAS_W - 12, bottom: CANVAS_H - 12 };
         this.updateWorldDimensions(); this.camera = { x: this.worldWidth / 2, y: this.worldHeight / 2, zoom: 0.15 };
@@ -513,7 +570,7 @@ class Game {
         this.activePointers = new Map();
         this.lastTime = performance.now(); this.lastSaveTime = performance.now();
         
-        this.initFirebase(); this.setupEvents(); this.checkLoginStatus();
+        this.initFirebase(); this.setupEvents(); this.setupArenaEvents(); this.checkLoginStatus();
     }
     
     updateWorldDimensions() { const t=TANK_THEMES[this.currentLabId]||TANK_THEMES[0]; const s=t.scale||1; this.worldWidth=this.containerRect.width*20*s; this.worldHeight=this.containerRect.height*20*s; }
@@ -922,7 +979,6 @@ class Game {
         const imgData = tctx.getImageData(0, 0, tc.width, tc.height).data;
         let points = [];
         
-        // 1. Lấy mẫu với bước nhảy nhỏ (3) để mảng tọa độ dày đặc và độ phân giải chữ cao nhất
         const sampleStep = 3; 
         for (let y = 0; y < tc.height; y += sampleStep) {
             for (let x = 0; x < tc.width; x += sampleStep) {
@@ -938,8 +994,6 @@ class Game {
             return;
         }
 
-        // 2. KHUẤY ĐỀU (SHUFFLE) MẢNG ĐIỂM
-        // Đây là mấu chốt để Pet rải đều khắp mọi nơi trên mặt chữ thay vì xếp thành đường kẻ sọc ngang
         points.sort(() => Math.random() - 0.5);
 
         let minX = tc.width, maxX = 0, minY = tc.height, maxY = 0;
@@ -955,7 +1009,6 @@ class Game {
         const cx = this.worldWidth / 2;
         const cy = this.worldHeight / 2;
 
-        // 3. Tối ưu Scale: Tính tỷ lệ nội suy để chữ luôn hiển thị vừa khít giữa màn hình, không bị tràn viền
         const maxW = this.worldWidth * 0.95;
         const maxH = this.worldHeight * 0.85;
         const scale = Math.min(maxW / textW, maxH / textH);
@@ -963,7 +1016,6 @@ class Game {
         const lab = this.labsData[this.currentLabId];
         const slimes = lab.slimes;
 
-        // 4. Kích thước thông minh: Tính toán mật độ Pet. Nếu bạn có ít Pet, Pet sẽ tự động to ra để lấp đầy nét chữ. Nếu có nhiều Pet, chúng sẽ thu nhỏ lại cho nét chữ sắc cạnh.
         const textVisualArea = textW * textH * scale * scale; 
         const estimatedInkArea = textVisualArea * 0.35; 
         const areaPerSlime = estimatedInkArea / slimes.length;
@@ -971,11 +1023,7 @@ class Game {
 
         for (let i = 0; i < slimes.length; i++) {
             const s = slimes[i];
-            
-            // Bốc các tọa độ một cách đồng đều từ mảng đã khuấy
             const pt = points[i % points.length];
-            
-            // 5. Gắn chặt tọa độ cố định, không cộng thêm bất kỳ sai số ngẫu nhiên nào
             s.targetX = cx + (pt.x - minX - textW/2) * scale;
             s.targetY = cy + (pt.y - minY - textH/2) * scale;
             s.targetRadius = idealRadius; 
@@ -984,6 +1032,486 @@ class Game {
         
         this.sound.playMutate();
     }
+
+    // === HỆ THỐNG ĐẤU TRƯỜNG (ARENA SYSTEM) ===
+    setupArenaEvents() {
+        const btnArena = document.getElementById("btn-arena-main");
+        const modalArena = document.getElementById("arena-modal");
+        const closeArena = document.getElementById("arena-close-btn");
+        const startSearchBtn = document.getElementById("arena-start-search-btn");
+        const cancelQueueBtn = document.getElementById("arena-cancel-queue-btn");
+        const queueOverlay = document.getElementById("arena-queue-overlay");
+
+        btnArena.onclick = () => {
+            // Kiểm tra điều kiện: Phải có ít nhất 1 Slime trong bất kỳ bể nào
+            let totalPets = 0;
+            for(let i=0; i<10; i++) {
+                if(this.labsData[i] && this.labsData[i].slimes) {
+                    totalPets += this.labsData[i].slimes.length;
+                }
+            }
+            if(totalPets === 0) {
+                showCustomAlert("⚠️ Bạn cần sở hữu ít nhất 1 Slime (Pet) ở bất kỳ bể nào để tham gia Đấu Trường!", "error");
+                return;
+            }
+
+            // Tự động quét và chọn pet mạnh nhất cho 3 slot nếu chưa chọn
+            this.autoFillArenaTeam();
+            this.renderArenaModalSlots();
+            modalArena.style.display = "flex";
+        };
+
+        closeArena.onclick = () => {
+            modalArena.style.display = "none";
+        };
+
+        startSearchBtn.onclick = () => {
+            const betInput = parseInt(document.getElementById("arena-bet-input").value) || 0;
+            const entryFee = 1;
+            const totalRequiredDia = entryFee + betInput;
+
+            if (this.diamonds < totalRequiredDia) {
+                showCustomAlert(`⚠️ Không đủ Kim Cương! Bạn cần tối thiểu ${totalRequiredDia} 💎 (1 Phí vào + ${betInput} Cược).`, "error");
+                return;
+            }
+
+            // Trừ phí và tiền cược trước
+            this.diamonds -= totalRequiredDia;
+            this.arenaBetDiamonds = betInput;
+            this.saveGame();
+
+            modalArena.style.display = "none";
+            queueOverlay.style.display = "flex";
+            this.inArenaQueue = true;
+
+            // Giả lập tìm trận trong 2-4 giây
+            const searchTime = 2000 + Math.random() * 2000;
+            this.arenaSearchTimeout = setTimeout(() => {
+                if (this.inArenaQueue) {
+                    queueOverlay.style.display = "none";
+                    this.inArenaQueue = false;
+                    this.startArenaBattle();
+                }
+            }, searchTime);
+        };
+
+        cancelQueueBtn.onclick = () => {
+            if (this.arenaSearchTimeout) clearTimeout(this.arenaSearchTimeout);
+            // Hoàn lại toàn bộ kim cương (phí + cược)
+            const entryFee = 1;
+            const totalRefund = entryFee + this.arenaBetDiamonds;
+            this.diamonds += totalRefund;
+            this.saveGame();
+
+            queueOverlay.style.display = "none";
+            this.inArenaQueue = false;
+            showCustomAlert(`ℹ️ Đã hủy tìm trận. Hoàn trả lại ${totalRefund} 💎 vào tài khoản.`, "info");
+        };
+    }
+
+    autoFillArenaTeam() {
+        // Thu thập tất cả pet từ mọi lab
+        let allPets = [];
+        for(let i=0; i<10; i++) {
+            if(this.labsData[i] && this.labsData[i].slimes) {
+                this.labsData[i].slimes.forEach(s => {
+                    const power = s.level * s.strain.tier;
+                    allPets.push({ slime: s, power: power });
+                });
+            }
+        }
+        // Sắp xếp giảm dần theo sức mạnh
+        allPets.sort((a,b) => b.power - a.power);
+
+        this.selectedArenaTeam = [null, null, null];
+        for(let i=0; i<3; i++) {
+            if(allPets[i]) {
+                this.selectedArenaTeam[i] = allPets[i].slime;
+            }
+        }
+    }
+
+    renderArenaModalSlots() {
+        const slotsContainer = document.getElementById("arena-pet-slots");
+        slotsContainer.innerHTML = "";
+
+        for(let i=0; i<3; i++) {
+            const pet = this.selectedArenaTeam[i];
+            const slotDiv = document.createElement("div");
+            slotDiv.style.cssText = "flex: 1; background: #080c14; border: 1.5px solid #28374b; border-radius: 8px; padding: 10px 6px; text-align: center; min-height: 110px; display: flex; flex-direction: column; justify-content: space-between;";
+            
+            if (pet) {
+                slotDiv.innerHTML = `
+                    <div style="font-size: 11px; font-weight: bold; color: ${pet.strain.color};">${pet.strain.name}</div>
+                    <div style="font-size: 10px; color: #ffd700;">Lv.${pet.level} (Bậc ${pet.strain.tier})</div>
+                    <div style="font-size: 9.5px; color: #00ffc8;">PWR: ${pet.level * pet.strain.tier}</div>
+                    <button style="background: #a02832; color: #fff; border: none; padding: 3px; border-radius: 4px; font-size: 9px; cursor: pointer; margin-top: 4px;" onclick="window.gameInstance.removeArenaSlot(${i})">Đổi Pet</button>
+                `;
+            } else {
+                slotDiv.innerHTML = `
+                    <div style="font-size: 11px; color: #6a829a; margin-top: 20px;">Trống [Slot ${i+1}]</div>
+                    <button style="background: #14503c; color: #00ffc8; border: 1px solid #00ffc8; padding: 4px; border-radius: 4px; font-size: 10px; cursor: pointer;" onclick="window.gameInstance.pickArenaSlot(${i})">+ Chọn Pet</button>
+                `;
+            }
+            slotsContainer.appendChild(slotDiv);
+        }
+    }
+
+    removeArenaSlot(index) {
+        this.selectedArenaTeam[index] = null;
+        this.renderArenaModalSlots();
+    }
+
+    pickArenaSlot(index) {
+        // Lấy danh sách tất cả pet để người chơi chọn
+        let allPets = [];
+        for(let i=0; i<10; i++) {
+            if(this.labsData[i] && this.labsData[i].slimes) {
+                this.labsData[i].slimes.forEach(s => {
+                    allPets.push(s);
+                });
+            }
+        }
+        if(allPets.length === 0) {
+            showCustomAlert("Không có Pet nào trong các Lab!", "error");
+            return;
+        }
+        // Chọn ngẫu nhiên 1 pet mạnh chưa có trong team hoặc pet đầu tiên
+        let chosen = allPets.find(p => !this.selectedArenaTeam.includes(p)) || allPets[0];
+        this.selectedArenaTeam[index] = chosen;
+        this.renderArenaModalSlots();
+    }
+
+    startArenaBattle() {
+        const battleOverlay = document.getElementById("arena-battle-overlay");
+        battleOverlay.style.display = "flex";
+        this.inArenaBattle = true;
+
+        const battleCanvas = document.getElementById("arenaBattleCanvas");
+        const bCtx = battleCanvas.getContext("2d");
+
+        // Lấy pet đầu tiên trong team (hoặc pet mạnh nhất) làm đại diện chiến đấu
+        let activePet = this.selectedArenaTeam.find(p => p !== null);
+        if(!activePet) {
+            this.autoFillArenaTeam();
+            activePet = this.selectedArenaTeam[0];
+        }
+
+        // Chỉ số chiến đấu theo yêu cầu
+        const pLevel = activePet.level;
+        const pTier = activePet.strain.tier;
+
+        const playerStats = {
+            x: 200,
+            y: 360,
+            radius: 35,
+            maxHp: pLevel * pTier * 50,
+            hp: pLevel * pTier * 50,
+            dmg: pLevel * pTier * 10,
+            spd: 200 + (pTier * 10),
+            color: activePet.strain.color,
+            name: `${this.playerName} (${activePet.strain.name})`,
+            strain: activePet.strain
+        };
+
+        // Đối thủ tự động cân xứng
+        const enemyLevel = Math.max(1, pLevel + Math.floor((Math.random() - 0.4) * 3));
+        const enemyTier = Math.max(1, pTier + (Math.random() > 0.7 ? 1 : 0));
+        const enemyStats = {
+            x: 1080,
+            y: 360,
+            radius: 35,
+            maxHp: enemyLevel * enemyTier * 50,
+            hp: enemyLevel * enemyTier * 50,
+            dmg: enemyLevel * enemyTier * 10,
+            spd: 200 + (enemyTier * 10),
+            color: '#ff4646',
+            name: `Bot Đấu Sĩ [Lv.${enemyLevel}]`,
+            lastShot: 0
+        };
+
+        let bullets = [];
+        let keys = { w: false, a: false, s: false, d: false };
+        let mouseX = 1080, mouseY = 360;
+        let joystickActive = false;
+        let joystickCenter = { x: 0, y: 0 };
+        let joystickVector = { x: 0, y: 0 };
+
+        // Xử lý sự kiện bàn phím PC
+        const handleKeyDown = (e) => {
+            if(!this.inArenaBattle) return;
+            if(e.key === 'w' || e.key === 'W') keys.w = true;
+            if(e.key === 'a' || e.key === 'A') keys.a = true;
+            if(e.key === 's' || e.key === 'S') keys.s = true;
+            if(e.key === 'd' || e.key === 'D') keys.d = true;
+        };
+        const handleKeyUp = (e) => {
+            if(!this.inArenaBattle) return;
+            if(e.key === 'w' || e.key === 'W') keys.w = false;
+            if(e.key === 'a' || e.key === 'A') keys.a = false;
+            if(e.key === 's' || e.key === 'S') keys.s = false;
+            if(e.key === 'd' || e.key === 'D') keys.d = false;
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        // Xử lý chuột & bắn trên PC
+        const handleMouseMove = (e) => {
+            const rect = battleCanvas.getBoundingClientRect();
+            mouseX = (e.clientX - rect.left) * (1280 / rect.width);
+            mouseY = (e.clientY - rect.top) * (720 / rect.height);
+        };
+        const handleMouseDown = (e) => {
+            if(!this.inArenaBattle) return;
+            const rect = battleCanvas.getBoundingClientRect();
+            const cx = (e.clientX - rect.left) * (1280 / rect.width);
+            const cy = (e.clientY - rect.top) * (720 / rect.height);
+
+            // Bắn đạn về hướng click
+            const angle = Math.atan2(cy - playerStats.y, cx - playerStats.x);
+            bullets.push({
+                x: playerStats.x,
+                y: playerStats.y,
+                vx: Math.cos(angle) * 900,
+                vy: Math.sin(angle) * 900,
+                isPlayer: true,
+                dmg: playerStats.dmg,
+                life: 1.5
+            });
+            this.sound.playPop();
+        };
+        battleCanvas.addEventListener('mousemove', handleMouseMove);
+        battleCanvas.addEventListener('mousedown', handleMouseDown);
+
+        // Xử lý cảm ứng Mobile (Joystick nửa trái, Bắn nửa phải)
+        const handleTouchStart = (e) => {
+            if(!this.inArenaBattle) return;
+            for(let i=0; i<e.touches.length; i++) {
+                const t = e.touches[i];
+                const rect = battleCanvas.getBoundingClientRect();
+                const tx = (t.clientX - rect.left) * (1280 / rect.width);
+                const ty = (t.clientY - rect.top) * (720 / rect.height);
+
+                if (tx < 640 && !joystickActive) {
+                    // Nửa trái: Joystick di chuyển
+                    joystickActive = true;
+                    joystickCenter = { x: tx, y: ty };
+                    joystickVector = { x: 0, y: 0 };
+                } else if (tx >= 640) {
+                    // Nửa phải: Bắn đạn về hướng chạm
+                    const angle = Math.atan2(ty - playerStats.y, tx - playerStats.x);
+                    bullets.push({
+                        x: playerStats.x,
+                        y: playerStats.y,
+                        vx: Math.cos(angle) * 900,
+                        vy: Math.sin(angle) * 900,
+                        isPlayer: true,
+                        dmg: playerStats.dmg,
+                        life: 1.5
+                    });
+                    this.sound.playPop();
+                }
+            }
+        };
+
+        const handleTouchMove = (e) => {
+            if(!this.inArenaBattle || !joystickActive) return;
+            for(let i=0; i<e.touches.length; i++) {
+                const t = e.touches[i];
+                const rect = battleCanvas.getBoundingClientRect();
+                const tx = (t.clientX - rect.left) * (1280 / rect.width);
+                const ty = (t.clientY - rect.top) * (720 / rect.height);
+
+                if (tx < 640) {
+                    const dx = tx - joystickCenter.x;
+                    const dy = ty - joystickCenter.y;
+                    const dist = Math.hypot(dx, dy);
+                    const maxR = 50;
+                    if (dist > 0) {
+                        joystickVector.x = (dx / dist) * Math.min(1, dist / maxR);
+                        joystickVector.y = (dy / dist) * Math.min(1, dist / maxR);
+                    }
+                }
+            }
+        };
+
+        const handleTouchEnd = (e) => {
+            joystickActive = false;
+            joystickVector = { x: 0, y: 0 };
+        };
+
+        battleCanvas.addEventListener('touchstart', handleTouchStart);
+        battleCanvas.addEventListener('touchmove', handleTouchMove);
+        battleCanvas.addEventListener('touchend', handleTouchEnd);
+
+        let lastFrameTime = performance.now();
+        let battleLoopId = null;
+
+        const runBattle = (now) => {
+            if (!this.inArenaBattle) return;
+            const dt = Math.min((now - lastFrameTime) / 1000, 0.1);
+            lastFrameTime = now;
+
+            // --- 1. DI CHUYỂN PLAYER ---
+            let moveX = 0, moveY = 0;
+            if (keys.w) moveY -= 1;
+            if (keys.s) moveY += 1;
+            if (keys.a) moveX -= 1;
+            if (keys.d) moveX += 1;
+
+            if (moveX !== 0 && moveY !== 0) { moveX *= 0.7071; moveY *= 0.7071; }
+
+            if (joystickActive) {
+                playerStats.x += joystickVector.x * playerStats.spd * dt;
+                playerStats.y += joystickVector.y * playerStats.spd * dt;
+            } else {
+                playerStats.x += moveX * playerStats.spd * dt;
+                playerStats.y += moveY * playerStats.spd * dt;
+            }
+
+            // Giới hạn trong sân đấu 1280x720
+            playerStats.x = Math.max(40, Math.min(1240, playerStats.x));
+            playerStats.y = Math.max(40, Math.min(680, playerStats.y));
+
+            // --- 2. AI ĐỐI THỦ (DI CHUYỂN & BẮN) ---
+            const edx = playerStats.x - enemyStats.x;
+            const edy = playerStats.y - enemyStats.y;
+            const edist = Math.hypot(edx, edy);
+            if (edist > 120) {
+                enemyStats.x += (edx / edist) * enemyStats.spd * 0.7 * dt;
+                enemyStats.y += (edy / edist) * enemyStats.spd * 0.7 * dt;
+            }
+            // Bot bắn định kỳ
+            if (now - enemyStats.lastShot > 1000) {
+                enemyStats.lastShot = now;
+                const eAngle = Math.atan2(playerStats.y - enemyStats.y, playerStats.x - enemyStats.x);
+                bullets.push({
+                    x: enemyStats.x,
+                    y: enemyStats.y,
+                    vx: Math.cos(eAngle) * 700,
+                    vy: Math.sin(eAngle) * 700,
+                    isPlayer: false,
+                    dmg: enemyLevel * enemyTier * 8,
+                    life: 1.5
+                });
+            }
+
+            // --- 3. CẬP NHẬT ĐẠN ---
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += b.vx * dt;
+                b.y += b.vy * dt;
+                b.life -= dt;
+
+                if (b.life <= 0 || b.x < 0 || b.x > 1280 || b.y < 0 || b.y > 720) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+
+                // Kiểm tra va chạm hitbox bán kính 35
+                if (b.isPlayer) {
+                    if (Math.hypot(b.x - enemyStats.x, b.y - enemyStats.y) <= 35) {
+                        enemyStats.hp -= b.dmg;
+                        bullets.splice(i, 1);
+                        if (enemyStats.hp <= 0) enemyStats.hp = 0;
+                    }
+                } else {
+                    if (Math.hypot(b.x - playerStats.x, b.y - playerStats.y) <= 35) {
+                        playerStats.hp -= b.dmg;
+                        bullets.splice(i, 1);
+                        if (playerStats.hp <= 0) playerStats.hp = 0;
+                    }
+                }
+            }
+
+            // --- 4. RENDER TRẬN ĐẤU ---
+            bCtx.fillStyle = '#06090f';
+            bCtx.fillRect(0, 0, 1280, 720);
+
+            // Vẽ lưới sàn đấu
+            bCtx.strokeStyle = '#1a2636';
+            bCtx.lineWidth = 1;
+            for (let x = 0; x < 1280; x += 60) { bCtx.beginPath(); bCtx.moveTo(x, 0); bCtx.lineTo(x, 720); bCtx.stroke(); }
+            for (let y = 0; y < 720; y += 60) { bCtx.beginPath(); bCtx.moveTo(0, y); bCtx.lineTo(1280, y); bCtx.stroke(); }
+
+            // Vẽ Player
+            bCtx.save();
+            bCtx.fillStyle = playerStats.color;
+            bCtx.beginPath(); bCtx.arc(playerStats.x, playerStats.y, playerStats.radius, 0, Math.PI * 2); bCtx.fill();
+            bCtx.strokeStyle = '#fff'; bCtx.lineWidth = 3; bCtx.stroke();
+            bCtx.restore();
+
+            // Vẽ Enemy
+            bCtx.save();
+            bCtx.fillStyle = enemyStats.color;
+            bCtx.beginPath(); bCtx.arc(enemyStats.x, enemyStats.y, enemyStats.radius, 0, Math.PI * 2); bCtx.fill();
+            bCtx.strokeStyle = '#fff'; bCtx.lineWidth = 3; bCtx.stroke();
+            bCtx.restore();
+
+            // Vẽ Đạn
+            bullets.forEach(b => {
+                bCtx.fillStyle = b.isPlayer ? '#00ffc8' : '#ff4646';
+                bCtx.beginPath(); bCtx.arc(b.x, b.y, 6, 0, Math.PI * 2); bCtx.fill();
+            });
+
+            // Vẽ UI Máu & Thông tin trên cùng
+            bCtx.fillStyle = 'rgba(15, 22, 34, 0.85)';
+            bCtx.fillRect(20, 20, 450, 70);
+            bCtx.strokeStyle = '#00ffc8'; bCtx.lineWidth = 2; bCtx.strokeRect(20, 20, 450, 70);
+            bCtx.fillStyle = '#fff'; bCtx.font = 'bold 14px Arial'; bCtx.fillText(playerStats.name, 35, 45);
+            // Thanh máu Player
+            bCtx.fillStyle = '#222'; bCtx.fillRect(35, 55, 420, 16);
+            bCtx.fillStyle = '#00ffc8'; bCtx.fillRect(35, 55, Math.max(0, 420 * (playerStats.hp / playerStats.maxHp)), 16);
+            bCtx.fillStyle = '#fff'; bCtx.font = '11px Arial'; bCtx.fillText(`HP: ${Math.max(0, Math.floor(playerStats.hp))} / ${playerStats.maxHp}`, 45, 68);
+
+            // Thanh máu Enemy
+            bCtx.fillStyle = 'rgba(15, 22, 34, 0.85)';
+            bCtx.fillRect(810, 20, 450, 70);
+            bCtx.strokeStyle = '#ff4646'; bCtx.lineWidth = 2; bCtx.strokeRect(810, 20, 450, 70);
+            bCtx.fillStyle = '#fff'; bCtx.font = 'bold 14px Arial'; bCtx.fillText(enemyStats.name, 825, 45);
+            bCtx.fillStyle = '#222'; bCtx.fillRect(825, 55, 420, 16);
+            bCtx.fillStyle = '#ff4646'; bCtx.fillRect(825, 55, Math.max(0, 420 * (enemyStats.hp / enemyStats.maxHp)), 16);
+            bCtx.fillStyle = '#fff'; bCtx.font = '11px Arial'; bCtx.fillText(`HP: ${Math.max(0, Math.floor(enemyStats.hp))} / ${enemyStats.maxHp}`, 835, 68);
+
+            // Kiểm tra kết quả Thắng / Thua
+            if (playerStats.hp <= 0 || enemyStats.hp <= 0) {
+                this.inArenaBattle = false;
+                window.removeEventListener('keydown', handleKeyDown);
+                window.removeEventListener('keyup', handleKeyUp);
+                battleCanvas.removeEventListener('mousemove', handleMouseMove);
+                battleCanvas.removeEventListener('mousedown', handleMouseDown);
+                battleCanvas.removeEventListener('touchstart', handleTouchStart);
+                battleCanvas.removeEventListener('touchmove', handleTouchMove);
+                battleCanvas.removeEventListener('touchend', handleTouchEnd);
+
+                battleOverlay.style.display = 'none';
+
+                if (enemyStats.hp <= 0) {
+                    // --- THẮNG ---
+                    const moneyReward = Math.floor(this.money * 0.05);
+                    const diamondReward = this.arenaBetDiamonds * 2;
+                    this.money += moneyReward;
+                    this.diamonds += diamondReward;
+                    this.saveGame();
+
+                    showCustomAlert(`🎉 <b>CHIẾN THẮNG VINH QUANG!</b><br><br>• Cướp được VNĐ từ đối thủ: <b>+${formatMoney(moneyReward)}</b><br>• Nhận thưởng Kim Cương cược x2: <b>+${diamondReward} 💎</b>`, "success");
+                } else {
+                    // --- THUA ---
+                    const moneyLoss = Math.floor(this.money * 0.05);
+                    this.money = Math.max(0, this.money - moneyLoss);
+                    this.saveGame();
+
+                    showCustomAlert(`💀 <b>THẤT BẠI THẢM HẢI!</b><br><br>• Bị cướp mất VNĐ: <b>-${formatMoney(moneyLoss)}</b><br>• Mất toàn bộ vé vào cửa và ${this.arenaBetDiamonds} 💎 cược!`, "error");
+                }
+                return;
+            }
+
+            battleLoopId = requestAnimationFrame(runBattle);
+        };
+
+        requestAnimationFrame(runBattle);
+    }
+
     setupEvents() {
         const getCanvasPos = (e) => { const rect = this.canvas.getBoundingClientRect(); if(rect.width === 0 || rect.height === 0) return { x: 0, y: 0 }; let cx = e.clientX; let cy = e.clientY; if (cx === undefined && e.touches && e.touches.length > 0) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; } return { x: (cx - rect.left) * (CANVAS_W / rect.width), y: (cy - rect.top) * (CANVAS_H / rect.height) }; };
         const toWP = (sx,sy) => ({ x:this.camera.x+(sx-(this.containerRect.left+this.containerRect.width/2))/this.camera.zoom, y:this.camera.y+(sy-(this.containerRect.top+this.containerRect.height/2))/this.camera.zoom });
@@ -992,7 +1520,6 @@ class Game {
             e.preventDefault(); this.sound.init(this.currentLabId); this.activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY}); const sc = getCanvasPos(e);
             if (this.activePointers.size === 2) { const p=Array.from(this.activePointers.values()); this.initialPinchDist=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y); this.initialZoom=this.camera.zoom; this.isDraggingCamera=false; this.draggedSlime=null; return; }
             
-            // XỬ LÝ NHẤN NÚT "+ 1 Ô" MUA LIÊN TỤC
             if (this.isInside(sc.x, sc.y, {x: 380, y: 12, w: 125, h: 44})) {
                 if (this.isFormingTextActive) {
                     this.isFormingTextActive = false;
@@ -1011,7 +1538,7 @@ class Game {
                     }
                 };
                 buySlot(); 
-                this.buySlotInterval = setInterval(buySlot, 150); // Mua 150ms 1 lần
+                this.buySlotInterval = setInterval(buySlot, 150);
                 return;
             }
 
@@ -1043,10 +1570,8 @@ class Game {
         this.canvas.addEventListener("pointermove", (e) => {
             if(!this.activePointers.has(e.pointerId)) return; this.activePointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
             
-            // Xóa bộ đếm mua liên tục nếu chuột trượt ra khỏi nút +1 Ô
             if (this.buySlotInterval) { const sc = getCanvasPos(e); if (!this.isInside(sc.x, sc.y, {x: 380, y: 12, w: 125, h: 44})) { clearInterval(this.buySlotInterval); this.buySlotInterval = null; } }
             
-            // Xử lý maxBtnTimer (nếu bạn có logic này)
             if (this.maxBtnTimer) {
                 const sc = getCanvasPos(e);
                 if (!this.isInside(sc.x, sc.y, {x: 380, y: 12, w: 125, h: 44})) {
@@ -1060,7 +1585,6 @@ class Game {
             if(this.isDraggingCamera){ const dx=e.clientX-this.lastPanPos.x, dy=e.clientY-this.lastPanPos.y; this.lastPanPos={x:e.clientX,y:e.clientY}; this.camera.x-=dx/this.camera.zoom; this.camera.y-=dy/this.camera.zoom; this.clampCamera(); }
         });
 
-        // Bắt sự kiện pointerup trên window để tránh kẹt chuột khi kéo thả ra ngoài viền
         window.addEventListener("pointerup", (e) => {
             if (this.buySlotInterval) { clearInterval(this.buySlotInterval); this.buySlotInterval = null; }
             
@@ -1346,7 +1870,6 @@ class Game {
         if (this.isInside(x, y, {x:CANVAS_W-645,y:12,w:190,h:44})) { if(this.money>=1000000&&this.slimes.length<this.maxCapacity){this.money-=1000000;this.slimes.push(new Slime(this.worldWidth/2,this.worldHeight/2,this.currentLabId,null,1));this.sound.playPop();this.saveGame();} return true; }
         
         if (this.isInside(x, y, {x:380,y:12,w:125,h:44})) { 
-            // Nếu đang trong chế độ ẩn và bấm nút MAX thì thoát chế độ ẩn thay vì mở hộp thoại mua
             if (this.isFormingTextActive) {
                 this.isFormingTextActive = false;
                 const lab = this.labsData[this.currentLabId];
@@ -1634,7 +2157,6 @@ class Game {
         this.bubbles.forEach(b => b.draw(this.ctx)); this.shockwaves.forEach(sw => sw.draw(this.ctx)); this.slimes.forEach(s => s.draw(this.ctx)); this.effects.forEach(e => e.draw(this.ctx));
         this.ctx.restore(); this.ctx.restore();
 
-        // HIỆU ỨNG TEXT KHI ĐANG TRONG CHẾ ĐỘ XẾP CHỮ
         if (this.isFormingTextActive) {
             this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
             this.ctx.fillRect(0, 0, CANVAS_W, 55);
@@ -1810,7 +2332,6 @@ class Game {
 window.addEventListener("load", () => { 
     window.gameInstance = new Game(); 
     
-    // Xử lý bật/tắt bảng quản lý và Nhấn giữ để Xếp Chữ
     const toggleBtn = document.getElementById('btn-toggle-manager');
     const managerEl = document.getElementById('strain-manager');
     
@@ -1818,12 +2339,10 @@ window.addEventListener("load", () => {
         let managerPressTimer = null;
         let isManagerLongPress = false;
 
-        // Bắt đầu nhấn xuống
         toggleBtn.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
             isManagerLongPress = false;
             
-            // Cài đặt thời gian chờ (800ms = 0.8 giây). Bạn có thể đổi số 800 này!
             managerPressTimer = setTimeout(() => {
                 isManagerLongPress = true;
                 if (window.gameInstance) {
@@ -1849,21 +2368,17 @@ window.addEventListener("load", () => {
             }, 800); 
         });
 
-        // Khi nhả tay ra
         toggleBtn.addEventListener('pointerup', (e) => {
             e.stopPropagation();
-            // Xóa bộ đếm thời gian nếu chưa đủ 0.8 giây
             if (managerPressTimer) {
                 clearTimeout(managerPressTimer);
                 managerPressTimer = null;
             }
-            // Nếu chỉ nhấn thả nhanh (chưa bị tính là Long Press) thì mở Bảng quản lý
             if (!isManagerLongPress) {
                 managerEl.style.display = managerEl.style.display === 'none' ? 'flex' : 'none';
             }
         });
 
-        // Nếu di chuột/trượt tay ra khỏi nút trước khi nhả
         toggleBtn.addEventListener('pointerleave', (e) => {
             if (managerPressTimer) {
                 clearTimeout(managerPressTimer);
@@ -1871,14 +2386,12 @@ window.addEventListener("load", () => {
             }
         });
 
-        // Bấm ra ngoài màn hình sẽ tự động thu gọn bảng quản lý lại
         window.addEventListener('pointerdown', (e) => {
             if (managerEl.style.display !== 'none' && !managerEl.contains(e.target) && !toggleBtn.contains(e.target)) {
                 managerEl.style.display = 'none';
             }
         });
 
-        // Chặn sự kiện lan truyền để lướt mượt mà bên trong bảng quản lý
         ['pointerdown', 'pointermove', 'touchstart', 'touchmove', 'wheel'].forEach(eventType => {
             managerEl.addEventListener(eventType, (e) => {
                 e.stopPropagation();
@@ -1887,7 +2400,6 @@ window.addEventListener("load", () => {
     }
 });
 
-// HÀM ÉP LƯU LÊN ĐÁM MÂY KHI THOÁT
 const forceCloudSave = () => {
     if (window.gameInstance && window.gameInstance.auth && window.gameInstance.auth.currentUser) {
         const localData = localStorage.getItem(window.gameInstance.getSaveKey());
@@ -1898,7 +2410,6 @@ const forceCloudSave = () => {
     }
 };
 
-// Bắt mọi thao tác: Ẩn tab, vuốt tắt ứng dụng, tải lại trang
 window.addEventListener("visibilitychange", () => { if (document.visibilityState === 'hidden') forceCloudSave(); });
 window.addEventListener("pagehide", forceCloudSave);
 window.addEventListener("beforeunload", forceCloudSave);
