@@ -39,7 +39,7 @@
         #rank-board { width: clamp(165px, 18vw, 215px); height: 100%; background-color: #0f1622; border: 1.5px solid #223145; border-radius: 8px; display: flex; flex-direction: column; padding: 8px 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7); flex-shrink: 0; }
         #rank-header { text-align: center; color: #ffd700; font-size: 13px; font-weight: bold; }
         #rank-server { text-align: center; color: #6a829a; font-size: 10px; margin-bottom: 6px; border-bottom: 1px solid #1a2636; padding-bottom: 3px; }
-        #rank-list { flex: 1; overflow-y: auto; scrollbar-width: none; touch-action: pan-y !important; margin-bottom: 6px; }
+        #rank-list { flex: 1; overflow-y: auto; scrollbar-width: none; touch-action: pan-y !important; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; margin-bottom: 6px; }
         #rank-list::-webkit-scrollbar { display: none; }
         #challenge-inbox-overlay { position: fixed; inset: 0; display: none; justify-content: center; align-items: center; z-index: 60000; background: rgba(6,9,15,.88); backdrop-filter: blur(6px); }
         #challenge-inbox-box { width: min(430px,92vw); background:#111a28; border:2px solid #ff4646; border-radius:12px; padding:20px; text-align:center; box-shadow:0 0 35px rgba(255,70,70,.35); }
@@ -51,7 +51,7 @@
         #challenge-reject-btn { background:#5b2028; color:#fff; border-color:#ff4646; }
         .arena-challenge-btn { width: 100%; margin-top: 8px; padding: 9px; background: linear-gradient(135deg,#14503c,#0b3025); color: #00ffc8; border: 1px solid #00ffc8; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .arena-challenge-btn:hover { filter: brightness(1.15); }
-        #arena-challenge-list { max-height: 48vh; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; margin: 10px 0; }
+        #arena-challenge-list { max-height: 48vh; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; margin: 10px 0; touch-action: pan-y !important; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
         .arena-challenge-player { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px; background:#080c14; border:1px solid #28374b; border-radius:7px; color:#e6f5ff; }
         #pvp-skillbar { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); display:flex; gap:8px; z-index:2; pointer-events:none; }
         .pvp-skill-slot { width:58px; height:58px; border:2px solid #28374b; background:rgba(10,16,25,.9); border-radius:9px; color:#fff; display:flex; align-items:center; justify-content:center; flex-direction:column; font-size:10px; }
@@ -66,7 +66,7 @@
         #arena-joystick { left:58px; bottom:52px; width:176px; height:176px; }
         #arena-joystick-knob { width:64px; height:64px; margin:-32px; }
         #arena-skill-wheel { position:absolute; right:18px; bottom:18px; width:520px; height:520px; pointer-events:none; z-index:12; }
-        .arena-skill-btn { position:absolute; touch-action:none; user-select:none; width:58px; height:58px; border-radius:50%; border:3px solid rgba(255,255,255,.94); background:radial-gradient(circle at 32% 28%,#9b62ed 0%,#3b146c 46%,#0a1020 82%); color:#fff; font-weight:900; cursor:pointer; pointer-events:auto; box-shadow:0 0 20px rgba(145,75,255,.48),inset 0 0 12px rgba(255,255,255,.16); text-shadow:0 2px 4px #000; transition:transform .12s ease,filter .12s ease; }
+        .arena-skill-btn { position:absolute; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; width:58px; height:58px; border-radius:50%; border:3px solid rgba(255,255,255,.94); background:radial-gradient(circle at 32% 28%,#9b62ed 0%,#3b146c 46%,#0a1020 82%); color:#fff; font-weight:900; cursor:pointer; pointer-events:auto; box-shadow:0 0 20px rgba(145,75,255,.48),inset 0 0 12px rgba(255,255,255,.16); text-shadow:0 2px 4px #000; transition:transform .12s ease,filter .12s ease; }
         .arena-skill-btn:hover { transform:scale(1.07); filter:brightness(1.18); }
         .arena-skill-btn:active { transform:scale(.94); }
         .arena-skill-btn span { display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:27px; line-height:1; }
@@ -80,7 +80,7 @@
         #arena-skill-wheel .arena-skill-btn:nth-child(5){left:216px;top:125px;}
         #arena-skill-wheel .arena-skill-btn{margin:0;}
         /* Nút đánh lớn nằm riêng ở góc phải dưới; không chiếm chỗ của cung kỹ năng. */
-        .arena-basic-attack { touch-action:none; user-select:none; position:absolute; left:330px; top:340px; width:132px; height:132px; border-radius:50%; border:4px solid rgba(190,235,255,.9); background:radial-gradient(circle at 35% 30%,rgba(105,170,210,.45),rgba(24,55,76,.72) 55%,rgba(8,18,28,.9) 78%); color:#ffd15c; font-size:58px; line-height:1; cursor:pointer; pointer-events:auto; box-shadow:0 0 28px rgba(105,190,240,.24),inset 0 0 25px rgba(160,220,255,.12); text-shadow:0 3px 8px #000; transition:transform .12s ease,filter .12s ease; }
+        .arena-basic-attack { touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; position:absolute; left:330px; top:340px; width:132px; height:132px; border-radius:50%; border:4px solid rgba(190,235,255,.9); background:radial-gradient(circle at 35% 30%,rgba(105,170,210,.45),rgba(24,55,76,.72) 55%,rgba(8,18,28,.9) 78%); color:#ffd15c; font-size:58px; line-height:1; cursor:pointer; pointer-events:auto; box-shadow:0 0 28px rgba(105,190,240,.24),inset 0 0 25px rgba(160,220,255,.12); text-shadow:0 3px 8px #000; transition:transform .12s ease,filter .12s ease; }
         .arena-basic-attack:hover { transform:scale(1.04); filter:brightness(1.15); }
         .arena-basic-attack:active { transform:scale(.95); }
         #arena-control-hint { position:absolute; left:58px; bottom:238px; color:rgba(230,245,255,.6); font-size:11px; pointer-events:none; }
@@ -131,7 +131,40 @@
         .custom-input-btns button { flex: 1; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; border: none; }
         #custom-input-ok { background: #14503c; color: #fff; border: 1px solid #00ffc8; } #custom-input-cancel { background: #283c50; color: #fff; }
         #html-alert-btn { background: #a02832; color: #fff; border: 1px solid #ff4646; padding: 10px 30px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-transform: uppercase; }
-    </style>
+
+        /* === MOBILE UX / PERFORMANCE PATCH === */
+        #rank-board, #game-wrapper, #strain-manager, #pet-pool-modal, #pet-pool-box, #pet-pool-grid, #arena-modal, #arena-challenge-list, #rank-list, #strain-list { overscroll-behavior: contain; }
+        #rank-board { touch-action: auto; }
+        #rank-list { touch-action: pan-y !important; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
+        #strain-manager { touch-action: auto; overflow: hidden; }
+        #strain-list { touch-action: pan-y !important; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; min-height: 0; }
+        #pet-pool-modal { touch-action: auto; padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+        #pet-pool-box { touch-action: auto; max-height: min(92dvh, 760px); min-height: 0; }
+        #pet-pool-grid { touch-action: pan-y !important; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; min-height: 120px; max-height: 60dvh !important; }
+        #pet-selected-preview, #pet-pool-box button { touch-action: manipulation; }
+        #arena-modal, #arena-queue-overlay, #challenge-inbox-overlay { touch-action: auto; }
+        #arena-challenge-list { touch-action: pan-y !important; -webkit-overflow-scrolling: touch; }
+        @media (max-width: 900px) {
+            #app-layout { gap: 4px; padding: 3px; }
+            #rank-board { width: min(180px, 32vw); padding: 6px 5px; }
+            #strain-manager { left: 10px !important; top: 72px !important; width: min(300px, calc(100vw - 20px)) !important; max-height: 72dvh !important; }
+            #strain-list { max-height: calc(72dvh - 92px); }
+            #pet-pool-box { width: min(96vw, 650px) !important; padding: 12px !important; }
+            #pet-pool-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)) !important; gap: 7px !important; }
+            #pet-pool-grid > div { min-height: 82px; }
+        }
+        @media (max-width: 600px) {
+            #rank-board { width: 34vw; min-width: 145px; }
+            #pet-pool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        }
+    
+/* Final mobile performance tuning */
+@media (max-width: 900px){
+  #rank-list,#strain-list,#pet-pool-grid,#arena-challenge-list{touch-action:pan-y !important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;}
+  #arena-battle-overlay{contain:layout paint style;}
+  #arenaBattleCanvas{image-rendering:auto;}
+}
+</style>
 
 <style id="arena-skill-arc-final">
 /* FINAL: cụm kỹ năng nhỏ, sát góc dưới bên phải, 5 nút cách đều trên 1/4 vòng cung quanh nút đánh */
@@ -792,6 +825,7 @@ class Game {
         this.onlinePlayers = {};
         this.rawLeaderboardData = {};
         this.presenceReady = false;
+        this._leaderboardRenderQueued = false;
         this.initFirebase(); this.setupEvents(); this.setupArenaEvents(); this.setupPetPoolEvents(); this.checkLoginStatus();
     }
     
@@ -807,15 +841,24 @@ class Game {
                 
                 this.leaderboardRef.on('value', s=>{ 
                     this.rawLeaderboardData = s.val() || {};
-                    this.renderLeaderboard();
+                    this.scheduleLeaderboardRender();
                 });
                 this.db.ref('presence').on('value', snap => {
                     this.onlinePlayers = snap.val() || {};
-                    this.renderLeaderboard();
+                    this.scheduleLeaderboardRender();
                 });
                     
             }
         } catch(e) {}
+    }
+
+    scheduleLeaderboardRender() {
+        if (this._leaderboardRenderQueued) return;
+        this._leaderboardRenderQueued = true;
+        requestAnimationFrame(() => {
+            this._leaderboardRenderQueued = false;
+            this.renderLeaderboard();
+        });
     }
 
     renderLeaderboard() {
@@ -1435,6 +1478,7 @@ let pressTimer = null;
             return;
         }
 
+        const frag = document.createDocumentFragment();
         allOwnedPets.forEach((item) => {
             const pet = item.slime;
             const card = document.createElement("div");
@@ -1457,8 +1501,9 @@ let pressTimer = null;
                 this.sound.playPop();
             };
 
-            gridContainer.appendChild(card);
+            frag.appendChild(card);
         });
+        gridContainer.appendChild(frag);
     }
 
     // === HỆ THỐNG ĐẤU TRƯỜNG (ARENA SYSTEM) ===
@@ -1638,7 +1683,12 @@ let pressTimer = null;
             const profile = sourcePet ? this.getArenaSkillProfile(sourcePet, i+1) : ({icon:['⚡','🔥','❄️','☄️','💥'][i],name:`Kỹ năng ${i+1}`,mult:1});
             const b=document.createElement('button'); b.className='arena-skill-btn '+(i<skillCount?'':'locked'); b.title=i<skillCount?profile.name:'Chưa mở';
             b.innerHTML=`<span>${i<skillCount?profile.icon:'🔒'}</span><small>${i+1}</small>`;
-            if(i<skillCount) b.onclick=(e)=>{e.preventDefault();e.stopPropagation();onSkill(i+1);};
+            if(i<skillCount){
+                // Dùng pointerdown thay cho click để mobile có thể bấm skill bằng ngón thứ 2
+                // trong lúc ngón thứ 1 vẫn đang giữ joystick.
+                b.style.touchAction='manipulation';
+                b.addEventListener('pointerdown',(e)=>{e.preventDefault();e.stopPropagation();try{b.setPointerCapture?.(e.pointerId);}catch(_){} onSkill(i+1);});
+            }
             wheel.appendChild(b);
         }
         const basic=document.createElement('button');
@@ -1646,21 +1696,24 @@ let pressTimer = null;
         basic.title='Đánh thường';
         basic.setAttribute('aria-label','Đánh thường');
         basic.innerHTML='✊';
-        basic.onclick=(e)=>{e.preventDefault();e.stopPropagation();onSkill(0);};
+        basic.style.touchAction='manipulation';
+        basic.addEventListener('pointerdown',(e)=>{e.preventDefault();e.stopPropagation();try{basic.setPointerCapture?.(e.pointerId);}catch(_){} onSkill(0);});
         wheel.appendChild(basic);
         let move={x:0,y:0}, active=false, pid=null;
         const update=(clientX,clientY)=>{const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=clientX-cx,dy=clientY-cy;const d=Math.hypot(dx,dy),m=48;if(d>m){dx=dx/d*m;dy=dy/d*m;}move={x:dx/m,y:dy/m};knob.style.transform=`translate(${dx}px,${dy}px)`;};
         const down=e=>{active=true;pid=e.pointerId;joy.setPointerCapture?.(pid);update(e.clientX,e.clientY);e.preventDefault();};
         const up=e=>{if(pid!==null&&e.pointerId!==pid)return;active=false;pid=null;move={x:0,y:0};knob.style.transform='translate(0,0)';};
         const mm=e=>{if(active)update(e.clientX,e.clientY);};
-        joy.addEventListener('pointerdown',down); joy.addEventListener('pointermove',mm); joy.addEventListener('pointerup',up); joy.addEventListener('pointercancel',up);
-        return {getMove:()=>move,isMoveActive:()=>active,destroy:()=>{joy.removeEventListener('pointerdown',down);joy.removeEventListener('pointermove',mm);joy.removeEventListener('pointerup',up);joy.removeEventListener('pointercancel',up);wheel.innerHTML='';active=false;pid=null;move={x:0,y:0};knob.style.transform='translate(0,0)';}};
+        const lost=()=>{ if(active){ active=false; pid=null; move={x:0,y:0}; knob.style.transform='translate(0,0)'; } };
+        joy.addEventListener('pointerdown',down); joy.addEventListener('pointermove',mm); joy.addEventListener('pointerup',up); joy.addEventListener('pointercancel',up); joy.addEventListener('lostpointercapture',lost);
+        window.addEventListener('blur',lost); document.addEventListener('visibilitychange',()=>{if(document.hidden)lost();});
+        return {getMove:()=>move,isMoveActive:()=>active,destroy:()=>{joy.removeEventListener('pointerdown',down);joy.removeEventListener('pointermove',mm);joy.removeEventListener('pointerup',up);joy.removeEventListener('pointercancel',up);joy.removeEventListener('lostpointercapture',lost);window.removeEventListener('blur',lost);wheel.innerHTML='';active=false;pid=null;move={x:0,y:0};knob.style.transform='translate(0,0)';}};
     }
 
     startArenaBattle() {
         const battleOverlay = document.getElementById('arena-battle-overlay');
         battleOverlay.style.display='flex'; this.inArenaBattle=true;
-        const canvas=document.getElementById('arenaBattleCanvas'), ctx=canvas.getContext('2d');
+        const canvas=document.getElementById('arenaBattleCanvas'), ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});
         const W=1920,H=1080; canvas.width=W; canvas.height=H;
 
         if(!this.selectedArenaTeam?.some(Boolean)) this.autoFillArenaTeam();
@@ -2766,7 +2819,7 @@ let pressTimer = null;
     startPvPBattle(room, isHost) {
         this.pvpFinished=false; this.inArenaBattle=true;
         const overlay=document.getElementById('arena-battle-overlay'); overlay.style.display='flex';
-        const canvas=document.getElementById('arenaBattleCanvas'), ctx=canvas.getContext('2d');
+        const canvas=document.getElementById('arenaBattleCanvas'), ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});
         const W=1920,H=1080; canvas.width=W; canvas.height=H;
         const myTeam=(isHost?room.hostTeam:room.guestTeam)||[];
         const oppTeam=(isHost?room.guestTeam:room.hostTeam)||[];
@@ -2783,9 +2836,15 @@ let pressTimer = null;
         const teamStatsB=teamB.map((p,i)=>makeFighter(p,i,false));
         let activeA=0, activeB=0;
         let effects=[]; let shake=0; let last=performance.now();
-        let localKeys={x:0,y:0}; let skillRequest=0; let localCooldown=0; let lastRemoteSkill=0;
-        let remoteInput={x:0,y:0,skill:0};
+        let lastRenderFrame=last;
+        const isMobilePvP=window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+        const baseFrameMs=isMobilePvP ? (1000/40) : (1000/60);
+        let localKeys={x:0,y:0}; let skillRequest=0; let skillRequestAt=0; let localCooldown=0; let lastRemoteSkill=0;
+        let remoteInput={x:0,y:0,skill:0,skillAt:0};
         let lastInputPublish=0; let lastStatePublish=0; let skillSeq=0; let latestSkillEvent=null; let lastRemoteSkillEvent=0;
+        let remoteTarget={x:null,y:null,hp:null,active:null,alive:null};
+        let selfServerTarget={x:null,y:null,hp:null,active:null,alive:null};
+        let networkClock=0;
         const inputRef=this.pvpRoomRef.child('inputs/'+this.playerId);
         const enemyId=isHost?room.guestId:room.hostId;
         const inputListener=this.pvpRoomRef.child('inputs/'+enemyId);
@@ -2795,11 +2854,11 @@ let pressTimer = null;
         // Xóa skillbar cũ do PvP trước đó tạo ra.
         const old=document.getElementById('pvp-skillbar'); if(old) old.remove();
         let shownSkillPetIndex=-1;
-        let arenaControls=this.setupArenaBattleControls(this.getArenaSkillCount(teamA[0]||fallback),(skill)=>{skillRequest=skill;},teamA[0]||fallback);
+        let arenaControls=this.setupArenaBattleControls(this.getArenaSkillCount(teamA[0]||fallback),(skill)=>{skillRequest=skill;skillRequestAt=Date.now();},teamA[0]||fallback);
         const refreshSkillControls=()=>{
             const idx=activeA; if(idx===shownSkillPetIndex) return; shownSkillPetIndex=idx;
             arenaControls.destroy();
-            arenaControls=this.setupArenaBattleControls(this.getArenaSkillCount(teamA[idx]||fallback),(skill)=>{skillRequest=skill;},teamA[idx]||fallback);
+            arenaControls=this.setupArenaBattleControls(this.getArenaSkillCount(teamA[idx]||fallback),(skill)=>{skillRequest=skill;skillRequestAt=Date.now();},teamA[idx]||fallback);
         };
         refreshSkillControls();
 
@@ -2809,25 +2868,25 @@ let pressTimer = null;
             if(k==='s'||k==='ArrowDown')localKeys.y=1;
             if(k==='a'||k==='ArrowLeft')localKeys.x=-1;
             if(k==='d'||k==='ArrowRight')localKeys.x=1;
-            if(/^[1-5]$/.test(k)) skillRequest=Number(k);
+            if(/^[1-5]$/.test(k)){ skillRequest=Number(k); skillRequestAt=Date.now(); }
         };
         const keyup=e=>{
             if(['w','ArrowUp','s','ArrowDown'].includes(e.key))localKeys.y=0;
             if(['a','ArrowLeft','d','ArrowRight'].includes(e.key))localKeys.x=0;
         };
         window.addEventListener('keydown',keydown); window.addEventListener('keyup',keyup);
-        inputListener.on('value',snap=>{ remoteInput=snap.val()||{x:0,y:0,skill:0}; });
+        inputListener.on('value',snap=>{ const v=snap.val(); if(v&&typeof v==='object'){ remoteInput={x:Number(v.x)||0,y:Number(v.y)||0,skill:Number(v.skill)||0,skillAt:Number(v.skillAt)||0}; } });
 
         const publishInput=()=>{
             const queuedSkill=skillRequest||0;
-            inputRef.set({x:localKeys.x||0,y:localKeys.y||0,skill:queuedSkill,skillAt:queuedSkill?Date.now():0,updatedAt:firebase.database.ServerValue.TIMESTAMP}).catch(err=>console.warn('PvP input publish failed:',err));
-            if(queuedSkill) skillRequest=0;
+            inputRef.set({x:localKeys.x||0,y:localKeys.y||0,skill:queuedSkill,skillAt:queuedSkill?(skillRequestAt||Date.now()):0,updatedAt:firebase.database.ServerValue.TIMESTAMP}).catch(err=>console.warn('PvP input publish failed:',err));
+            if(queuedSkill) { skillRequest=0; skillRequestAt=0; }
         };
 
         const spawnEffect=(type,x,y,color,extra={})=>{
             const life=Math.max(0.05,Math.min(Number(extra.life)||0.65,1.5));
             effects.push({id:Math.random().toString(36).slice(2),type,x,y,color,life,maxLife:life,r:extra.r||20,fromX:extra.fromX,toX:extra.toX,fromY:extra.fromY,toY:extra.toY,text:extra.text||'',angle:extra.angle||0});
-            if(effects.length>120) effects.splice(0,effects.length-120);
+            if(effects.length>(isMobilePvP?55:90)) effects.splice(0,effects.length-(isMobilePvP?55:90));
         };
         const getActive=(team,idx)=>team[Math.min(idx,team.length-1)];
         const currentA=()=>getActive(teamStatsA,activeA), currentB=()=>getActive(teamStatsB,activeB);
@@ -2865,7 +2924,7 @@ let pressTimer = null;
             else if(['meteor','divinemeteor','volcano'].includes(k)) spawnEffect(k,target.x,target.y,attacker.color,{r:155,life:.9});
             else spawnEffect(k,target.x,target.y,attacker.color,{r:130,life:k==='blackhole'||k==='singularity'||k==='abyss'?1.1:.72,angle:ang});
             spawnEffect('text',target.x,target.y-70,attacker.color,{text:dmg?`-${dmg}`:'+'+Math.floor(attacker.maxHp*.10),life:.65});
-            if(side==='A'){ skillSeq++; latestSkillEvent={seq:skillSeq,ownerId:room.hostId,skill:profile.kind,x:attacker.x,y:attacker.y,targetX:target.x,targetY:target.y,color:attacker.color}; }
+            skillSeq++; latestSkillEvent={seq:skillSeq,ownerId:(side==='A'?room.hostId:room.guestId),skill:profile.kind,x:attacker.x,y:attacker.y,targetX:target.x,targetY:target.y,color:attacker.color};
             shake=Math.max(shake,profile.kind==='meteor'||profile.kind==='vortex'?.18:.08);
             if(target.hp<=0){target.alive=false;target.hp=0;spawnEffect('ko',target.x,target.y,target.color,{r:130,life:.8,text:'K.O!'});respawnNext(side==='A'?'B':'A');}
         };
@@ -2932,22 +2991,45 @@ let pressTimer = null;
         stateListener.on('value',snap=>{ const v=snap.val(); if(v && typeof v==='object'){ remoteState=v; } });
 
         const frame=(now)=>{
+            // Mobile: giữ input/đồng bộ nhẹ nhưng giới hạn render để tránh CPU/GPU spike.
+            if (now - lastRenderFrame < baseFrameMs) { requestAnimationFrame(frame); return; }
+            lastRenderFrame = now;
             // PvP render loop must NEVER die because one skill/effect/state is malformed.
             // A render exception used to stop requestAnimationFrame completely, leaving only the controls visible.
             if(!this.inArenaBattle){arenaControls.destroy();window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);inputListener.off();stateListener.off();return;}
             try {
             const dt=Math.min((now-last)/1000,.05);last=now; cdA=Math.max(0,cdA-dt);cdB=Math.max(0,cdB-dt);shake=Math.max(0,shake-dt);
-            const dom=arenaControls.getMove(); if(arenaControls.isMoveActive?.()){ localKeys.x=dom.x; localKeys.y=dom.y; }
+            const dom=arenaControls.getMove();
+            if(arenaControls.isMoveActive?.()){ localKeys.x=dom.x; localKeys.y=dom.y; }
+            else { localKeys.x=0; localKeys.y=0; }
             if(isHost){
                 const a=currentA(),b=currentB();
                 move(a,localKeys,dt); move(b,remoteInput,dt);
                 if(skillRequest&&cdA<=0){ try{ processSkill(a,b,skillRequest,'A'); }catch(err){ console.error('PvP skill A error:',err); } cdA=.38;skillRequest=0; }
-                if(remoteInput.skill&&cdB<=0 && Number(remoteInput.skillAt||0)!==lastRemoteSkill){ lastRemoteSkill=Number(remoteInput.skillAt||0); try{ processSkill(b,a,remoteInput.skill,'B'); }catch(err){ console.error('PvP skill B error:',err); } cdB=.38; remoteInput.skill=0; }
+                const remoteSkillAt=Number(remoteInput.skillAt||0);
+                if(remoteInput.skill&&cdB<=0 && (remoteSkillAt!==lastRemoteSkill || remoteSkillAt===0)){
+                    lastRemoteSkill=remoteSkillAt||Date.now();
+                    try{ processSkill(b,a,remoteInput.skill,'B'); }catch(err){ console.error('PvP skill B error:',err); }
+                    cdB=.38; remoteInput.skill=0;
+                }
                 const allDeadA=activeA>=teamStatsA.length-1&&!teamStatsA[activeA].alive;
                 const allDeadB=activeB>=teamStatsB.length-1&&!teamStatsB[activeB].alive;
                 if(allDeadA||allDeadB){this.pvpRoomRef.update({status:'finished',winnerId:allDeadB?room.hostId:room.guestId});}
                 if(now-lastStatePublish>100){ lastStatePublish=now; const payload=statePayload(); this.pvpRoomRef.child('state').set(payload).catch(err=>console.warn('PvP state publish failed:',err)); if(latestSkillEvent) latestSkillEvent=null; }
             } else {
+                // Guest xử lý chuyển động LOCAL ngay lập tức. Skill vẫn do host tính sát thương,
+                // nhưng hiển thị hiệu ứng/flash cục bộ để nút skill không có cảm giác bị trễ.
+                if(skillRequest&&cdA<=0){
+                    const gp=teamA[activeA], gprof=this.getArenaSkillProfile(gp,skillRequest)||this.getArenaSkillProfile(gp,1);
+                    if(gprof){
+                        const gg=currentA(), gt=currentB();
+                        if(gg&&gt){
+                            const dd=Math.hypot(gg.x-gt.x,gg.y-gt.y);
+                            if(dd<=gprof.range) spawnEffect(gprof.kind,gt.x,gt.y,gg.color,{r:110,life:.22,angle:Math.atan2(gt.y-gg.y,gt.x-gg.x)});
+                        }
+                    }
+                    cdA=.18; skillRequest=0; skillRequestAt=0;
+                }
                 // Guest luôn xử lý chuyển động LOCAL, kể cả khi state Firebase chưa tới.
                 // Đây là điểm quan trọng: không để độ trễ mạng làm nhân vật đứng hình.
                 const me=currentA();
@@ -2956,18 +3038,34 @@ let pressTimer = null;
                     const meState=remoteState.players?.[this.playerId], opState=remoteState.players?.[enemyId];
                     const myIndex=Number(meState?.active||0), opIndex=Number(opState?.active||0);
                     if(myIndex<teamStatsA.length){
-                        activeA=myIndex;
+                        if(myIndex!==activeA){ activeA=myIndex; refreshSkillControls(); }
                         const me2=currentA();
                         if(me2){
-                            if(Number.isFinite(meState?.hp)) me2.hp=meState.hp;
+                            selfServerTarget.x=Number.isFinite(meState?.x)?Number(meState.x):selfServerTarget.x;
+                            selfServerTarget.y=Number.isFinite(meState?.y)?Number(meState.y):selfServerTarget.y;
+                            selfServerTarget.hp=Number.isFinite(meState?.hp)?Number(meState.hp):selfServerTarget.hp;
+                            selfServerTarget.alive=meState?.alive!==false;
                             if(Number.isFinite(Number(meState?.maxHp))) me2.maxHp=Number(meState.maxHp)||me2.maxHp;
                             me2.alive=meState?.alive!==false;
-                            // Chỉ sửa vị trí khi lệch lớn; không khóa chuyển động local.
-                            if(Number.isFinite(meState?.x) && Math.abs(me2.x-meState.x)>220) me2.x=meState.x;
-                            if(Number.isFinite(meState?.y) && Math.abs(me2.y-meState.y)>220) me2.y=meState.y;
+                            if(selfServerTarget.x!==null && Math.abs(me2.x-selfServerTarget.x)>320) me2.x=selfServerTarget.x;
+                            if(selfServerTarget.y!==null && Math.abs(me2.y-selfServerTarget.y)>320) me2.y=selfServerTarget.y;
+                            if(Number.isFinite(selfServerTarget.hp)) me2.hp=me2.hp*0.82+selfServerTarget.hp*0.18;
                         }
                     }
-                    if(opIndex<teamStatsB.length){activeB=opIndex; const op=currentB(); if(op){op.x=Number.isFinite(opState?.x)?opState.x:op.x;op.y=Number.isFinite(opState?.y)?opState.y:op.y;op.hp=Number.isFinite(opState?.hp)?opState.hp:op.hp;op.alive=opState?.alive!==false;}}
+                    if(opIndex<teamStatsB.length){
+                        if(opIndex!==activeB) activeB=opIndex;
+                        const op=currentB();
+                        if(op){
+                            if(Number.isFinite(opState?.x)) remoteTarget.x=Number(opState.x);
+                            if(Number.isFinite(opState?.y)) remoteTarget.y=Number(opState.y);
+                            if(Number.isFinite(opState?.hp)) remoteTarget.hp=Number(opState.hp);
+                            remoteTarget.alive=opState?.alive!==false;
+                            op.alive=remoteTarget.alive;
+                            if(Number.isFinite(remoteTarget.hp)) op.hp=op.hp*0.78+remoteTarget.hp*0.22;
+                            if(Number.isFinite(remoteTarget.x) && Math.abs(op.x-remoteTarget.x)>360) op.x=remoteTarget.x;
+                            if(Number.isFinite(remoteTarget.y) && Math.abs(op.y-remoteTarget.y)>360) op.y=remoteTarget.y;
+                        }
+                    }
                     // Không đồng bộ cả mảng effects qua Firebase: việc reset effects mỗi 80ms
                     // gây giật và khiến tia/beam bị kéo dài trên màn hình. Chỉ truyền một skill event.
                     const se=remoteState.skillEvent;
@@ -2979,12 +3077,27 @@ let pressTimer = null;
                     }
                 }
             }
+            // Network smoothing: interpolate the remote fighter instead of snapping to each Firebase update.
+            if(!isHost){
+                const op=currentB();
+                if(op && Number.isFinite(remoteTarget.x) && Number.isFinite(remoteTarget.y)){
+                    const follow=1-Math.exp(-dt*14);
+                    op.x += (remoteTarget.x-op.x)*follow;
+                    op.y += (remoteTarget.y-op.y)*follow;
+                }
+            }
             refreshSkillControls();
             ctx.save();
             if(shake>0)ctx.translate((Math.random()-.5)*12,(Math.random()-.5)*12);
             ctx.clearRect(-20,-20,W+40,H+40);ctx.fillStyle='#050a11';ctx.fillRect(0,0,W,H);
-            ctx.strokeStyle='#132536';ctx.lineWidth=2;for(let x=0;x<W;x+=70){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=70){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-            ctx.fillStyle='rgba(0,255,200,.055)';ctx.fillRect(0,H/2-130,W,260);
+            if(!this._pvpGridCache){
+                const gc=document.createElement('canvas'); gc.width=W; gc.height=H; const gx=gc.getContext('2d');
+                gx.fillStyle='#050a11'; gx.fillRect(0,0,W,H); gx.strokeStyle='#132536'; gx.lineWidth=2;
+                for(let x=0;x<W;x+=70){gx.beginPath();gx.moveTo(x,0);gx.lineTo(x,H);gx.stroke();}
+                for(let y=0;y<H;y+=70){gx.beginPath();gx.moveTo(0,y);gx.lineTo(W,y);gx.stroke();}
+                gx.fillStyle='rgba(0,255,200,.055)';gx.fillRect(0,H/2-130,W,260); this._pvpGridCache=gc;
+            }
+            ctx.drawImage(this._pvpGridCache,0,0);
             try { drawPet(currentA(),now,false); } catch(err) { console.warn('draw pet A skipped',err); }
             try { drawPet(currentB(),now,true); } catch(err) { console.warn('draw pet B skipped',err); }
             try { drawEffects(now,dt); } catch(err) { console.warn('draw effects skipped',err); effects=[]; }
@@ -3015,10 +3128,42 @@ let pressTimer = null;
     }
 
     start() {
-        const loop = (now) => { try { const dt = Math.min((now - this.lastTime) / 1000, 0.1); this.lastTime = now; this.update(dt); this.draw(); } catch (e) { console.error(e); } requestAnimationFrame(loop); };
+        let lastFrame = 0;
+        const loop = (now) => {
+            // Không chạy game/lab loop phía dưới PvP overlay: tránh 2 vòng render cùng lúc.
+            const arenaVisible = this.inArenaBattle || document.getElementById('arena-battle-overlay')?.style.display === 'flex';
+            const hidden = document.hidden;
+            const mobile = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+            const minFrame = mobile ? 1000 / 40 : 1000 / 60;
+            if (!arenaVisible && !hidden && (now - lastFrame >= minFrame)) {
+                lastFrame = now;
+                try {
+                    const dt = Math.min((now - this.lastTime) / 1000, 0.1);
+                    this.lastTime = now;
+                    this.update(dt);
+                    this.draw();
+                } catch (e) { console.error(e); }
+            } else if (arenaVisible || hidden) {
+                this.lastTime = now;
+            }
+            requestAnimationFrame(loop);
+        };
         requestAnimationFrame(loop);
     }
 }
+
+// === MOBILE SCROLL / MODAL SAFETY ===
+(function setupMobileScrollSafety(){
+    const enableScroll = (id) => {
+        const el=document.getElementById(id);
+        if(!el) return;
+        el.style.webkitOverflowScrolling='touch';
+        el.style.overscrollBehaviorY='contain';
+        el.addEventListener('touchstart', e=>e.stopPropagation(), {passive:true});
+        el.addEventListener('touchmove', e=>e.stopPropagation(), {passive:true});
+    };
+    ['rank-list','strain-list','pet-pool-grid','arena-challenge-list'].forEach(enableScroll);
+})();
 
 window.addEventListener("load", () => { 
     window.gameInstance = new Game(); 
