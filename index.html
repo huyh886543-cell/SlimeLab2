@@ -824,6 +824,8 @@ class Game {
         
         this.onlinePlayers = {};
         this.rawLeaderboardData = {};
+        this.friends = {};
+        this.friendsRef = null;
         this.presenceReady = false;
         this._leaderboardRenderQueued = false;
         this.initFirebase(); this.setupEvents(); this.setupArenaEvents(); this.setupPetPoolEvents(); this.checkLoginStatus();
@@ -866,15 +868,15 @@ class Game {
             const l=document.getElementById("rank-list");
             if(!l) return;
             const d=this.rawLeaderboardData || {};
+            const friends=this.friends || {};
             l.innerHTML="";
-            if(!Object.keys(d).length) {
-                if(this.playerName && !this.isDeleted) {
-                    l.innerHTML=`<div class="rank-item current-user"><div class="rank-name">1. ${this.playerName}</div><div class="rank-val val-diamond">${this.diamonds>0?`💎 ${this.diamonds}`:formatMoney(this.money)}</div></div>`;
-                }
-                return;
-            }
+
+            // BXH riêng tư: chỉ chính mình + những người đã kết bạn.
+            const visibleIds = new Set([this.playerId]);
+            Object.keys(friends).forEach(id => { if(friends[id]) visibleIds.add(id); });
+
             const p=Object.keys(d)
-                .filter(k=>d[k]&&d[k].name&&!d[k].deleted)
+                .filter(k=>d[k]&&d[k].name&&!d[k].deleted&&visibleIds.has(k))
                 .map(k=>({
                     id:k,
                     name:d[k].name,
@@ -882,8 +884,21 @@ class Game {
                     diamonds:Number(d[k].diamonds)||0,
                     online:!!(this.onlinePlayers && this.onlinePlayers[k] && this.onlinePlayers[k].online)
                 }))
-                .sort((a,b)=>b.diamonds-a.diamonds||b.money-a.money);
+                .sort((a,b)=>{
+                    if(a.id===this.playerId) return -1;
+                    if(b.id===this.playerId) return 1;
+                    return b.diamonds-a.diamonds||b.money-a.money;
+                });
+
+            if(this.playerName && !this.isDeleted && !p.some(x=>x.id===this.playerId)) {
+                p.unshift({id:this.playerId,name:this.playerName,money:Number(this.money)||0,diamonds:Number(this.diamonds)||0,online:true});
+            }
             this.leaderboardPlayers=p;
+
+            if(!p.length) {
+                l.innerHTML=`<div style="text-align:center;padding:14px;color:#7890a8;font-size:11px;">Chưa có dữ liệu bảng xếp hạng.</div>`;
+                return;
+            }
 
             p.slice(0,20).forEach((e,i)=>{
                 const div=document.createElement("div");
@@ -891,7 +906,6 @@ class Game {
                 div.dataset.playerId=e.id;
                 div.innerHTML=`<div class="rank-name">${i+1}. ${e.name}</div><div style="display:flex;align-items:center;gap:5px;"><span class="rank-online-dot" title="${e.online?'Đang online':'Offline'}"></span><div class="rank-val ${e.diamonds>0?'val-diamond':'val-money'}">${e.diamonds>0?`💎 ${e.diamonds}`:formatMoney(e.money)}</div></div>`;
 
-                // Nút PvP trực tiếp ngay trên từng người chơi đang online.
                 if(e.id!==this.playerId && e.online) {
                     const duelBtn=document.createElement("button");
                     duelBtn.className="rank-pvp-btn";
@@ -906,122 +920,70 @@ class Game {
                     div.appendChild(duelBtn);
                 }
 
-let pressTimer = null;
-                        let isLongPress = false;
-                        let startY = 0;
-                        let tapCount = 0;
-                        let tapTimeout = null;
+                let pressTimer=null;
+                let isLongPress=false;
+                let startY=0;
+                div.onpointerdown=(ev)=>{
+                    isLongPress=false; startY=ev.clientY;
+                    if(e.id===this.playerId){
+                        pressTimer=setTimeout(()=>{
+                            isLongPress=true;pressTimer=null;
+                            showCustomAlert(`<div style="text-align:left;display:inline-block;line-height:1.8;">👤 <b>Người chơi:</b> ${this.playerName}<br>💰 <b>Tài sản:</b> ${formatMoney(this.money)}<br>💎 <b>Kim cương:</b> ${this.diamonds}</div>`,"info");
+                            document.getElementById("html-alert-title").innerText="🕵️ HỒ SƠ CỦA BẠN";
+                        },1500);
+                    } else {
+                        pressTimer=setTimeout(()=>{isLongPress=true;pressTimer=null;this.openDiceModal(e);},500);
+                    }
+                };
+                div.onpointermove=(ev)=>{if(Math.abs(ev.clientY-startY)>10&&pressTimer){clearTimeout(pressTimer);pressTimer=null;}};
+                const cancelPress=()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}};
+                div.onpointerup=cancelPress;
+                div.onpointerleave=cancelPress;
+                l.appendChild(div);
+            });
+        } catch(e) { console.warn('renderLeaderboard failed:',e); }
+    }
 
-                        div.onpointerdown = (ev) => {
-                            isLongPress = false;
-                            startY = ev.clientY;
-                            
-                            if(e.id === this.playerId) {
-                                pressTimer = setTimeout(() => { 
-                                    isLongPress = true; pressTimer = null; tapCount = 0;
-                                    let totalPets = 0; let highestLvl = 0; let highestPetName = "Chưa có"; let unlockedLabs = 0;
-                                    for(let j=0; j<10; j++){
-                                        if(this.labsData[j] && this.labsData[j].unlocked){
-                                            unlockedLabs++; totalPets += this.labsData[j].slimes.length;
-                                            this.labsData[j].slimes.forEach(s => { if(s.level > highestLvl) { highestLvl = s.level; highestPetName = s.strain.name; } });
-                                        }
-                                    }
-                                    const msg = `<div style="text-align:left; display:inline-block; margin-top:10px; line-height: 1.8;">
-                                        👤 <b>Người chơi:</b> ${this.playerName}<br>
-                                        💰 <b>Tài sản:</b> ${formatMoney(this.money)}<br>
-                                        💎 <b>Kim cương:</b> ${this.diamonds}<br>
-                                        🔬 <b>Số Lab đã mở:</b> ${unlockedLabs}/10<br>
-                                        👾 <b>Tổng số Pet đang nuôi:</b> ${totalPets}<br>
-                                        👑 <b>Pet cấp cao nhất:</b> ${highestPetName} (Lv.${highestLvl})
-                                    </div>`;
-                                    showCustomAlert(msg, "info"); document.getElementById("html-alert-title").innerText = "🕵️ HỒ SƠ BÍ MẬT";
-                                }, 1500); 
-                            } else {
-                                pressTimer = setTimeout(() => { 
-                                    isLongPress = true; pressTimer = null; tapCount = 0; this.openDiceModal(e); 
-                                }, 500); 
-                            }
-                        };
+    setupFriendsListener() {
+        try {
+            if(!this.db || !this.playerId) return;
+            if(this.friendsRef) { try { this.friendsRef.off(); } catch(e) {} }
+            this.friendsRef=this.db.ref('friends/' + this.playerId);
+            this.friendsRef.on('value', snap=>{
+                this.friends=snap.val() || {};
+                this.scheduleLeaderboardRender();
+            });
+        } catch(e) { console.warn('Friends listener failed:',e); }
+    }
 
-                        div.onpointermove = (ev) => {
-                            if (Math.abs(ev.clientY - startY) > 10) { 
-                                if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } 
-                            }
-                        };
-
-                        const cancelPress = () => {
-                            if (pressTimer) {
-                                clearTimeout(pressTimer); pressTimer = null;
-                                
-                                if (!isLongPress && e.id !== this.playerId) {
-                                    tapCount++;
-                                    clearTimeout(tapTimeout);
-                                    
-                                    if (tapCount === 3) {
-                                        tapCount = 0;
-                                        const ov = document.getElementById("custom-input-overlay");
-                                        const ti = document.getElementById("custom-input-title");
-                                        const ip = document.getElementById("custom-input-field");
-                                        const ok = document.getElementById("custom-input-ok");
-                                        const cc = document.getElementById("custom-input-cancel");
-                                        
-                                        ti.innerText = `Nhập % tài sản tặng cho ${e.name}:`;
-                                        ip.value = ""; 
-                                        ip.placeholder = "Nhập từ 1 đến 100..."; 
-                                        ip.maxLength = 3; 
-                                        
-                                        ov.style.display = "flex"; 
-                                        ip.focus();
-                                        
-                                        ok.onclick = () => {
-                                            let val = parseFloat(ip.value.trim());
-                                            if (isNaN(val) || val <= 0 || val > 100) { 
-                                                showCustomAlert("Vui lòng nhập số % hợp lệ từ 1 đến 100!"); 
-                                                return; 
-                                            }
-                                            ov.style.display = "none"; 
-                                            ip.placeholder = ""; 
-                                            ip.maxLength = 15;
-                                            this.sendMoneyGift(e, val / 100);
-                                        };
-                                        
-                                        cc.onclick = () => { 
-                                            ov.style.display = "none"; 
-                                            ip.placeholder = ""; 
-                                            ip.maxLength = 15; 
-                                        };
-                                    } else {
-                                        tapTimeout = setTimeout(() => {
-                                            if (tapCount === 1) {
-                                                this.confirmModalTitle = `🎁 Gửi tặng Slime`;
-                                                this.confirmModalSubtitle = `Bạn muốn chọn 1 Slime của mình tặng cho ${e.name}?`;
-                                                this.pendingConfirmButtons = [
-                                                    { text: "Bắt đầu chọn", bg: "#14503c", action: () => { this.giftingTo = e; this.pendingConfirmButtons=null; showCustomAlert(`Bấm vào 1 Slime bất kỳ để tặng cho ${e.name}`,"info"); } },
-                                                    { text: "Hủy", bg: "#283c50", action: () => { this.pendingConfirmButtons=null; } }
-                                                ];
-                                            } else if (tapCount === 2) {
-                                                const msg = `<div style="text-align:left; display:inline-block; margin-top:10px; line-height: 1.8;">
-                                                    👤 <b>Người chơi:</b> ${e.name}<br>
-                                                    🏆 <b>Xếp hạng:</b> Top ${i + 1}<br>
-                                                    💰 <b>Tài sản:</b> ${formatMoney(e.money)}<br>
-                                                    💎 <b>Kim cương:</b> ${e.diamonds}<br>
-                                                    <br><i style="color:#7890a8; font-size:12.5px;">(Mạng lưới tình báo chỉ thu thập được đến đây. Nâng cấp Vệ Tinh ở các bản cập nhật sau để xem chi tiết!)</i>
-                                                </div>`;
-                                                showCustomAlert(msg, "info");
-                                                document.getElementById("html-alert-title").innerText = "🕵️ THÔNG TIN TÌNH BÁO";
-                                            }
-                                            tapCount = 0; 
-                                        }, 600);
-                                    }
-                                }
-                            }
-                        };
-                        
-                        div.onpointerup = cancelPress; 
-                        div.onpointerleave = () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } };
-                        l.appendChild(div); 
-                    });
-        } catch(e) {}
+    addFriendByExactName() {
+        if(!this.db || !this.playerId || !this.playerName) {
+            showCustomAlert('⚠️ Firebase chưa sẵn sàng.','error'); return;
+        }
+        const ov=document.getElementById('custom-input-overlay');
+        const ti=document.getElementById('custom-input-title');
+        const ip=document.getElementById('custom-input-field');
+        const ok=document.getElementById('custom-input-ok');
+        const cc=document.getElementById('custom-input-cancel');
+        if(!ov||!ti||!ip||!ok||!cc) return;
+        ti.innerText='Nhập chính xác tên người muốn kết bạn:';
+        ip.value=''; ip.placeholder='Tên hiển thị chính xác'; ip.maxLength=15;
+        ov.style.display='flex'; setTimeout(()=>ip.focus(),50);
+        const close=()=>{ov.style.display='none';ip.placeholder='';ip.maxLength=15;};
+        cc.onclick=close;
+        ok.onclick=()=>{
+            const wanted=ip.value.trim();
+            if(!wanted){showCustomAlert('⚠️ Hãy nhập tên người chơi.','error');return;}
+            if(wanted===this.playerName){showCustomAlert('⚠️ Bạn không thể kết bạn với chính mình.','error');return;}
+            const found=Object.keys(this.rawLeaderboardData||{})
+                .map(id=>({id,data:this.rawLeaderboardData[id]}))
+                .find(x=>x.data&&!x.data.deleted&&x.data.name===wanted);
+            if(!found){showCustomAlert('❌ Không tìm thấy người chơi có tên chính xác này. Hãy kiểm tra lại chữ hoa, chữ thường và khoảng trắng.','error');return;}
+            if(this.friends && this.friends[found.id]){close();showCustomAlert(`ℹ️ ${wanted} đã có trong danh sách bạn bè.`,'info');return;}
+            this.db.ref('friends/'+this.playerId+'/'+found.id).set({name:found.data.name,addedAt:firebase.database.ServerValue.TIMESTAMP}).then(()=>{
+                close(); showCustomAlert(`🤝 Đã kết bạn với <b>${found.data.name}</b>! Người này sẽ xuất hiện trên bảng xếp hạng của bạn.`,'success');
+            }).catch(err=>showCustomAlert('❌ Không thể kết bạn: '+err.message+'<br><small>Kiểm tra Firebase Rules cho nhánh <b>friends</b>.</small>','error'));
+        };
     }
 
     listenForTransactions() {
@@ -1175,6 +1137,7 @@ let pressTimer = null;
                 this.syncFirebase(); 
                 this.setupPresence();
                 this.setupPresenceHeartbeat();
+                this.setupFriendsListener();
                 this.listenForTransactions();
                 this.setupChallengeSystem();
                 this.start();
@@ -1215,6 +1178,7 @@ let pressTimer = null;
             this.syncFirebase(); 
             this.setupPresence();
             this.setupPresenceHeartbeat();
+            this.setupFriendsListener();
             this.listenForTransactions();
             this.setupChallengeSystem();
             this.start(); 
@@ -1985,8 +1949,9 @@ let pressTimer = null;
                 document.getElementById("custom-input-cancel").onclick=()=>document.getElementById("custom-input-overlay").style.display="none"; 
                 return true; 
             }
-            if(this.isInside(x,y,{x:px+20,y:py+211,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="🚪 Bạn có chắc chắn muốn đăng xuất?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{if(this.auth)this.auth.signOut().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
-            if(this.isInside(x,y,{x:px+20,y:py+264,w:340,h:44})){ 
+            if(this.isInside(x,y,{x:px+20,y:py+211,w:340,h:44})){ this.addFriendByExactName(); return true; }
+            if(this.isInside(x,y,{x:px+20,y:py+264,w:340,h:44})){ this.showSettings=false; this.confirmModalTitle="🚪 Bạn có chắc chắn muốn đăng xuất?"; this.confirmModalSubtitle=""; this.pendingConfirmButtons=[{text:"Xác Nhận",bg:"#a02832",action:()=>{if(this.auth)this.auth.signOut().finally(()=>{localStorage.clear();window.location.reload();});else{localStorage.clear();window.location.reload();}}},{text:"Hủy",bg:"#283c50",action:()=>{this.pendingConfirmButtons=null;}}]; return true; }
+            if(this.isInside(x,y,{x:px+20,y:py+317,w:340,h:44})){ 
                 this.showSettings=false; 
                 this.confirmModalTitle="⚠️ XÓA VĨNH VIỄN TÀI KHOẢN NÀY?"; 
                 this.confirmModalSubtitle="Cảnh báo: Dữ liệu Đám mây cũng sẽ bị xóa sạch!"; 
@@ -1995,7 +1960,8 @@ let pressTimer = null;
                         this.isDeleted=true;
                         const p1 = this.leaderboardRef ? this.leaderboardRef.child(this.playerId).remove() : Promise.resolve();
                         const p2 = (this.auth && this.auth.currentUser) ? this.db.ref('gameSaves/' + this.auth.currentUser.uid).remove() : Promise.resolve();
-                        Promise.all([p1, p2]).finally(() => {
+                        const p3 = this.db ? this.db.ref('friends/' + this.playerId).remove() : Promise.resolve();
+                        Promise.all([p1, p2, p3]).finally(() => {
                             if(this.auth) this.auth.signOut();
                             localStorage.clear();
                             window.location.reload();
@@ -2005,7 +1971,7 @@ let pressTimer = null;
                 ]; 
                 return true; 
             }
-            if(!this.isInside(x,y,{x:px,y:py,w:380,h:338}))this.showSettings=false; return true;
+            if(!this.isInside(x,y,{x:px,y:py,w:380,h:391}))this.showSettings=false; return true;
         }
 
         if (this.isInside(x, y, {x:CANVAS_W-295, y:12, w:160, h:44})) { this.showBook=!this.showBook; this.showSettings=false; this.showShop=false; this.showLabModal=false; return true; }
@@ -2346,15 +2312,16 @@ let pressTimer = null;
     }
 
     drawSettingsModal() {
-        const p = { x: CANVAS_W - 400, y: 65, w: 380, h: 338 };
+        const p = { x: CANVAS_W - 400, y: 65, w: 380, h: 391 };
         this.ctx.fillStyle = "#141e2d"; this.ctx.fillRect(p.x, p.y, p.w, p.h); this.ctx.strokeStyle = COLOR_ACCENT; this.ctx.strokeRect(p.x, p.y, p.w, p.h);
         this.ctx.fillStyle = COLOR_TEXT; this.ctx.font = "bold 14px Arial"; this.ctx.fillText(`Âm lượng: ${Math.round(this.sound.volume * 100)}%`, p.x + 20, p.y + 36);
         this.drawButton({ x: p.x + p.w - 110, y: p.y + 15, w: 40, h: 30 }, "#283c50", null, "-", "#fff", "bold 16px Arial"); this.drawButton({ x: p.x + p.w - 60, y: p.y + 15, w: 40, h: 30 }, "#283c50", null, "+", "#fff", "bold 16px Arial");
         this.drawButton({ x: p.x + 20, y: p.y + 55, w: 340, h: 40 }, this.sound.musicPlaying ? "#1e5064" : "#5a2828", null, this.sound.musicPlaying ? "🎵 Nhạc: BẬT" : "🔇 Nhạc: TẮT", "#fff", "bold 13px Arial");
         this.drawButton({ x: p.x + 20, y: p.y + 105, w: 340, h: 44 }, "#14503c", COLOR_ACCENT, "☁️ Lưu Lên Đám Mây", "#fff", "bold 13px Arial");
         this.drawButton({ x: p.x + 20, y: p.y + 158, w: 340, h: 44 }, "#a06414", COLOR_GOLD, "✏️ Đổi Tên (10Tr)", "#fff", "bold 13px Arial");
-        this.drawButton({ x: p.x + 20, y: p.y + 211, w: 340, h: 44 }, "#1e648c", COLOR_ACCENT, "🚪 Đăng Xuất", "#fff", "bold 13px Arial");
-        this.drawButton({ x: p.x + 20, y: p.y + 264, w: 340, h: 44 }, "#a02832", COLOR_WARNING, "🗑️ Xóa Tài Khoản", "#fff", "bold 13px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 211, w: 340, h: 44 }, "#14503c", COLOR_ACCENT, "🤝 Kết Bạn (nhập đúng tên)", "#fff", "bold 13px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 264, w: 340, h: 44 }, "#1e648c", COLOR_ACCENT, "🚪 Đăng Xuất", "#fff", "bold 13px Arial");
+        this.drawButton({ x: p.x + 20, y: p.y + 317, w: 340, h: 44 }, "#a02832", COLOR_WARNING, "🗑️ Xóa Tài Khoản", "#fff", "bold 13px Arial");
     }
 
     drawBookModal() {
@@ -2648,6 +2615,7 @@ let pressTimer = null;
             }
             if (this.challengeListenerAttached) return;
             this.challengeListenerAttached = true;
+            if (!this.handledAcceptedChallenges) this.handledAcceptedChallenges = new Set();
             this.challengeRef = this.db.ref('challenges/' + this.playerId);
             this.challengeRef.on('child_added', snap => this.handleIncomingChallenge(snap));
             this.challengeRef.on('child_changed', snap => this.handleChallengeChanged(snap));
@@ -2658,7 +2626,14 @@ let pressTimer = null;
                 Object.keys(all).forEach(id => {
                     const c = all[id];
                     if (c && c.status === 'accepted' && c.roomId && c.from === this.playerId) {
-                        this.joinPvPRoom(c.roomId, c, true);
+                        // Mỗi lời mời ACCEPTED chỉ được xử lý đúng một lần.
+                        // Nếu giữ listener value và không có guard, sau khi trận 1 kết thúc
+                        // Firebase vẫn trả lại challenge cũ -> tự động vào lại room đã finished
+                        // và hiện popup thắng/thua ngay khi bắt đầu trận 2.
+                        if (!this.handledAcceptedChallenges.has(id)) {
+                            this.handledAcceptedChallenges.add(id);
+                            this.joinPvPRoom(c.roomId, c, true);
+                        }
                     }
                 });
             });
@@ -2683,6 +2658,9 @@ let pressTimer = null;
         const c = snap.val();
         if (!c) return;
         if (c.status === 'accepted' && c.roomId && c.from === this.playerId) {
+            if (!this.handledAcceptedChallenges) this.handledAcceptedChallenges = new Set();
+            if (this.handledAcceptedChallenges.has(snap.key)) return;
+            this.handledAcceptedChallenges.add(snap.key);
             this.joinPvPRoom(c.roomId, c, true);
         } else if (c.status === 'rejected' && c.from === this.playerId) {
             showCustomAlert(`❌ ${c.toName || 'Đối thủ'} đã từ chối lời mời thách đấu.`, 'info');
@@ -2757,6 +2735,7 @@ let pressTimer = null;
 
     joinPvPRoom(roomId, challenge, isHost) {
         if (!this.db || !roomId) return;
+        if (this.pvpLastFinishedRoomId && this.pvpLastFinishedRoomId===roomId) return;
         if (this.inArenaBattle && this.pvpRoomId===roomId) return;
         if (this.pvpRoomRef && this.pvpRoomId===roomId) {
             // Đã theo dõi đúng room rồi; không tạo thêm listener trùng.
@@ -2766,7 +2745,7 @@ let pressTimer = null;
             try { this.pvpRoomRef.off(); } catch(e) {}
         }
         this.pvpRoomUnsub=null;
-        this.pvpFinished=false; this.pvpRoomId=roomId; this.pvpIsHost=!!isHost; this.pvpRemoteState=null;
+        this.pvpFinished=false; if(this.pvpLastFinishedRoomId!==roomId) this.pvpLastFinishedRoomId=null; this.pvpRoomId=roomId; this.pvpIsHost=!!isHost; this.pvpRemoteState=null;
         const ref=this.db.ref('pvpRooms/'+roomId);
         this.pvpRoomRef=ref;
         // Hiển thị lỗi đọc phòng thay vì im lặng đứng ngoài trận.
@@ -2788,6 +2767,8 @@ let pressTimer = null;
     finishPvPBattle(won) {
         if (this.pvpFinished) return;
         this.pvpFinished=true; this.inArenaBattle=false;
+        // Đánh dấu room đã kết thúc để challenge listener không bao giờ tự mở lại room cũ.
+        this.pvpLastFinishedRoomId = this.pvpRoomId || null;
         const ov=document.getElementById('arena-battle-overlay'); if(ov) ov.style.display='none';
         const wheel=document.getElementById('arena-skill-wheel'); if(wheel) wheel.innerHTML='';
         const knob=document.getElementById('arena-joystick-knob'); if(knob) knob.style.transform='translate(0,0)';
@@ -2913,7 +2894,8 @@ let pressTimer = null;
             const mitigation=Math.max(0.18,1-(target.defense/(target.defense+raw*0.9)));
             let dmg=Math.max(1,Math.floor(raw*mitigation));
             // Kỹ năng đặc biệt có hiệu ứng chiến đấu khác nhau.
-            if(profile.kind==='heal') { attacker.hp=Math.min(attacker.maxHp,attacker.hp+Math.floor(attacker.maxHp*0.10)); dmg=0; }
+            let healAmount=0;
+            if(profile.kind==='heal') { healAmount=Math.floor(attacker.maxHp*0.10); attacker.hp=Math.min(attacker.maxHp,attacker.hp+healAmount); dmg=0; }
             else target.hp=Math.max(0,target.hp-dmg);
             const dx=target.x-attacker.x,dy=target.y-attacker.y,ang=Math.atan2(dy,dx);
             const k=profile.kind;
@@ -2923,9 +2905,9 @@ let pressTimer = null;
             else if(['arc','slash','rift'].includes(k)) spawnEffect(k,target.x,target.y,attacker.color,{r:105,angle:ang,life:.5});
             else if(['meteor','divinemeteor','volcano'].includes(k)) spawnEffect(k,target.x,target.y,attacker.color,{r:155,life:.9});
             else spawnEffect(k,target.x,target.y,attacker.color,{r:130,life:k==='blackhole'||k==='singularity'||k==='abyss'?1.1:.72,angle:ang});
-            spawnEffect('text',target.x,target.y-70,attacker.color,{text:dmg?`-${dmg}`:'+'+Math.floor(attacker.maxHp*.10),life:.65});
-            skillSeq++; latestSkillEvent={seq:skillSeq,ownerId:(side==='A'?room.hostId:room.guestId),skill:profile.kind,x:attacker.x,y:attacker.y,targetX:target.x,targetY:target.y,color:attacker.color};
-            shake=Math.max(shake,profile.kind==='meteor'||profile.kind==='vortex'?.18:.08);
+            spawnEffect('text',target.x,target.y-70,attacker.color,{text:dmg?`-${dmg}`:`+${healAmount}`,life:.65});
+            skillSeq++; latestSkillEvent={seq:skillSeq,ownerId:(side==='A'?room.hostId:room.guestId),skill:profile.kind,x:attacker.x,y:attacker.y,targetX:target.x,targetY:target.y,color:attacker.color,damage:dmg,targetHp:target.hp,targetMaxHp:target.maxHp,healAmount};
+            shake=Math.max(shake, profile.kind==='meteor'||profile.kind==='vortex' ? .18 : .08);
             if(target.hp<=0){target.alive=false;target.hp=0;spawnEffect('ko',target.x,target.y,target.color,{r:130,life:.8,text:'K.O!'});respawnNext(side==='A'?'B':'A');}
         };
 
@@ -3072,7 +3054,11 @@ let pressTimer = null;
                     if(se && Number(se.seq||0)>lastRemoteSkillEvent){
                         lastRemoteSkillEvent=Number(se.seq||0);
                         if(se.ownerId!==this.playerId && Number.isFinite(se.x) && Number.isFinite(se.y)){
-                            spawnEffect(se.skill||'hit',Number(se.x),Number(se.y),se.color||'#ff4646',{fromX:Number(se.x),fromY:Number(se.y),toX:Number(se.targetX||se.x),toY:Number(se.targetY||se.y),r:130,life:.55,angle:Math.atan2(Number(se.targetY||se.y)-Number(se.y),Number(se.targetX||se.x)-Number(se.x))});
+                            const sx=Number(se.x), sy=Number(se.y), tx=Number(se.targetX||se.x), ty=Number(se.targetY||se.y), scol=se.color||'#ff4646';
+                            spawnEffect(se.skill||'hit',sx,sy,scol,{fromX:sx,fromY:sy,toX:tx,toY:ty,r:130,life:.55,angle:Math.atan2(ty-sy,tx-sx)});
+                            // Skill event mang theo damage để cả hai máy đều nhìn thấy số sát thương.
+                            if(Number(se.damage)>0) spawnEffect('text',tx,ty-70,scol,{text:`-${Math.floor(Number(se.damage))}`,life:.65});
+                            if(Number(se.healAmount)>0) spawnEffect('text',sx,sy-70,scol,{text:`+${Math.floor(Number(se.healAmount))}`,life:.65});
                         }
                     }
                 }
