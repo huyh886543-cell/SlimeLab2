@@ -160,10 +160,35 @@
     
 /* Final mobile performance tuning */
 @media (max-width: 900px){
-  #rank-list,#strain-list,#pet-pool-grid,#arena-challenge-list{touch-action:pan-y !important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;}
+  #rank-list,#arena-challenge-list{touch-action:pan-y !important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;} #strain-list,#pet-pool-grid{touch-action:auto !important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:auto;}
   #arena-battle-overlay{contain:layout paint style;}
   #arenaBattleCanvas{image-rendering:auto;}
 }
+
+/* === THANH KÉO LỚN CHO BẢNG CHỌN PET + QUẢN LÝ === */
+#pet-pool-grid,#strain-list{
+    scrollbar-width:auto !important;
+    scrollbar-color:#00ffc8 #182536 !important;
+    overflow-y:scroll !important;
+    scrollbar-gutter:stable !important;
+    touch-action:auto !important;
+}
+#pet-pool-grid::-webkit-scrollbar,#strain-list::-webkit-scrollbar{width:18px !important;}
+#pet-pool-grid::-webkit-scrollbar-track,#strain-list::-webkit-scrollbar-track{
+    background:#182536 !important;border:1px solid #2b4058;border-radius:10px;
+}
+#pet-pool-grid::-webkit-scrollbar-thumb,#strain-list::-webkit-scrollbar-thumb{
+    background:linear-gradient(#00ffc8,#00a8ff) !important;
+    border:3px solid #182536 !important;border-radius:10px;min-height:64px;
+}
+#pet-pool-grid::-webkit-scrollbar-thumb:hover,#strain-list::-webkit-scrollbar-thumb:hover{filter:brightness(1.2);}
+@media (max-width:900px){
+    #pet-pool-grid,#strain-list{scrollbar-width:auto !important;scrollbar-color:#00ffc8 #182536 !important;touch-action:auto !important;}
+    #pet-pool-grid::-webkit-scrollbar,#strain-list::-webkit-scrollbar{width:22px !important;}
+    #pet-pool-grid::-webkit-scrollbar-thumb,#strain-list::-webkit-scrollbar-thumb{border-width:4px !important;min-height:80px;}
+    #pet-pool-grid,#strain-list{padding-right:8px !important;}
+}
+
 </style>
 
 <style id="arena-skill-arc-final">
@@ -980,9 +1005,16 @@ class Game {
                 .find(x=>x.data&&!x.data.deleted&&x.data.name===wanted);
             if(!found){showCustomAlert('❌ Không tìm thấy người chơi có tên chính xác này. Hãy kiểm tra lại chữ hoa, chữ thường và khoảng trắng.','error');return;}
             if(this.friends && this.friends[found.id]){close();showCustomAlert(`ℹ️ ${wanted} đã có trong danh sách bạn bè.`,'info');return;}
-            this.db.ref('friends/'+this.playerId+'/'+found.id).set({name:found.data.name,addedAt:firebase.database.ServerValue.TIMESTAMP}).then(()=>{
-                close(); showCustomAlert(`🤝 Đã kết bạn với <b>${found.data.name}</b>! Người này sẽ xuất hiện trên bảng xếp hạng của bạn.`,'success');
-            }).catch(err=>showCustomAlert('❌ Không thể kết bạn: '+err.message+'<br><small>Kiểm tra Firebase Rules cho nhánh <b>friends</b>.</small>','error'));
+            const friendInfoA={name:found.data.name,addedAt:firebase.database.ServerValue.TIMESTAMP};
+            const friendInfoB={name:this.playerName,addedAt:firebase.database.ServerValue.TIMESTAMP};
+            const friendUpdates={};
+            friendUpdates[`friends/${this.playerId}/${found.id}`]=friendInfoA;
+            friendUpdates[`friends/${found.id}/${this.playerId}`]=friendInfoB;
+            this.db.ref().update(friendUpdates).then(()=>{
+                close();
+                // Không thông báo cho người được kết bạn. Dữ liệu bạn bè hai chiều sẽ tự
+                // xuất hiện trong BXH của họ qua friends listener.
+            }).catch(err=>showCustomAlert('❌ Không thể kết bạn: '+err.message+'<br><small>Kiểm tra Firebase Rules cho nhánh <b>friends</b> ở cả hai phía.</small>','error'));
         };
     }
 
@@ -2616,6 +2648,7 @@ class Game {
             if (this.challengeListenerAttached) return;
             this.challengeListenerAttached = true;
             if (!this.handledAcceptedChallenges) this.handledAcceptedChallenges = new Set();
+            this.challengeInitialSyncDone = false;
             this.challengeRef = this.db.ref('challenges/' + this.playerId);
             this.challengeRef.on('child_added', snap => this.handleIncomingChallenge(snap));
             this.challengeRef.on('child_changed', snap => this.handleChallengeChanged(snap));
@@ -2623,17 +2656,24 @@ class Game {
             // kể cả khi child_changed bị bỏ lỡ do kết nối realtime chập chờn.
             this.challengeRef.on('value', snap => {
                 const all = snap.val() || {};
+                // Lần đọc đầu tiên chỉ đồng bộ các challenge cũ, TUYỆT ĐỐI không tự vào
+                // phòng đã accepted trước khi người chơi mở game. Điều này loại bỏ lỗi
+                // vừa vào game đã hiện thắng/thua của trận cũ.
+                if (!this.challengeInitialSyncDone) {
+                    Object.keys(all).forEach(id => {
+                        const c = all[id];
+                        if (c && c.status === 'accepted' && c.roomId && c.from === this.playerId) {
+                            this.handledAcceptedChallenges.add(id);
+                        }
+                    });
+                    this.challengeInitialSyncDone = true;
+                    return;
+                }
                 Object.keys(all).forEach(id => {
                     const c = all[id];
-                    if (c && c.status === 'accepted' && c.roomId && c.from === this.playerId) {
-                        // Mỗi lời mời ACCEPTED chỉ được xử lý đúng một lần.
-                        // Nếu giữ listener value và không có guard, sau khi trận 1 kết thúc
-                        // Firebase vẫn trả lại challenge cũ -> tự động vào lại room đã finished
-                        // và hiện popup thắng/thua ngay khi bắt đầu trận 2.
-                        if (!this.handledAcceptedChallenges.has(id)) {
-                            this.handledAcceptedChallenges.add(id);
-                            this.joinPvPRoom(c.roomId, c, true);
-                        }
+                    if (c && c.status === 'accepted' && c.roomId && c.from === this.playerId && !this.handledAcceptedChallenges.has(id)) {
+                        this.handledAcceptedChallenges.add(id);
+                        this.joinPvPRoom(c.roomId, c, true);
                     }
                 });
             });
@@ -2757,7 +2797,14 @@ class Game {
             const room=snap.val();
             if (!room) return;
             this.pvpRoom=room;
-            if (room.status==='finished') { this.finishPvPBattle(room.winnerId===this.playerId); return; }
+            if (room.status==='finished') {
+                // Chỉ hiển thị kết quả nếu đây là trận đang thực sự diễn ra trên máy này.
+                // Không được mở popup khi join nhầm room cũ/stale challenge lúc khởi động.
+                if (this.inArenaBattle && this.pvpRoomId===roomId && !this.pvpFinished) {
+                    this.finishPvPBattle(room.winnerId===this.playerId);
+                }
+                return;
+            }
             if (room.status==='ready' && !this.inArenaBattle) this.startPvPBattle(room, room.hostId===this.playerId);
             if (room.state && room.state.players && room.state.players[this.playerId!==room.hostId?room.hostId:room.guestId]) this.pvpRemoteState=room.state.players[this.playerId!==room.hostId?room.hostId:room.guestId];
         });
@@ -2765,7 +2812,7 @@ class Game {
     }
 
     finishPvPBattle(won) {
-        if (this.pvpFinished) return;
+        if (this.pvpFinished || !this.inArenaBattle) return;
         this.pvpFinished=true; this.inArenaBattle=false;
         // Đánh dấu room đã kết thúc để challenge listener không bao giờ tự mở lại room cũ.
         this.pvpLastFinishedRoomId = this.pvpRoomId || null;
